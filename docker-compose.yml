@@ -24,6 +24,8 @@ services:
       - postgres
     environment:
       POSTGRES_USER: rpuser
+      POSTGRES_PASSWORD: rppass
+      POSTGRES_SERVER: postgres
       POSTGRES_DB: reportportal
 
 volumes:

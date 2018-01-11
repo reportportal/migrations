@@ -1,24 +1,11 @@
 FROM golang:1.9.2
-WORKDIR /go/src/gitlab.com/avarabyeu/migrations
 
-RUN apt-get update && apt-get install -y \
-      ca-certificates \
-      && rm -fr /var/lib/apt/lists/*
+RUN go get -u -d github.com/mattes/migrate/cli github.com/lib/pq && \
+      go build -tags 'postgres' -o /usr/local/bin/migrate github.com/mattes/migrate/cli
 
-RUN curl https://glide.sh/get | sh && \
-    go get -v github.com/alecthomas/gometalinter && \
-    gometalinter --install
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
-ARG version
-
-COPY glide.yaml glide.lock ./
-RUN glide install
-
-COPY ./ ./
-RUN make build version=$version
-
-FROM scratch
-WORKDIR /root/
-COPY migrations/ ./migrations/
-COPY --from=0 /go/src/gitlab.com/avarabyeu/migrations/bin/migrate ./migrate
-CMD ["./migrate"]
+COPY migrations/ /migrations/
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["up"]
