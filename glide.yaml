@@ -1,0 +1,10 @@
+package: gitlab.com/avarabyeu/migrations
+import:
+- package: github.com/jinzhu/gorm
+  version: ^1.0.0
+- package: github.com/lib/pq
+- package: github.com/mattes/migrate
+  version: ^3.0.1
+  subpackages:
+  - database/postgres
+  - source/file
