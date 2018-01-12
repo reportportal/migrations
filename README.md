@@ -9,10 +9,10 @@ docker-compose run --rm migrations
 
 #### Downgrade to previous revision
 ```sh
-docker-compose exec --rm migrations down
+docker-compose run --rm migrations down
 ```
 
 #### Downgrade to N revisions back
 ```sh
-docker-compose exec --rm migrations down N
+docker-compose run --rm migrations down N
 ```
