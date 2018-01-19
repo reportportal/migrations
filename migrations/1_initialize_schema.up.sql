@@ -99,4 +99,34 @@ CREATE TABLE activity (
   action_type   VARCHAR                 NOT NULL,
   name          VARCHAR                 NOT NULL
   -- history ??
+);
+
+CREATE TABLE dashboard (
+  id            SERIAL CONSTRAINT dashboard_pk PRIMARY KEY,
+  name          VARCHAR UNIQUE          NOT NULL,
+  project_id    INT REFERENCES project (id) ON DELETE CASCADE,
+  creation_date TIMESTAMP DEFAULT now() NOT NULL,
+  CONSTRAINT unq_name_project UNIQUE (name, project_id)
+  -- acl ??
+);
+
+CREATE TABLE widget (
+  id         SERIAL CONSTRAINT widget_id PRIMARY KEY,
+  name       VARCHAR NOT NULL,
+  -- content options ??
+  -- applying filter id??
+  project_id INT REFERENCES project (id) ON DELETE CASCADE
+  -- acl ???
+);
+
+CREATE TABLE dashboard_widget (
+  dashboard_id      INT REFERENCES dashboard (id) ON UPDATE CASCADE ON DELETE CASCADE,
+  widget_id         INT REFERENCES widget (id) ON UPDATE CASCADE ON DELETE CASCADE,
+  widget_name       VARCHAR REFERENCES widget (name), -- make it as reference ??
+  wdiget_width      INT NOT NULL,
+  widget_heigth     INT NOT NULL,
+  widget_position_x INT NOT NULL,
+  widget_position_y INT NOT NULL,
+  CONSTRAINT profile_project_pk PRIMARY KEY (dashboard_id, widget_id),
+  CONSTRAINT unq_widget_name_dashboard UNIQUE (dashboard_id, widget_name)
 )
