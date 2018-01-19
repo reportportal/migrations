@@ -3,6 +3,12 @@
 
 CREATE TYPE PROJECT_TYPE_ENUM AS ENUM ('INTERNAL', 'PERSONAL', 'UPSA');
 
+CREATE TYPE USER_ROLE_ENUM AS ENUM ('ADMINISTRATOR', 'USER');
+
+CREATE TYPE USER_TYPE_ENUM AS ENUM ('INTERNAL', 'UPSA', 'GITHUB', 'LDAP');
+
+CREATE TYPE PROJECT_ROLE_ENUM AS ENUM ('OPERATOR', 'CUSTOMER', 'MEMBER', 'PROJECT_MANAGER');
+
 -- CREATE TABLE defect_type (
 --
 -- )
@@ -17,7 +23,7 @@ CREATE TABLE bug_tracking_system (
 
 CREATE TABLE defect_form_field (
   id                 SERIAL CONSTRAINT defect_form_field_pk PRIMARY KEY,
-  bugtracking_system SERIAL REFERENCES bug_tracking_system (id) ON DELETE CASCADE,
+  bugtracking_system INT REFERENCES bug_tracking_system (id) ON DELETE CASCADE,
   field_id           VARCHAR       NOT NULL,
   type               VARCHAR       NOT NULL,
   required           BOOLEAN       NOT NULL DEFAULT FALSE,
@@ -26,7 +32,7 @@ CREATE TABLE defect_form_field (
 
 CREATE TABLE defect_field_allowed_value (
   id                SERIAL CONSTRAINT defect_field_allowed_value_pk PRIMARY KEY,
-  defect_form_field SERIAL REFERENCES defect_form_field (id) ON DELETE CASCADE,
+  defect_form_field INT REFERENCES defect_form_field (id) ON DELETE CASCADE,
   value_id          VARCHAR NOT NULL,
   value_name        VARCHAR NULL
 );
@@ -47,7 +53,7 @@ CREATE TABLE project_configuration (
   keep_screenshots_interval INTERVAL                   NOT NULL,
   aa_enabled                BOOLEAN DEFAULT TRUE       NOT NULL,
   metadata                  JSONB                      NULL,
-  email_configuration_id    SERIAL REFERENCES project_email_configuration (id) ON DELETE CASCADE,
+  email_configuration_id    INT REFERENCES project_email_configuration (id) ON DELETE CASCADE,
   --   statistics sub type ???
   created_on                TIMESTAMP DEFAULT now()    NOT NULL
 );
@@ -58,5 +64,28 @@ CREATE TABLE project (
   name                     VARCHAR                 NOT NULL,
   metadata                 JSONB                   NULL,
   created_on               TIMESTAMP DEFAULT now() NOT NULL,
-  project_configuration_id SERIAL REFERENCES project_configuration (id) ON DELETE CASCADE
+  project_configuration_id INT REFERENCES project_configuration (id) ON DELETE CASCADE
+);
+
+
+CREATE TABLE profile (
+  id                 SERIAL CONSTRAINT user_pk PRIMARY KEY,
+  login              VARCHAR        NOT NULL UNIQUE,
+  password           VARCHAR        NOT NULL,
+  email              VARCHAR        NOT NULL,
+  -- photos ?
+  role               USER_ROLE_ENUM NOT NULL,
+  type               USER_TYPE_ENUM NOT NULL,
+  -- isExpired ?
+  default_project_id INT REFERENCES project (id) ON DELETE CASCADE,
+  full_name          VARCHAR        NOT NULL,
+  metadata           JSONB          NULL
+);
+
+CREATE TABLE profile_project(
+  profile_id INT REFERENCES profile (id) ON UPDATE CASCADE ON DELETE CASCADE ,
+  project_id INT REFERENCES project (id) ON UPDATE CASCADE ON DELETE CASCADE ,
+  CONSTRAINT profile_project_pk PRIMARY KEY (profile_id, project_id),
+  project_role PROJECT_ROLE_ENUM NOT NULL
+  -- proposed role ??
 );
