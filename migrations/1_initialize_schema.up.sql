@@ -132,4 +132,21 @@ CREATE TABLE dashboard_widget (
   widget_position_x INT     NOT NULL,
   widget_position_y INT     NOT NULL,
   CONSTRAINT dashboard_widget_pk PRIMARY KEY (dashboard_id, widget_id)
-)
+);
+
+CREATE TABLE launch (
+  id                   BIGSERIAL                                                             NOT NULL,
+  project_id           BIGSERIAL REFERENCES project (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
+  profile_id           BIGSERIAL REFERENCES profile (id) ON DELETE SET NULL ON UPDATE CASCADE,
+  name                 VARCHAR(256)                                                          NOT NULL,
+  description          TEXT,
+  start_time           TIMESTAMP                                                             NOT NULL,
+  end_time             TIMESTAMP,
+  status               LAUNCH_STATUS_ENUM                                                    NOT NULL,
+  launch_number        BIGINT                                                                NOT NULL,
+  last_modified        TIMESTAMP                                                             NOT NULL,
+  launch_mode          LAUNCH_MODE_ENUM                                                      NOT NULL,
+  approximate_duration DOUBLE PRECISION,
+  CONSTRAINT pk_launch_id PRIMARY KEY (id),
+  CONSTRAINT unq_name_number UNIQUE (name, launch_number)
+);
