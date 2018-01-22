@@ -9,9 +9,16 @@ CREATE TYPE USER_TYPE_ENUM AS ENUM ('INTERNAL', 'UPSA', 'GITHUB', 'LDAP');
 
 CREATE TYPE PROJECT_ROLE_ENUM AS ENUM ('OPERATOR', 'CUSTOMER', 'MEMBER', 'PROJECT_MANAGER');
 
-CREATE TYPE LAUNCH_STATUS_ENUM AS ENUM ('IN_PROGRESS', 'PASSED', 'FAILED', 'STOPPED', 'SKIPPED', 'INTERRUPTED', 'RESETED', 'CANCELLED');
+CREATE TYPE STATUS_ENUM AS ENUM ('IN_PROGRESS', 'PASSED', 'FAILED', 'STOPPED', 'SKIPPED', 'INTERRUPTED', 'RESETED', 'CANCELLED');
 
 CREATE TYPE LAUNCH_MODE_ENUM AS ENUM ('DEFAULT', 'DEBUG');
+
+CREATE TYPE EXTERNAL_SYSTEM_TYPE_ENUM AS ENUM ('NONE', 'JIRA', 'TFS', 'RALLY');
+
+CREATE TYPE AUTH_TYPE_ENUM AS ENUM ('OAUTH', 'NTLM', 'APIKEY', 'BASIC');
+
+CREATE TYPE TEST_ITEM_TYPE_ENUM AS ENUM ('SUITE', 'STORY', 'TEST', 'SCENARIO', 'STEP', 'BEFORE_CLASS', 'BEFORE_GROUPS', 'BEFORE_METHOD',
+  'BEFORE_SUITE', 'BEFORE_TEST', 'AFTER_CLASS', 'AFTER_GROUPS', 'AFTER_METHOD', 'AFTER_SUITE', 'AFTER_TEST');
 
 -- CREATE TABLE defect_type (
 --
@@ -135,18 +142,48 @@ CREATE TABLE dashboard_widget (
 );
 
 CREATE TABLE launch (
-  id                   BIGSERIAL                                                             NOT NULL,
-  project_id           BIGSERIAL REFERENCES project (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
+  id                   BIGSERIAL CONSTRAINT launch_pk PRIMARY KEY,
+  project_id           BIGSERIAL REFERENCES project (id) ON DELETE CASCADE ON UPDATE CASCADE             NOT NULL,
   profile_id           BIGSERIAL REFERENCES profile (id) ON DELETE SET NULL ON UPDATE CASCADE,
-  name                 VARCHAR(256)                                                          NOT NULL,
+  name                 VARCHAR(256)                                                                      NOT NULL,
   description          TEXT,
-  start_time           TIMESTAMP                                                             NOT NULL,
+  start_time           TIMESTAMP                                                                         NOT NULL,
   end_time             TIMESTAMP,
-  status               LAUNCH_STATUS_ENUM                                                    NOT NULL,
-  launch_number        BIGINT                                                                NOT NULL,
-  last_modified        TIMESTAMP                                                             NOT NULL,
-  launch_mode          LAUNCH_MODE_ENUM                                                      NOT NULL,
+  status               STATUS_ENUM                                                                       NOT NULL,
+  -- tags as another table per project?
+  -- statistics ???
+  launch_number        BIGINT                                                                            NOT NULL,
+  last_modified        TIMESTAMP                                                                         NOT NULL,
+  launch_mode          LAUNCH_MODE_ENUM                                                                  NOT NULL,
   approximate_duration DOUBLE PRECISION,
-  CONSTRAINT pk_launch_id PRIMARY KEY (id),
   CONSTRAINT unq_name_number UNIQUE (name, launch_number)
 );
+
+CREATE TABLE test_item (
+  id             BIGSERIAL CONSTRAINT test_item_pk PRIMARY KEY,
+  name           VARCHAR(256),
+  type           TEST_ITEM_TYPE_ENUM                                                  NOT NULL,
+  start_time     TIMESTAMP                                                            NOT NULL,
+  end_time       TIMESTAMP,
+  status         STATUS_ENUM                                                          NOT NULL,
+  -- tags??
+  -- statistics??
+  -- path ??
+  parent_item_id BIGSERIAL REFERENCES test_item (id) ON DELETE CASCADE ON UPDATE CASCADE,
+  launch_id      BIGSERIAL REFERENCES launch (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
+  -- has children?
+  description    TEXT,
+  -- parameters
+  last_modified  TIMESTAMP                                                            NOT NULL,
+  unique_id      VARCHAR(256)                                                         NOT NULL
+);
+
+CREATE TABLE log (
+  id            BIGSERIAL CONSTRAINT log_pk PRIMARY KEY,
+  log_time      TIMESTAMP                                                               NOT NULL,
+  log_message   TEXT                                                                    NOT NULL,
+  -- binary content?
+  test_item_id  BIGSERIAL REFERENCES test_item (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
+  last_modified TIMESTAMP                                                               NOT NULL,
+  log_level     INTEGER                                                                 NOT NULL
+)
