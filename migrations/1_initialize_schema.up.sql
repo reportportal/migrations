@@ -172,15 +172,20 @@ CREATE TABLE test_item (
   -- tags??
   -- statistics??
   -- path ??
-  -- retries ?
   parent_item_id BIGINT REFERENCES test_item (id) ON DELETE CASCADE ON UPDATE CASCADE,
   retry_of       BIGINT REFERENCES test_item (id) ON DELETE CASCADE ON UPDATE CASCADE,
   launch_id      BIGINT REFERENCES launch (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
-  -- has children?
+  has_children   BOOLEAN DEFAULT FALSE,
   description    TEXT,
-  -- parameters
   last_modified  TIMESTAMP                                                         NOT NULL,
   unique_id      VARCHAR(256)                                                      NOT NULL
+);
+
+CREATE TABLE test_parameter (
+  id           BIGSERIAL CONSTRAINT test_parameter_pk PRIMARY KEY,
+  key          VARCHAR(256) NOT NULL,
+  value        TEXT,
+  test_item_id BIGINT REFERENCES test_item (id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE log (
