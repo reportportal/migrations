@@ -20,10 +20,9 @@ CREATE TYPE AUTH_TYPE_ENUM AS ENUM ('OAUTH', 'NTLM', 'APIKEY', 'BASIC');
 CREATE TYPE TEST_ITEM_TYPE_ENUM AS ENUM ('SUITE', 'STORY', 'TEST', 'SCENARIO', 'STEP', 'BEFORE_CLASS', 'BEFORE_GROUPS', 'BEFORE_METHOD',
   'BEFORE_SUITE', 'BEFORE_TEST', 'AFTER_CLASS', 'AFTER_GROUPS', 'AFTER_METHOD', 'AFTER_SUITE', 'AFTER_TEST');
 
--- CREATE TABLE defect_type (
---
--- )
+CREATE TYPE ISSUE_GROUP AS ENUM ('PRODUCT_BUG', 'AUTOMATION_BUG', 'SYSTEM_ISSUE', 'TO_INVESTIGATE', 'NO_DEFECT');
 
+------------------------------ Bug tracking systems ------------------------------
 CREATE TABLE bug_tracking_system (
   id   SERIAL CONSTRAINT bug_tracking_system_pk PRIMARY KEY,
   url  VARCHAR       NOT NULL,
@@ -47,8 +46,10 @@ CREATE TABLE defect_field_allowed_value (
   value_id          VARCHAR NOT NULL,
   value_name        VARCHAR NULL
 );
+-----------------------------------------------------------------------------------
 
 
+------------------------------ Project configurations ------------------------------
 CREATE TABLE project_email_configuration (
   id         SERIAL CONSTRAINT project_email_configuration_pk PRIMARY KEY,
   enabled    BOOLEAN DEFAULT FALSE NOT NULL,
@@ -69,7 +70,24 @@ CREATE TABLE project_configuration (
   created_on                TIMESTAMP DEFAULT now()    NOT NULL
 );
 
+CREATE TABLE issue_type (
+  id          SERIAL CONSTRAINT issue_type_pk PRIMARY KEY,
+  issue_group ISSUE_GROUP NOT NULL,
+  locator     VARCHAR(64),
+  long_name   VARCHAR(256),
+  short_name  VARCHAR(64),
+  hex_color   VARCHAR(7)
+);
 
+CREATE TABLE issue_type_project_configuration (
+  configuration_id BIGINT REFERENCES project_configuration,
+  issue_type_id    INTEGER REFERENCES issue_type,
+  CONSTRAINT issue_type_project_configuration_pk PRIMARY KEY (configuration_id, issue_type_id)
+);
+-----------------------------------------------------------------------------------
+
+
+---------------------------- Project and users ------------------------------------
 CREATE TABLE project (
   id                       SERIAL CONSTRAINT project_pk PRIMARY KEY,
   name                     VARCHAR                 NOT NULL,
@@ -78,9 +96,8 @@ CREATE TABLE project (
   project_configuration_id INTEGER REFERENCES project_configuration (id) ON DELETE CASCADE UNIQUE
 );
 
-
-CREATE TABLE profile (
-  id                 SERIAL CONSTRAINT profile_pk PRIMARY KEY,
+CREATE TABLE users (
+  id                 SERIAL CONSTRAINT users_pk PRIMARY KEY,
   login              VARCHAR        NOT NULL UNIQUE,
   password           VARCHAR        NOT NULL,
   email              VARCHAR        NOT NULL,
@@ -93,26 +110,17 @@ CREATE TABLE profile (
   metadata           JSONB          NULL
 );
 
-CREATE TABLE profile_project (
-  profile_id   INTEGER REFERENCES profile (id) ON UPDATE CASCADE ON DELETE CASCADE,
+CREATE TABLE users_project (
+  user_id      INTEGER REFERENCES users (id) ON UPDATE CASCADE ON DELETE CASCADE,
   project_id   INTEGER REFERENCES project (id) ON UPDATE CASCADE ON DELETE CASCADE,
-  CONSTRAINT profile_project_pk PRIMARY KEY (profile_id, project_id),
+  CONSTRAINT users_project_pk PRIMARY KEY (user_id, project_id),
   project_role PROJECT_ROLE_ENUM NOT NULL
   -- proposed role ??
 );
+-----------------------------------------------------------------------------------
 
--- need to be recreated
-CREATE TABLE activity (
-  id            BIGSERIAL CONSTRAINT activity_pk PRIMARY KEY,
-  profile_id    INTEGER REFERENCES profile (id) ON DELETE CASCADE,
-  project_id    INTEGER REFERENCES project (id) ON DELETE CASCADE,
-  last_modified TIMESTAMP DEFAULT now() NOT NULL,
-  object_type   VARCHAR                 NOT NULL,
-  action_type   VARCHAR                 NOT NULL,
-  name          VARCHAR                 NOT NULL
-  -- history ??
-);
 
+-------------------------- Dashboards and widgets -----------------------------
 CREATE TABLE dashboard (
   id            SERIAL CONSTRAINT dashboard_pk PRIMARY KEY,
   name          VARCHAR                 NOT NULL,
@@ -142,50 +150,57 @@ CREATE TABLE dashboard_widget (
   CONSTRAINT dashboard_widget_pk PRIMARY KEY (dashboard_id, widget_id),
   CONSTRAINT widget_on_dashboard_unq UNIQUE (dashboard_id, widget_name)
 );
+-----------------------------------------------------------------------------------
+
+
+--------------------------- Launches, items, logs --------------------------------------
 
 CREATE TABLE launch (
   id                   BIGSERIAL CONSTRAINT launch_pk PRIMARY KEY,
-  project_id           INTEGER REFERENCES project (id) ON DELETE CASCADE ON UPDATE CASCADE             NOT NULL,
-  profile_id           INTEGER REFERENCES profile (id) ON DELETE SET NULL ON UPDATE CASCADE,
-  name                 VARCHAR(256)                                                                    NOT NULL,
+  project_id           INTEGER REFERENCES project (id) ON DELETE CASCADE ON UPDATE CASCADE                      NOT NULL,
+  user_id              INTEGER REFERENCES users (id) ON DELETE CASCADE,
+  name                 VARCHAR(256)                                                                             NOT NULL,
   description          TEXT,
-  start_time           TIMESTAMP                                                                       NOT NULL,
+  start_time           TIMESTAMP                                                                                NOT NULL,
   end_time             TIMESTAMP,
-  status               STATUS_ENUM                                                                     NOT NULL,
-  -- tags as another table per project?
+  status               STATUS_ENUM                                                                              NOT NULL,
   -- statistics ???
-  launch_number        BIGINT                                                                          NOT NULL,
+  launch_number        BIGINT                                                                                   NOT NULL,
+  last_modified        TIMESTAMP DEFAULT now()                                                                  NOT NULL,
+  launch_mode          LAUNCH_MODE_ENUM                                                                         NOT NULL,
   has_retries          BOOLEAN DEFAULT FALSE,
-  last_modified        TIMESTAMP                                                                       NOT NULL,
-  launch_mode          LAUNCH_MODE_ENUM                                                                NOT NULL,
   approximate_duration DOUBLE PRECISION,
-  CONSTRAINT unq_name_number UNIQUE (name, launch_number)
+  CONSTRAINT unq_name_number UNIQUE (name, launch_number, project_id)
 );
 
 CREATE TABLE test_item (
   id             BIGSERIAL CONSTRAINT test_item_pk PRIMARY KEY,
   name           VARCHAR(256),
-  type           TEST_ITEM_TYPE_ENUM                                               NOT NULL,
-  start_time     TIMESTAMP                                                         NOT NULL,
+  type           TEST_ITEM_TYPE_ENUM                              NOT NULL,
+  start_time     TIMESTAMP                                        NOT NULL,
   end_time       TIMESTAMP,
-  status         STATUS_ENUM                                                       NOT NULL,
-  -- tags??
-  -- statistics??
-  -- path ??
-  parent_item_id BIGINT REFERENCES test_item (id) ON DELETE CASCADE ON UPDATE CASCADE,
-  retry_of       BIGINT REFERENCES test_item (id) ON DELETE CASCADE ON UPDATE CASCADE,
-  launch_id      BIGINT REFERENCES launch (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
+  status         STATUS_ENUM                                      NOT NULL,
+  parent_item_id BIGINT REFERENCES test_item ON DELETE CASCADE,
+  retry_of       BIGINT REFERENCES test_item ON DELETE CASCADE,
+  launch_id      BIGINT REFERENCES launch ON DELETE CASCADE       NOT NULL,
   has_children   BOOLEAN DEFAULT FALSE,
   description    TEXT,
-  last_modified  TIMESTAMP                                                         NOT NULL,
-  unique_id      VARCHAR(256)                                                      NOT NULL
+  last_modified  TIMESTAMP                                        NOT NULL,
+  unique_id      VARCHAR(256)                                     NOT NULL
 );
 
-CREATE TABLE test_parameter (
-  id           BIGSERIAL CONSTRAINT test_parameter_pk PRIMARY KEY,
-  key          VARCHAR(256) NOT NULL,
-  value        TEXT,
-  test_item_id BIGINT REFERENCES test_item (id) ON DELETE CASCADE ON UPDATE CASCADE
+CREATE TABLE parameter (
+  id      BIGSERIAL CONSTRAINT parameter_pk PRIMARY KEY,
+  key     VARCHAR(256) NOT NULL,
+  value   TEXT,
+  item_id BIGINT REFERENCES test_item (id) ON DELETE CASCADE
+);
+
+CREATE TABLE tag (
+  id        BIGSERIAL CONSTRAINT tag_pk PRIMARY KEY,
+  value     TEXT,
+  item_id   BIGINT REFERENCES test_item (id) ON DELETE CASCADE,
+  launch_id BIGINT REFERENCES launch (id) ON DELETE CASCADE
 );
 
 CREATE TABLE log (
@@ -193,7 +208,36 @@ CREATE TABLE log (
   log_time      TIMESTAMP                                                            NOT NULL,
   log_message   TEXT                                                                 NOT NULL,
   -- binary content?
-  test_item_id  BIGINT REFERENCES test_item (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
+  item_id       BIGINT REFERENCES test_item (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
   last_modified TIMESTAMP                                                            NOT NULL,
   log_level     INTEGER                                                              NOT NULL
-)
+);
+
+----------------------------------------------------------------------------------------
+
+
+------------------------------ Issue ticket many to many ------------------------------
+CREATE TABLE issue (
+  id                BIGSERIAL CONSTRAINT issue_pk PRIMARY KEY,
+  issue_type        INTEGER REFERENCES issue_type ON DELETE CASCADE,
+  issue_description TEXT,
+  auto_analyzed     BOOLEAN DEFAULT FALSE,
+  ignore_analyzer   BOOLEAN DEFAULT FALSE,
+  test_item_id      BIGINT REFERENCES test_item ON DELETE CASCADE UNIQUE
+);
+
+CREATE TABLE ticket (
+  id           BIGSERIAL CONSTRAINT ticket_pk PRIMARY KEY,
+  ticket_id    VARCHAR(64)                                                   NOT NULL UNIQUE,
+  submitter_id BIGINT REFERENCES users (id) ON DELETE SET NULL,
+  submit_date  TIMESTAMP DEFAULT now()                                       NOT NULL,
+  bts_id       INTEGER REFERENCES bug_tracking_system (id) ON DELETE CASCADE NOT NULL,
+  url          VARCHAR(256)                                                  NOT NULL
+);
+
+CREATE TABLE issue_ticket (
+  issue_id  BIGINT REFERENCES issue (id),
+  ticket_id BIGINT REFERENCES ticket (id),
+  CONSTRAINT issue_ticket_pk PRIMARY KEY (issue_id, ticket_id)
+);
+----------------------------------------------------------------------------------------
