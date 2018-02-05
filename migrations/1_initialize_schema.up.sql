@@ -162,9 +162,6 @@ CREATE TABLE launch (
   name                 VARCHAR(256)                                                                             NOT NULL,
   description          TEXT,
   start_time           TIMESTAMP                                                                                NOT NULL,
-  end_time             TIMESTAMP,
-  status               STATUS_ENUM                                                                              NOT NULL,
-  -- statistics ???
   launch_number        BIGINT                                                                                   NOT NULL,
   last_modified        TIMESTAMP DEFAULT now()                                                                  NOT NULL,
   launch_mode          LAUNCH_MODE_ENUM                                                                         NOT NULL,
@@ -174,19 +171,28 @@ CREATE TABLE launch (
 );
 
 CREATE TABLE test_item (
-  id             BIGSERIAL CONSTRAINT test_item_pk PRIMARY KEY,
-  name           VARCHAR(256),
-  type           TEST_ITEM_TYPE_ENUM                              NOT NULL,
-  start_time     TIMESTAMP                                        NOT NULL,
-  end_time       TIMESTAMP,
-  status         STATUS_ENUM                                      NOT NULL,
-  parent_item_id BIGINT REFERENCES test_item ON DELETE CASCADE,
-  retry_of       BIGINT REFERENCES test_item ON DELETE CASCADE,
-  launch_id      BIGINT REFERENCES launch ON DELETE CASCADE       NOT NULL,
-  has_children   BOOLEAN DEFAULT FALSE,
-  description    TEXT,
-  last_modified  TIMESTAMP                                        NOT NULL,
-  unique_id      VARCHAR(256)                                     NOT NULL
+  id            BIGSERIAL CONSTRAINT test_item_pk PRIMARY KEY,
+  name          VARCHAR(256),
+  type          TEST_ITEM_TYPE_ENUM NOT NULL,
+  start_time    TIMESTAMP           NOT NULL,
+  description   TEXT,
+  last_modified TIMESTAMP           NOT NULL,
+  unique_id     VARCHAR(256)        NOT NULL
+);
+
+CREATE TABLE test_item_structure (
+  id        BIGSERIAL CONSTRAINT test_item_structure_pk PRIMARY KEY,
+  item_id   BIGINT REFERENCES test_item ON DELETE CASCADE UNIQUE,
+  launch_id BIGINT REFERENCES launch ON DELETE CASCADE UNIQUE,
+  parent_id BIGINT REFERENCES test_item_structure ON DELETE CASCADE UNIQUE,
+  retry_of  BIGINT REFERENCES test_item_structure ON DELETE CASCADE UNIQUE
+);
+
+CREATE TABLE test_item_results (
+  id       BIGSERIAL CONSTRAINT test_item_results_pk PRIMARY KEY,
+  item_id  BIGINT REFERENCES test_item_structure ON DELETE CASCADE UNIQUE,
+  status   STATUS_ENUM NOT NULL,
+  duration DOUBLE PRECISION
 );
 
 CREATE TABLE parameter (
@@ -207,7 +213,6 @@ CREATE TABLE log (
   id            BIGSERIAL CONSTRAINT log_pk PRIMARY KEY,
   log_time      TIMESTAMP                                                            NOT NULL,
   log_message   TEXT                                                                 NOT NULL,
-  -- binary content?
   item_id       BIGINT REFERENCES test_item (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
   last_modified TIMESTAMP                                                            NOT NULL,
   log_level     INTEGER                                                              NOT NULL
@@ -218,12 +223,12 @@ CREATE TABLE log (
 
 ------------------------------ Issue ticket many to many ------------------------------
 CREATE TABLE issue (
-  id                BIGSERIAL CONSTRAINT issue_pk PRIMARY KEY,
-  issue_type        INTEGER REFERENCES issue_type ON DELETE CASCADE,
-  issue_description TEXT,
-  auto_analyzed     BOOLEAN DEFAULT FALSE,
-  ignore_analyzer   BOOLEAN DEFAULT FALSE,
-  test_item_id      BIGINT REFERENCES test_item ON DELETE CASCADE UNIQUE
+  id                   BIGSERIAL CONSTRAINT issue_pk PRIMARY KEY,
+  issue_type           INTEGER REFERENCES issue_type ON DELETE CASCADE,
+  issue_description    TEXT,
+  auto_analyzed        BOOLEAN DEFAULT FALSE,
+  ignore_analyzer      BOOLEAN DEFAULT FALSE,
+  test_item_results_id BIGINT REFERENCES test_item_results ON DELETE CASCADE UNIQUE
 );
 
 CREATE TABLE ticket (
