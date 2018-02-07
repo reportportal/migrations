@@ -110,7 +110,7 @@ CREATE TABLE users (
   metadata           JSONB          NULL
 );
 
-CREATE TABLE users_project (
+CREATE TABLE project_user (
   user_id      INTEGER REFERENCES users (id) ON UPDATE CASCADE ON DELETE CASCADE,
   project_id   INTEGER REFERENCES project (id) ON UPDATE CASCADE ON DELETE CASCADE,
   CONSTRAINT users_project_pk PRIMARY KEY (user_id, project_id),
