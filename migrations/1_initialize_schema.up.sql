@@ -17,6 +17,8 @@ CREATE TYPE BTS_TYPE_ENUM AS ENUM ('NONE', 'JIRA', 'TFS', 'RALLY');
 
 CREATE TYPE AUTH_TYPE_ENUM AS ENUM ('OAUTH', 'NTLM', 'APIKEY', 'BASIC');
 
+CREATE TYPE ACCESS_TOKEN_TYPE_ENUM AS ENUM ('OAUTH', 'NTLM', 'APIKEY', 'BASIC');
+
 CREATE TYPE TEST_ITEM_TYPE_ENUM AS ENUM ('SUITE', 'STORY', 'TEST', 'SCENARIO', 'STEP', 'BEFORE_CLASS', 'BEFORE_GROUPS', 'BEFORE_METHOD',
   'BEFORE_SUITE', 'BEFORE_TEST', 'AFTER_CLASS', 'AFTER_GROUPS', 'AFTER_METHOD', 'AFTER_SUITE', 'AFTER_TEST');
 
@@ -116,6 +118,13 @@ CREATE TABLE project_user (
   CONSTRAINT users_project_pk PRIMARY KEY (user_id, project_id),
   project_role PROJECT_ROLE_ENUM NOT NULL
   -- proposed role ??
+);
+
+CREATE TABLE oauth_access_token (
+  user_id    BIGINT REFERENCES users (id) ON UPDATE CASCADE ON DELETE CASCADE,
+  token      VARCHAR                NOT NULL,
+  token_type ACCESS_TOKEN_TYPE_ENUM NOT NULL,
+  CONSTRAINT access_tokens_pk PRIMARY KEY (user_id, token_type)
 );
 -----------------------------------------------------------------------------------
 
