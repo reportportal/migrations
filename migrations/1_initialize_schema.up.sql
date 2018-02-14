@@ -100,7 +100,6 @@ CREATE TABLE project (
   id                       SERIAL CONSTRAINT project_pk PRIMARY KEY,
   name                     VARCHAR                 NOT NULL,
   metadata                 JSONB                   NULL,
-  created_on               TIMESTAMP DEFAULT now() NOT NULL,
   project_configuration_id INTEGER REFERENCES project_configuration (id) ON DELETE CASCADE UNIQUE
 );
 
