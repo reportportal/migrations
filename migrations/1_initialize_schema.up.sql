@@ -208,9 +208,9 @@ CREATE TABLE test_item (
 CREATE TABLE test_item_structure (
   id        BIGSERIAL CONSTRAINT test_item_structure_pk PRIMARY KEY,
   item_id   BIGINT REFERENCES test_item ON DELETE CASCADE UNIQUE,
-  launch_id BIGINT REFERENCES launch ON DELETE CASCADE UNIQUE,
-  parent_id BIGINT REFERENCES test_item_structure ON DELETE CASCADE UNIQUE,
-  retry_of  BIGINT REFERENCES test_item_structure ON DELETE CASCADE UNIQUE
+  launch_id BIGINT REFERENCES launch ON DELETE CASCADE,
+  parent_id BIGINT REFERENCES test_item_structure ON DELETE CASCADE,
+  retry_of  BIGINT REFERENCES test_item_structure ON DELETE CASCADE
 );
 
 CREATE TABLE test_item_results (
