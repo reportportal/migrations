@@ -97,9 +97,9 @@ CREATE TABLE issue_type_project_configuration (
 
 ---------------------------- Project and users ------------------------------------
 CREATE TABLE project (
-  id                       SERIAL CONSTRAINT project_pk PRIMARY KEY,
-  name                     VARCHAR                 NOT NULL,
-  metadata                 JSONB                   NULL,
+  id                       BIGSERIAL CONSTRAINT project_pk PRIMARY KEY,
+  name                     VARCHAR NOT NULL,
+  metadata                 JSONB   NULL,
   project_configuration_id INTEGER REFERENCES project_configuration (id) ON DELETE CASCADE UNIQUE
 );
 
@@ -170,20 +170,21 @@ CREATE TABLE dashboard_widget (
 --------------------------- Launches, items, logs --------------------------------------
 
 CREATE TABLE launch (
-  id                   BIGSERIAL CONSTRAINT launch_pk PRIMARY KEY,
-  project_id           INTEGER REFERENCES project (id) ON DELETE CASCADE ON UPDATE CASCADE                      NOT NULL,
-  user_id              INTEGER REFERENCES users (id) ON DELETE CASCADE,
-  name                 VARCHAR(256)                                                                             NOT NULL,
-  description          TEXT,
-  start_time           TIMESTAMP                                                                                NOT NULL,
-  number               INTEGER                                                                                  NOT NULL,
-  last_modified        TIMESTAMP DEFAULT now()                                                                  NOT NULL,
-  mode                 LAUNCH_MODE_ENUM                                                                         NOT NULL,
+  id            BIGSERIAL CONSTRAINT launch_pk PRIMARY KEY,
+  project_id    INTEGER REFERENCES project (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
+  user_id       INTEGER REFERENCES users (id) ON DELETE SET NULL,
+  name          VARCHAR(256)                                                        NOT NULL,
+  description   TEXT,
+  start_time    TIMESTAMP                                                           NOT NULL,
+  number        INTEGER                                                             NOT NULL,
+  last_modified TIMESTAMP DEFAULT now()                                             NOT NULL,
+  mode          LAUNCH_MODE_ENUM                                                    NOT NULL,
+  status        STATUS_ENUM                                                         NOT NULL,
   CONSTRAINT unq_name_number UNIQUE (name, number, project_id)
 );
 
 CREATE TABLE launch_tag (
-  id        SERIAL CONSTRAINT launch_tag_pk PRIMARY KEY,
+  id        BIGSERIAL CONSTRAINT launch_tag_pk PRIMARY KEY,
   value     TEXT,
   launch_id BIGINT REFERENCES launch (id) ON DELETE CASCADE
 );
