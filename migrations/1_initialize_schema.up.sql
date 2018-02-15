@@ -97,7 +97,7 @@ CREATE TABLE issue_type_project_configuration (
 
 ---------------------------- Project and users ------------------------------------
 CREATE TABLE project (
-  id                       BIGSERIAL CONSTRAINT project_pk PRIMARY KEY,
+  id                       SERIAL CONSTRAINT project_pk PRIMARY KEY,
   name                     VARCHAR NOT NULL,
   metadata                 JSONB   NULL,
   project_configuration_id INTEGER REFERENCES project_configuration (id) ON DELETE CASCADE UNIQUE
