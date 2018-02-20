@@ -169,6 +169,7 @@ CREATE TABLE dashboard_widget (
 
 --------------------------- Launches, items, logs --------------------------------------
 
+
 CREATE TABLE launch (
   id            BIGSERIAL CONSTRAINT launch_pk PRIMARY KEY,
   project_id    INTEGER REFERENCES project (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
@@ -188,6 +189,26 @@ CREATE TABLE launch_tag (
   value     TEXT,
   launch_id BIGINT REFERENCES launch (id) ON DELETE CASCADE
 );
+
+CREATE OR REPLACE FUNCTION update_last_launch_number()
+  RETURNS TRIGGER AS
+$BODY$
+BEGIN
+  NEW.number = (SELECT number
+                FROM launch
+                WHERE name = NEW.name AND project_id = NEW.project_id
+                ORDER BY number DESC
+                LIMIT 1) + 1;
+  NEW.number = CASE WHEN NEW.number IS NULL THEN 1 ELSE NEW.number END;
+  RETURN NEW;
+END;
+$BODY$ LANGUAGE plpgsql;
+
+
+CREATE TRIGGER last_launch_number_trigger
+BEFORE INSERT ON launch
+FOR EACH ROW
+EXECUTE PROCEDURE update_last_launch_number();
 
 CREATE TYPE PARAMETER AS (
   key   VARCHAR(256),
