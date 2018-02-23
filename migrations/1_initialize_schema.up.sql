@@ -134,12 +134,12 @@ CREATE TABLE oauth_access_token (
 
 CREATE TABLE oauth_registration (
   id                           VARCHAR(64) PRIMARY KEY,
-  client_id                    VARCHAR(128) PRIMARY KEY NOT NULL UNIQUE,
-  client_secret                VARCHAR(256) PRIMARY KEY,
-  client_auth_method           VARCHAR(64) PRIMARY KEY  NOT NULL,
-  auth_grant_type              VARCHAR(64) PRIMARY KEY,
-  redirect_uri_template        VARCHAR(256) PRIMARY KEY,
-  scopes                       VARCHAR ARRAY            NOT NULL,
+  client_id                    VARCHAR(128)  NOT NULL UNIQUE,
+  client_secret                VARCHAR(256),
+  client_auth_method           VARCHAR(64)   NOT NULL,
+  auth_grant_type              VARCHAR(64),
+  redirect_uri_template        VARCHAR(256),
+  scopes                       VARCHAR ARRAY NOT NULL,
 
   authorization_uri            VARCHAR(256),
   token_uri                    VARCHAR(256),
