@@ -131,6 +131,25 @@ CREATE TABLE oauth_access_token (
   token_type ACCESS_TOKEN_TYPE_ENUM NOT NULL,
   CONSTRAINT access_tokens_pk PRIMARY KEY (user_id, token_type)
 );
+
+CREATE TABLE oauth_registration (
+  id                           VARCHAR(64) PRIMARY KEY,
+  client_id                    VARCHAR(128) PRIMARY KEY NOT NULL UNIQUE,
+  client_secret                VARCHAR(256) PRIMARY KEY,
+  client_auth_method           VARCHAR(64) PRIMARY KEY  NOT NULL,
+  auth_grant_type              VARCHAR(64) PRIMARY KEY,
+  redirect_uri_template        VARCHAR(256) PRIMARY KEY,
+  scopes                       VARCHAR ARRAY            NOT NULL,
+
+  authorization_uri            VARCHAR(256),
+  token_uri                    VARCHAR(256),
+
+  user_info_endpoint_uri       VARCHAR(256),
+  user_info_endpoint_name_attr VARCHAR(256),
+
+  jwk_set_uri                  VARCHAR(256),
+  client_name                  VARCHAR(128)
+);
 -----------------------------------------------------------------------------------
 
 
@@ -199,15 +218,19 @@ BEGIN
                 WHERE name = NEW.name AND project_id = NEW.project_id
                 ORDER BY number DESC
                 LIMIT 1) + 1;
-  NEW.number = CASE WHEN NEW.number IS NULL THEN 1 ELSE NEW.number END;
+  NEW.number = CASE WHEN NEW.number IS NULL
+    THEN 1
+               ELSE NEW.number END;
   RETURN NEW;
 END;
-$BODY$ LANGUAGE plpgsql;
+$BODY$
+LANGUAGE plpgsql;
 
 
 CREATE TRIGGER last_launch_number_trigger
-BEFORE INSERT ON launch
-FOR EACH ROW
+  BEFORE INSERT
+  ON launch
+  FOR EACH ROW
 EXECUTE PROCEDURE update_last_launch_number();
 
 CREATE TYPE PARAMETER AS (
