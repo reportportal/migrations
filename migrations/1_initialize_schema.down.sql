@@ -27,7 +27,7 @@ DROP TABLE IF EXISTS issue CASCADE;
 DROP TABLE IF EXISTS issue_ticket CASCADE;
 DROP TABLE IF EXISTS ticket CASCADE;
 
-DROP TRIGGER last_launch_number_trigger ON launch;
+DROP TRIGGER IF EXISTS last_launch_number_trigger ON launch;
 DROP FUNCTION update_last_launch_number();
 DROP TABLE IF EXISTS launch CASCADE;
 DROP TABLE IF EXISTS launch_tag CASCADE;

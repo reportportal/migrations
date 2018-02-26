@@ -153,7 +153,7 @@ CREATE TABLE oauth_registration (
 
 CREATE TABLE oauth_registration_scope (
   id                    SERIAL CONSTRAINT oauth_registration_scope_pk PRIMARY KEY,
-  oauth_registration_fk INTEGER REFERENCES oauth_registration (id) ON UPDATE CASCADE ON DELETE CASCADE,
+  oauth_registration_fk VARCHAR(128) REFERENCES oauth_registration (id) ON UPDATE CASCADE ON DELETE CASCADE,
   scope                 VARCHAR(256)
 );
 -----------------------------------------------------------------------------------
