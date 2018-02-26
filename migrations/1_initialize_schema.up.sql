@@ -150,6 +150,12 @@ CREATE TABLE oauth_registration (
   jwk_set_uri                  VARCHAR(256),
   client_name                  VARCHAR(128)
 );
+
+CREATE TABLE oauth_registration_scope (
+  id                    SERIAL CONSTRAINT oauth_registration_scope_pk PRIMARY KEY,
+  oauth_registration_fk INTEGER REFERENCES widget (id) ON UPDATE CASCADE ON DELETE CASCADE,
+  scope                 VARCHAR(256)
+);
 -----------------------------------------------------------------------------------
 
 
