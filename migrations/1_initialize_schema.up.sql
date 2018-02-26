@@ -139,7 +139,6 @@ CREATE TABLE oauth_registration (
   client_auth_method           VARCHAR(64)   NOT NULL,
   auth_grant_type              VARCHAR(64),
   redirect_uri_template        VARCHAR(256),
-  scopes                       VARCHAR ARRAY NOT NULL,
 
   authorization_uri            VARCHAR(256),
   token_uri                    VARCHAR(256),
