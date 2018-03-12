@@ -79,12 +79,12 @@ CREATE TABLE project_configuration (
 );
 
 CREATE TABLE issue_type (
-  id          SERIAL CONSTRAINT issue_type_pk PRIMARY KEY,
-  issue_group ISSUE_GROUP_ENUM NOT NULL,
-  locator     VARCHAR(64),
-  long_name   VARCHAR(256),
-  short_name  VARCHAR(64),
-  hex_color   VARCHAR(7)
+  id           SERIAL CONSTRAINT issue_type_pk PRIMARY KEY,
+  issue_group  ISSUE_GROUP_ENUM NOT NULL,
+  locator     VARCHAR(64), -- issue string identifier
+  issue_name   VARCHAR(256), -- issue full name
+  abbreviation VARCHAR(64), -- issue abbreviation
+  hex_color    VARCHAR(7)
 );
 
 CREATE TABLE issue_type_project_configuration (
@@ -134,9 +134,9 @@ CREATE TABLE oauth_access_token (
 
 CREATE TABLE oauth_registration (
   id                           VARCHAR(64) PRIMARY KEY,
-  client_id                    VARCHAR(128)  NOT NULL UNIQUE,
+  client_id                    VARCHAR(128) NOT NULL UNIQUE,
   client_secret                VARCHAR(256),
-  client_auth_method           VARCHAR(64)   NOT NULL,
+  client_auth_method           VARCHAR(64)  NOT NULL,
   auth_grant_type              VARCHAR(64),
   redirect_uri_template        VARCHAR(256),
 
@@ -233,9 +233,9 @@ LANGUAGE plpgsql;
 
 
 CREATE TRIGGER last_launch_number_trigger
-  BEFORE INSERT
+BEFORE INSERT
   ON launch
-  FOR EACH ROW
+FOR EACH ROW
 EXECUTE PROCEDURE update_last_launch_number();
 
 CREATE TYPE PARAMETER AS (
@@ -244,7 +244,7 @@ CREATE TYPE PARAMETER AS (
 );
 
 CREATE TABLE test_item (
-  id            BIGSERIAL CONSTRAINT test_item_pk PRIMARY KEY,
+  item_id       BIGSERIAL CONSTRAINT test_item_pk PRIMARY KEY,
   name          VARCHAR(256),
   type          TEST_ITEM_TYPE_ENUM NOT NULL,
   start_time    TIMESTAMP           NOT NULL,
@@ -255,16 +255,14 @@ CREATE TABLE test_item (
 );
 
 CREATE TABLE test_item_structure (
-  id        BIGSERIAL CONSTRAINT test_item_structure_pk PRIMARY KEY,
-  item_id   BIGINT REFERENCES test_item ON DELETE CASCADE UNIQUE,
+  item_id   BIGINT CONSTRAINT test_item_structure_pk PRIMARY KEY REFERENCES test_item (item_id) ON DELETE CASCADE UNIQUE,
   launch_id BIGINT REFERENCES launch ON DELETE CASCADE,
   parent_id BIGINT REFERENCES test_item_structure ON DELETE CASCADE,
   retry_of  BIGINT REFERENCES test_item_structure ON DELETE CASCADE
 );
 
 CREATE TABLE test_item_results (
-  id       BIGSERIAL CONSTRAINT test_item_results_pk PRIMARY KEY,
-  item_id  BIGINT REFERENCES test_item ON DELETE CASCADE UNIQUE,
+  item_id  BIGINT CONSTRAINT test_item_results_pk PRIMARY KEY REFERENCES test_item (item_id) ON DELETE CASCADE UNIQUE,
   status   STATUS_ENUM NOT NULL,
   duration REAL
 );
@@ -272,17 +270,17 @@ CREATE TABLE test_item_results (
 CREATE TABLE item_tag (
   id      SERIAL CONSTRAINT item_tag_pk PRIMARY KEY,
   value   TEXT,
-  item_id BIGINT REFERENCES test_item (id) ON DELETE CASCADE
+  item_id BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE
 );
 
 
 CREATE TABLE log (
   id            BIGSERIAL CONSTRAINT log_pk PRIMARY KEY,
-  log_time      TIMESTAMP                                                            NOT NULL,
-  log_message   TEXT                                                                 NOT NULL,
-  item_id       BIGINT REFERENCES test_item (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
-  last_modified TIMESTAMP                                                            NOT NULL,
-  log_level     INTEGER                                                              NOT NULL
+  log_time      TIMESTAMP                                                                 NOT NULL,
+  log_message   TEXT                                                                      NOT NULL,
+  item_id       BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
+  last_modified TIMESTAMP                                                                 NOT NULL,
+  log_level     INTEGER                                                                   NOT NULL
 );
 
 ----------------------------------------------------------------------------------------
@@ -290,12 +288,11 @@ CREATE TABLE log (
 
 ------------------------------ Issue ticket many to many ------------------------------
 CREATE TABLE issue (
-  id                   BIGSERIAL CONSTRAINT issue_pk PRIMARY KEY,
-  issue_type           INTEGER REFERENCES issue_type ON DELETE CASCADE,
-  issue_description    TEXT,
-  auto_analyzed        BOOLEAN DEFAULT FALSE,
-  ignore_analyzer      BOOLEAN DEFAULT FALSE,
-  test_item_results_id BIGINT REFERENCES test_item_results ON DELETE CASCADE UNIQUE
+  issue_id          BIGINT CONSTRAINT issue_pk PRIMARY KEY REFERENCES test_item_results (item_id) ON DELETE CASCADE,
+  issue_type        INTEGER REFERENCES issue_type ON DELETE CASCADE,
+  issue_description TEXT,
+  auto_analyzed     BOOLEAN DEFAULT FALSE,
+  ignore_analyzer   BOOLEAN DEFAULT FALSE
 );
 
 CREATE TABLE ticket (
@@ -308,7 +305,7 @@ CREATE TABLE ticket (
 );
 
 CREATE TABLE issue_ticket (
-  issue_id  BIGINT REFERENCES issue (id),
+  issue_id  BIGINT REFERENCES issue (issue_id),
   ticket_id BIGINT REFERENCES ticket (id),
   CONSTRAINT issue_ticket_pk PRIMARY KEY (issue_id, ticket_id)
 );
