@@ -81,7 +81,7 @@ CREATE TABLE project_configuration (
 CREATE TABLE issue_type (
   id           SERIAL CONSTRAINT issue_type_pk PRIMARY KEY,
   issue_group  ISSUE_GROUP_ENUM NOT NULL,
-  locator     VARCHAR(64), -- issue string identifier
+  locator      VARCHAR(64), -- issue string identifier
   issue_name   VARCHAR(256), -- issue full name
   abbreviation VARCHAR(64), -- issue abbreviation
   hex_color    VARCHAR(7)
@@ -264,7 +264,7 @@ CREATE TABLE test_item_structure (
 CREATE TABLE test_item_results (
   item_id  BIGINT CONSTRAINT test_item_results_pk PRIMARY KEY REFERENCES test_item (item_id) ON DELETE CASCADE UNIQUE,
   status   STATUS_ENUM NOT NULL,
-  duration REAL
+  duration BIGINT
 );
 
 CREATE TABLE item_tag (
