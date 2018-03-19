@@ -245,6 +245,7 @@ CREATE TYPE PARAMETER AS (
 
 CREATE TABLE test_item (
   item_id       BIGSERIAL CONSTRAINT test_item_pk PRIMARY KEY,
+  launch_id     BIGINT REFERENCES launch ON DELETE CASCADE,
   name          VARCHAR(256),
   type          TEST_ITEM_TYPE_ENUM NOT NULL,
   start_time    TIMESTAMP           NOT NULL,
@@ -256,7 +257,6 @@ CREATE TABLE test_item (
 
 CREATE TABLE test_item_structure (
   item_id   BIGINT CONSTRAINT test_item_structure_pk PRIMARY KEY REFERENCES test_item (item_id) ON DELETE CASCADE UNIQUE,
-  launch_id BIGINT REFERENCES launch ON DELETE CASCADE,
   parent_id BIGINT REFERENCES test_item_structure ON DELETE CASCADE,
   retry_of  BIGINT REFERENCES test_item_structure ON DELETE CASCADE
 );
