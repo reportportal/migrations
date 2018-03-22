@@ -57,54 +57,15 @@ CREATE TABLE defect_field_allowed_value (
 -----------------------------------------------------------------------------------
 
 
------------------------------- Project configurations ------------------------------
-CREATE TABLE project_email_configuration (
-  id         SERIAL CONSTRAINT project_email_configuration_pk PRIMARY KEY,
-  enabled    BOOLEAN DEFAULT FALSE NOT NULL,
-  recipients VARCHAR ARRAY         NOT NULL
-  --   email cases?
-);
-
-CREATE TABLE project_configuration (
-  id                        SERIAL CONSTRAINT project_configuration_pk PRIMARY KEY,
-  project_type              PROJECT_TYPE_ENUM          NOT NULL,
-  interrupt_timeout         INTERVAL                   NOT NULL,
-  keep_logs_interval        INTERVAL                   NOT NULL,
-  keep_screenshots_interval INTERVAL                   NOT NULL,
-  aa_enabled                BOOLEAN DEFAULT TRUE       NOT NULL,
-  metadata                  JSONB                      NULL,
-  email_configuration_id    INTEGER REFERENCES project_email_configuration (id) ON DELETE CASCADE UNIQUE,
-  --   statistics sub type ???
-  created_on                TIMESTAMP DEFAULT now()    NOT NULL
-);
-
-CREATE TABLE issue_type (
-  id           SERIAL CONSTRAINT issue_type_pk PRIMARY KEY,
-  issue_group  ISSUE_GROUP_ENUM NOT NULL,
-  locator      VARCHAR(64), -- issue string identifier
-  issue_name   VARCHAR(256), -- issue full name
-  abbreviation VARCHAR(64), -- issue abbreviation
-  hex_color    VARCHAR(7)
-);
-
-CREATE TABLE issue_type_project_configuration (
-  configuration_id INTEGER REFERENCES project_configuration,
-  issue_type_id    INTEGER REFERENCES issue_type,
-  CONSTRAINT issue_type_project_configuration_pk PRIMARY KEY (configuration_id, issue_type_id)
-);
------------------------------------------------------------------------------------
-
-
 ---------------------------- Project and users ------------------------------------
 CREATE TABLE project (
-  id                       SERIAL CONSTRAINT project_pk PRIMARY KEY,
-  name                     VARCHAR NOT NULL,
-  metadata                 JSONB   NULL,
-  project_configuration_id INTEGER REFERENCES project_configuration (id) ON DELETE CASCADE UNIQUE
+  id       BIGSERIAL CONSTRAINT project_pk PRIMARY KEY,
+  name     VARCHAR NOT NULL,
+  metadata JSONB   NULL
 );
 
 CREATE TABLE users (
-  id                 SERIAL CONSTRAINT users_pk PRIMARY KEY,
+  id                 BIGSERIAL CONSTRAINT users_pk PRIMARY KEY,
   login              VARCHAR        NOT NULL UNIQUE,
   password           VARCHAR        NOT NULL,
   email              VARCHAR        NOT NULL,
@@ -118,8 +79,8 @@ CREATE TABLE users (
 );
 
 CREATE TABLE project_user (
-  user_id      INTEGER REFERENCES users (id) ON UPDATE CASCADE ON DELETE CASCADE,
-  project_id   INTEGER REFERENCES project (id) ON UPDATE CASCADE ON DELETE CASCADE,
+  user_id      BIGINT REFERENCES users (id) ON UPDATE CASCADE ON DELETE CASCADE,
+  project_id   BIGINT REFERENCES project (id) ON UPDATE CASCADE ON DELETE CASCADE,
   CONSTRAINT users_project_pk PRIMARY KEY (user_id, project_id),
   project_role PROJECT_ROLE_ENUM NOT NULL
   -- proposed role ??
@@ -157,6 +118,42 @@ CREATE TABLE oauth_registration_scope (
 );
 -----------------------------------------------------------------------------------
 
+------------------------------ Project configurations ------------------------------
+CREATE TABLE project_email_configuration (
+  id         BIGSERIAL CONSTRAINT project_email_configuration_pk PRIMARY KEY,
+  enabled    BOOLEAN DEFAULT FALSE NOT NULL,
+  recipients VARCHAR ARRAY         NOT NULL
+  --   email cases?
+);
+
+CREATE TABLE project_configuration (
+  id                        BIGINT CONSTRAINT project_configuration_pk PRIMARY KEY REFERENCES project (id) ON DELETE CASCADE UNIQUE,
+  project_type              PROJECT_TYPE_ENUM          NOT NULL,
+  interrupt_timeout         INTERVAL                   NOT NULL,
+  keep_logs_interval        INTERVAL                   NOT NULL,
+  keep_screenshots_interval INTERVAL                   NOT NULL,
+  aa_enabled                BOOLEAN DEFAULT TRUE       NOT NULL,
+  metadata                  JSONB                      NULL,
+  email_configuration_id    BIGINT REFERENCES project_email_configuration (id) ON DELETE CASCADE UNIQUE,
+  created_on                TIMESTAMP DEFAULT now()    NOT NULL
+);
+
+CREATE TABLE issue_type (
+  id           SERIAL CONSTRAINT issue_type_pk PRIMARY KEY,
+  issue_group  ISSUE_GROUP_ENUM NOT NULL,
+  locator      VARCHAR(64), -- issue string identifier
+  issue_name   VARCHAR(256), -- issue full name
+  abbreviation VARCHAR(64), -- issue abbreviation
+  hex_color    VARCHAR(7)
+);
+
+CREATE TABLE issue_type_project_configuration (
+  configuration_id BIGINT REFERENCES project_configuration,
+  issue_type_id    INTEGER REFERENCES issue_type,
+  CONSTRAINT issue_type_project_configuration_pk PRIMARY KEY (configuration_id, issue_type_id)
+);
+-----------------------------------------------------------------------------------
+
 
 -------------------------- Dashboards and widgets -----------------------------
 CREATE TABLE dashboard (
@@ -173,7 +170,7 @@ CREATE TABLE widget (
   name       VARCHAR NOT NULL,
   -- content options ??
   -- applying filter id??
-  project_id INTEGER REFERENCES project (id) ON DELETE CASCADE
+  project_id BIGINT REFERENCES project (id) ON DELETE CASCADE
   -- acl ???
 );
 
@@ -196,8 +193,8 @@ CREATE TABLE dashboard_widget (
 
 CREATE TABLE launch (
   id            BIGSERIAL CONSTRAINT launch_pk PRIMARY KEY,
-  project_id    INTEGER REFERENCES project (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
-  user_id       INTEGER REFERENCES users (id) ON DELETE SET NULL,
+  project_id    BIGINT REFERENCES project (id) ON DELETE CASCADE ON UPDATE CASCADE  NOT NULL,
+  user_id       BIGINT REFERENCES users (id) ON DELETE SET NULL,
   name          VARCHAR(256)                                                        NOT NULL,
   description   TEXT,
   start_time    TIMESTAMP                                                           NOT NULL,
@@ -264,7 +261,7 @@ CREATE TABLE test_item_structure (
 CREATE TABLE test_item_results (
   item_id  BIGINT CONSTRAINT test_item_results_pk PRIMARY KEY REFERENCES test_item (item_id) ON DELETE CASCADE UNIQUE,
   status   STATUS_ENUM NOT NULL,
-  duration BIGINT
+  duration DOUBLE PRECISION
 );
 
 CREATE TABLE item_tag (
@@ -289,7 +286,7 @@ CREATE TABLE log (
 ------------------------------ Issue ticket many to many ------------------------------
 CREATE TABLE issue (
   issue_id          BIGINT CONSTRAINT issue_pk PRIMARY KEY REFERENCES test_item_results (item_id) ON DELETE CASCADE,
-  issue_type        INTEGER REFERENCES issue_type ON DELETE CASCADE,
+  issue_type        INTEGER NOT NULL REFERENCES issue_type ON DELETE CASCADE,
   issue_description TEXT,
   auto_analyzed     BOOLEAN DEFAULT FALSE,
   ignore_analyzer   BOOLEAN DEFAULT FALSE
