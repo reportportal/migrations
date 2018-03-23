@@ -207,7 +207,7 @@ CREATE TABLE launch (
 
 CREATE TABLE launch_tag (
   id        BIGSERIAL CONSTRAINT launch_tag_pk PRIMARY KEY,
-  value     TEXT,
+  value     TEXT NOT NULL,
   launch_id BIGINT REFERENCES launch (id) ON DELETE CASCADE
 );
 
