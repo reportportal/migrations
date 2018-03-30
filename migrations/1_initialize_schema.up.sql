@@ -13,8 +13,6 @@ CREATE TYPE STATUS_ENUM AS ENUM ('IN_PROGRESS', 'PASSED', 'FAILED', 'STOPPED', '
 
 CREATE TYPE LAUNCH_MODE_ENUM AS ENUM ('DEFAULT', 'DEBUG');
 
-CREATE TYPE BTS_TYPE_ENUM AS ENUM ('NONE', 'JIRA', 'TFS', 'RALLY');
-
 CREATE TYPE AUTH_TYPE_ENUM AS ENUM ('OAUTH', 'NTLM', 'APIKEY', 'BASIC');
 
 CREATE TYPE ACCESS_TOKEN_TYPE_ENUM AS ENUM ('OAUTH', 'NTLM', 'APIKEY', 'BASIC');
@@ -29,33 +27,6 @@ CREATE TABLE server_settings (
   key   VARCHAR,
   value VARCHAR
 );
-
------------------------------- Bug tracking systems ------------------------------
-CREATE TABLE bug_tracking_system (
-  id   SERIAL CONSTRAINT bug_tracking_system_pk PRIMARY KEY,
-  url  VARCHAR       NOT NULL,
-  type BTS_TYPE_ENUM NOT NULL
-  --   project ref?
-
-);
-
-CREATE TABLE defect_form_field (
-  id                 SERIAL CONSTRAINT defect_form_field_pk PRIMARY KEY,
-  bugtracking_system INTEGER REFERENCES bug_tracking_system (id) ON DELETE CASCADE,
-  field_id           VARCHAR       NOT NULL,
-  type               VARCHAR       NOT NULL,
-  required           BOOLEAN       NOT NULL DEFAULT FALSE,
-  values             VARCHAR ARRAY NOT NULL
-);
-
-CREATE TABLE defect_field_allowed_value (
-  id                SERIAL CONSTRAINT defect_field_allowed_value_pk PRIMARY KEY,
-  defect_form_field INTEGER REFERENCES defect_form_field (id) ON DELETE CASCADE,
-  value_id          VARCHAR NOT NULL,
-  value_name        VARCHAR NULL
-);
------------------------------------------------------------------------------------
-
 
 ---------------------------- Project and users ------------------------------------
 CREATE TABLE project (
@@ -154,6 +125,42 @@ CREATE TABLE issue_type_project_configuration (
 );
 -----------------------------------------------------------------------------------
 
+------------------------------ Bug tracking systems ------------------------------
+CREATE TABLE bug_tracking_system (
+  id          SERIAL CONSTRAINT bug_tracking_system_pk PRIMARY KEY,
+  url         VARCHAR                        NOT NULL,
+  type        VARCHAR                        NOT NULL,
+  bts_project VARCHAR                        NOT NULL,
+  project_id  BIGINT REFERENCES project (id) NOT NULL
+  --   project ref?
+);
+
+CREATE TABLE defect_form_field (
+  id                 SERIAL CONSTRAINT defect_form_field_pk PRIMARY KEY,
+  bugtracking_system INTEGER REFERENCES bug_tracking_system (id) ON DELETE CASCADE,
+  field_id           VARCHAR       NOT NULL,
+  type               VARCHAR       NOT NULL,
+  required           BOOLEAN       NOT NULL DEFAULT FALSE,
+  values             VARCHAR ARRAY NOT NULL
+);
+
+CREATE TABLE defect_field_allowed_value (
+  id                SERIAL CONSTRAINT defect_field_allowed_value_pk PRIMARY KEY,
+  defect_form_field INTEGER REFERENCES defect_form_field (id) ON DELETE CASCADE,
+  value_id          VARCHAR NOT NULL,
+  value_name        VARCHAR NULL
+);
+
+CREATE TABLE bug_tracking_system_auth (
+  id        SERIAL CONSTRAINT bug_tracking_system_auth_pk PRIMARY KEY REFERENCES bug_tracking_system (id) ON DELETE CASCADE ON UPDATE CASCADE,
+  auth_type AUTH_TYPE_ENUM NOT NULL,
+  username  VARCHAR,
+  password  VARCHAR,
+  domain    VARCHAR,
+  accessKey VARCHAR
+);
+-----------------------------------------------------------------------------------
+
 
 -------------------------- Dashboards and widgets -----------------------------
 CREATE TABLE dashboard (
@@ -198,6 +205,7 @@ CREATE TABLE launch (
   name          VARCHAR(256)                                                        NOT NULL,
   description   TEXT,
   start_time    TIMESTAMP                                                           NOT NULL,
+  end_time      TIMESTAMP,
   number        INTEGER                                                             NOT NULL,
   last_modified TIMESTAMP DEFAULT now()                                             NOT NULL,
   mode          LAUNCH_MODE_ENUM                                                    NOT NULL,
@@ -261,6 +269,7 @@ CREATE TABLE test_item_structure (
 CREATE TABLE test_item_results (
   item_id  BIGINT CONSTRAINT test_item_results_pk PRIMARY KEY REFERENCES test_item (item_id) ON DELETE CASCADE UNIQUE,
   status   STATUS_ENUM NOT NULL,
+  end_time TIMESTAMP,
   duration DOUBLE PRECISION
 );
 

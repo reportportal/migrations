@@ -3,6 +3,7 @@ DROP TABLE IF EXISTS server_settings;
 DROP TABLE IF EXISTS bug_tracking_system CASCADE;
 DROP TABLE IF EXISTS defect_form_field CASCADE;
 DROP TABLE IF EXISTS defect_field_allowed_value CASCADE;
+DROP TABLE IF EXISTS bug_tracking_system_auth CASCADE;
 
 DROP TABLE IF EXISTS project_email_configuration CASCADE;
 DROP TABLE IF EXISTS project_configuration CASCADE;
