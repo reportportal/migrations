@@ -50,15 +50,15 @@ CREATE TABLE users (
 );
 
 CREATE TABLE project_user (
-  user_id      BIGINT REFERENCES users (id) ON UPDATE CASCADE ON DELETE CASCADE,
-  project_id   BIGINT REFERENCES project (id) ON UPDATE CASCADE ON DELETE CASCADE,
+  user_id      BIGINT REFERENCES users (id) ON DELETE CASCADE,
+  project_id   BIGINT REFERENCES project (id) ON DELETE CASCADE,
   CONSTRAINT users_project_pk PRIMARY KEY (user_id, project_id),
   project_role PROJECT_ROLE_ENUM NOT NULL
   -- proposed role ??
 );
 
 CREATE TABLE oauth_access_token (
-  user_id    BIGINT REFERENCES users (id) ON UPDATE CASCADE ON DELETE CASCADE,
+  user_id    BIGINT REFERENCES users (id) ON DELETE CASCADE,
   token      VARCHAR                NOT NULL,
   token_type ACCESS_TOKEN_TYPE_ENUM NOT NULL,
   CONSTRAINT access_tokens_pk PRIMARY KEY (user_id, token_type)
@@ -84,7 +84,7 @@ CREATE TABLE oauth_registration (
 
 CREATE TABLE oauth_registration_scope (
   id                    SERIAL CONSTRAINT oauth_registration_scope_pk PRIMARY KEY,
-  oauth_registration_fk VARCHAR(128) REFERENCES oauth_registration (id) ON UPDATE CASCADE ON DELETE CASCADE,
+  oauth_registration_fk VARCHAR(128) REFERENCES oauth_registration (id) ON DELETE CASCADE,
   scope                 VARCHAR(256)
 );
 -----------------------------------------------------------------------------------
@@ -127,32 +127,36 @@ CREATE TABLE issue_type_project_configuration (
 
 ------------------------------ Bug tracking systems ------------------------------
 CREATE TABLE bug_tracking_system (
-  id          SERIAL CONSTRAINT bug_tracking_system_pk PRIMARY KEY,
-  url         VARCHAR                        NOT NULL,
-  type        VARCHAR                        NOT NULL,
-  bts_project VARCHAR                        NOT NULL,
-  project_id  BIGINT REFERENCES project (id) NOT NULL
-  --   project ref?
+  id          BIGSERIAL CONSTRAINT bug_tracking_system_pk PRIMARY KEY,
+  url         VARCHAR                                          NOT NULL,
+  type        VARCHAR                                          NOT NULL,
+  bts_project VARCHAR                                          NOT NULL,
+  project_id  BIGINT REFERENCES project (id) ON DELETE CASCADE NOT NULL,
+  CONSTRAINT unique_bts UNIQUE (url, type, bts_project, project_id)
 );
 
 CREATE TABLE defect_form_field (
-  id                 SERIAL CONSTRAINT defect_form_field_pk PRIMARY KEY,
-  bugtracking_system INTEGER REFERENCES bug_tracking_system (id) ON DELETE CASCADE,
-  field_id           VARCHAR       NOT NULL,
-  type               VARCHAR       NOT NULL,
-  required           BOOLEAN       NOT NULL DEFAULT FALSE,
-  values             VARCHAR ARRAY NOT NULL
+  id                     BIGSERIAL CONSTRAINT defect_form_field_pk PRIMARY KEY,
+  bug_tracking_system_id BIGINT REFERENCES bug_tracking_system (id) ON DELETE CASCADE,
+  field_id               VARCHAR NOT NULL,
+  type                   VARCHAR NOT NULL,
+  required               BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE defect_field_allowed_value (
-  id                SERIAL CONSTRAINT defect_field_allowed_value_pk PRIMARY KEY,
-  defect_form_field INTEGER REFERENCES defect_form_field (id) ON DELETE CASCADE,
+  id                BIGSERIAL CONSTRAINT defect_field_allowed_value_pk PRIMARY KEY,
+  defect_form_field BIGINT REFERENCES defect_form_field (id) ON DELETE CASCADE,
   value_id          VARCHAR NOT NULL,
-  value_name        VARCHAR NULL
+  value_name        VARCHAR NOT NULL
+);
+
+CREATE TABLE defect_form_field_value (
+  id     BIGINT REFERENCES defect_form_field (id) ON DELETE CASCADE,
+  values VARCHAR NOT NULL
 );
 
 CREATE TABLE bug_tracking_system_auth (
-  id        SERIAL CONSTRAINT bug_tracking_system_auth_pk PRIMARY KEY REFERENCES bug_tracking_system (id) ON DELETE CASCADE ON UPDATE CASCADE,
+  id        BIGINT CONSTRAINT bug_tracking_system_auth_pk PRIMARY KEY REFERENCES bug_tracking_system (id) ON DELETE CASCADE,
   auth_type AUTH_TYPE_ENUM NOT NULL,
   username  VARCHAR,
   password  VARCHAR,
@@ -182,8 +186,8 @@ CREATE TABLE widget (
 );
 
 CREATE TABLE dashboard_widget (
-  dashboard_id      INTEGER REFERENCES dashboard (id) ON UPDATE CASCADE ON DELETE CASCADE,
-  widget_id         INTEGER REFERENCES widget (id) ON UPDATE CASCADE ON DELETE CASCADE,
+  dashboard_id      INTEGER REFERENCES dashboard (id) ON DELETE CASCADE,
+  widget_id         INTEGER REFERENCES widget (id) ON DELETE CASCADE,
   widget_name       VARCHAR NOT NULL, -- make it as reference ??
   wdiget_width      INT     NOT NULL,
   widget_heigth     INT     NOT NULL,
@@ -200,7 +204,7 @@ CREATE TABLE dashboard_widget (
 
 CREATE TABLE launch (
   id            BIGSERIAL CONSTRAINT launch_pk PRIMARY KEY,
-  project_id    BIGINT REFERENCES project (id) ON DELETE CASCADE ON UPDATE CASCADE  NOT NULL,
+  project_id    BIGINT REFERENCES project (id) ON DELETE CASCADE                    NOT NULL,
   user_id       BIGINT REFERENCES users (id) ON DELETE SET NULL,
   name          VARCHAR(256)                                                        NOT NULL,
   description   TEXT,
@@ -243,11 +247,6 @@ BEFORE INSERT
 FOR EACH ROW
 EXECUTE PROCEDURE update_last_launch_number();
 
-CREATE TYPE PARAMETER AS (
-  key   VARCHAR(256),
-  value TEXT
-);
-
 CREATE TABLE test_item (
   item_id       BIGSERIAL CONSTRAINT test_item_pk PRIMARY KEY,
   launch_id     BIGINT REFERENCES launch ON DELETE CASCADE,
@@ -255,7 +254,6 @@ CREATE TABLE test_item (
   type          TEST_ITEM_TYPE_ENUM NOT NULL,
   start_time    TIMESTAMP           NOT NULL,
   description   TEXT,
-  parameters    PARAMETER [],
   last_modified TIMESTAMP           NOT NULL,
   unique_id     VARCHAR(256)        NOT NULL
 );
@@ -273,6 +271,12 @@ CREATE TABLE test_item_results (
   duration DOUBLE PRECISION
 );
 
+CREATE TABLE parameter (
+  item_id BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE,
+  key     VARCHAR NOT NULL,
+  value   VARCHAR NOT NULL
+);
+
 CREATE TABLE item_tag (
   id      SERIAL CONSTRAINT item_tag_pk PRIMARY KEY,
   value   TEXT,
@@ -282,11 +286,11 @@ CREATE TABLE item_tag (
 
 CREATE TABLE log (
   id            BIGSERIAL CONSTRAINT log_pk PRIMARY KEY,
-  log_time      TIMESTAMP                                                                 NOT NULL,
-  log_message   TEXT                                                                      NOT NULL,
-  item_id       BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
-  last_modified TIMESTAMP                                                                 NOT NULL,
-  log_level     INTEGER                                                                   NOT NULL
+  log_time      TIMESTAMP                                                NOT NULL,
+  log_message   TEXT                                                     NOT NULL,
+  item_id       BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE  NOT NULL,
+  last_modified TIMESTAMP                                                NOT NULL,
+  log_level     INTEGER                                                  NOT NULL
 );
 
 ----------------------------------------------------------------------------------------
