@@ -320,3 +320,20 @@ CREATE TABLE issue_ticket (
   CONSTRAINT issue_ticket_pk PRIMARY KEY (issue_id, ticket_id)
 );
 ----------------------------------------------------------------------------------------
+
+CREATE FUNCTION check_wired_tickets()
+  RETURNS TRIGGER AS
+$BODY$
+BEGIN
+  DELETE FROM ticket
+  WHERE (SELECT count(issue_ticket.ticket_id)
+         FROM issue_ticket
+         WHERE issue_ticket.ticket_id = old.ticket_id) = 0 AND ticket.id = old.ticket_id;
+  RETURN NULL;
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+CREATE TRIGGER after_ticket_delete
+AFTER DELETE ON issue_ticket
+FOR EACH ROW EXECUTE PROCEDURE check_wired_tickets();
