@@ -24,7 +24,7 @@ CREATE TYPE ISSUE_GROUP_ENUM AS ENUM ('PRODUCT_BUG', 'AUTOMATION_BUG', 'SYSTEM_I
 
 CREATE TABLE server_settings (
   id    SMALLSERIAL CONSTRAINT server_settings_id PRIMARY KEY,
-  key   VARCHAR,
+  key   VARCHAR NOT NULL UNIQUE,
   value VARCHAR
 );
 
@@ -242,9 +242,9 @@ LANGUAGE plpgsql;
 
 
 CREATE TRIGGER last_launch_number_trigger
-BEFORE INSERT
+  BEFORE INSERT
   ON launch
-FOR EACH ROW
+  FOR EACH ROW
 EXECUTE PROCEDURE update_last_launch_number();
 
 CREATE TABLE test_item (
