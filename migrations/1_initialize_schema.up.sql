@@ -204,6 +204,7 @@ CREATE TABLE dashboard_widget (
 
 CREATE TABLE launch (
   id            BIGSERIAL CONSTRAINT launch_pk PRIMARY KEY,
+  uuid          VARCHAR CONSTRAINT UNIQUE                                           NOT NULL,
   project_id    BIGINT REFERENCES project (id) ON DELETE CASCADE                    NOT NULL,
   user_id       BIGINT REFERENCES users (id) ON DELETE SET NULL,
   name          VARCHAR(256)                                                        NOT NULL,
