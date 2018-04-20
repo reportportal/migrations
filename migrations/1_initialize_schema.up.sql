@@ -204,7 +204,7 @@ CREATE TABLE dashboard_widget (
 
 CREATE TABLE launch (
   id            BIGSERIAL CONSTRAINT launch_pk PRIMARY KEY,
-  uuid          VARCHAR CONSTRAINT UNIQUE                                           NOT NULL,
+  uuid          VARCHAR                                                             NOT NULL,
   project_id    BIGINT REFERENCES project (id) ON DELETE CASCADE                    NOT NULL,
   user_id       BIGINT REFERENCES users (id) ON DELETE SET NULL,
   name          VARCHAR(256)                                                        NOT NULL,
@@ -215,7 +215,7 @@ CREATE TABLE launch (
   last_modified TIMESTAMP DEFAULT now()                                             NOT NULL,
   mode          LAUNCH_MODE_ENUM                                                    NOT NULL,
   status        STATUS_ENUM                                                         NOT NULL,
-  CONSTRAINT unq_name_number UNIQUE (name, number, project_id)
+  CONSTRAINT unq_name_number UNIQUE (name, number, project_id, uuid)
 );
 
 CREATE TABLE launch_tag (
