@@ -166,7 +166,7 @@ CREATE TABLE bug_tracking_system_auth (
 -----------------------------------------------------------------------------------
 
 
--------------------------- Dashboards and widgets -----------------------------
+-------------------------- Dashboards, widgets, user filters -----------------------------
 CREATE TABLE dashboard (
   id            SERIAL CONSTRAINT dashboard_pk PRIMARY KEY,
   name          VARCHAR                 NOT NULL,
@@ -177,12 +177,17 @@ CREATE TABLE dashboard (
 );
 
 CREATE TABLE widget (
-  id         SERIAL CONSTRAINT widget_id PRIMARY KEY,
-  name       VARCHAR NOT NULL,
+  id             BIGSERIAL CONSTRAINT widget_id PRIMARY KEY,
+  name           VARCHAR NOT NULL,
+  widget_type    VARCHAR NOT NULL,
+  items_count    SMALLINT,
+  widget_options JSONB,
   -- content options ??
-  -- applying filter id??
-  project_id BIGINT REFERENCES project (id) ON DELETE CASCADE
-  -- acl ???
+  project_id     BIGINT REFERENCES project (id) ON DELETE CASCADE
+);
+
+CREATE TABLE filter (
+  id BIGSERIAL CONSTRAINT filter_pk PRIMARY KEY
 );
 
 CREATE TABLE dashboard_widget (
@@ -195,6 +200,12 @@ CREATE TABLE dashboard_widget (
   widget_position_y INT     NOT NULL,
   CONSTRAINT dashboard_widget_pk PRIMARY KEY (dashboard_id, widget_id),
   CONSTRAINT widget_on_dashboard_unq UNIQUE (dashboard_id, widget_name)
+);
+
+CREATE TABLE widget_filter (
+  widget_id INTEGER REFERENCES widget (id) ON DELETE CASCADE,
+  filter_id BIGINT REFERENCES filter (id) ON DELETE CASCADE,
+  CONSTRAINT widget_filter_po PRIMARY KEY (widget_id, filter_id)
 );
 -----------------------------------------------------------------------------------
 
