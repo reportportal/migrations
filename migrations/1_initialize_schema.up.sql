@@ -1,6 +1,3 @@
--- hello world
-
-
 CREATE TYPE PROJECT_TYPE_ENUM AS ENUM ('INTERNAL', 'PERSONAL', 'UPSA');
 
 CREATE TYPE USER_ROLE_ENUM AS ENUM ('ADMINISTRATOR', 'USER');
@@ -27,6 +24,9 @@ CREATE TYPE ISSUE_GROUP_ENUM AS ENUM ('PRODUCT_BUG', 'AUTOMATION_BUG', 'SYSTEM_I
 CREATE TYPE INTEGRATION_AUTH_FLOW_ENUM AS ENUM ('OAUTH', 'BASIC', 'TOKEN', 'FORM');
 
 CREATE TYPE INTEGRATION_GROUP_ENUM AS ENUM ('BTS', 'NOTIFICATION');
+
+CREATE TYPE FILTER_CONDITION AS ENUM ('EQUALS', 'NOT_EQUALS', 'CONTAINS', 'EXISTS', 'IN', 'HAS', 'GREATER_THAN', 'GREATER_THAN_OR_EQUALS',
+  'LOWER_THAN', 'LOWER_THAN_OR_EQUALS', 'BETWEEN');
 
 CREATE TABLE server_settings (
   id    SMALLSERIAL CONSTRAINT server_settings_id PRIMARY KEY,
@@ -167,10 +167,10 @@ CREATE TABLE defect_form_field_value (
 -------------------------- Dashboards and widgets -----------------------------
 CREATE TABLE integration_type (
   id            SERIAL CONSTRAINT integration_type_pk PRIMARY KEY,
-  name          VARCHAR(128)            NOT NULL,
-  auth_flow     INTEGRATION_AUTH_FLOW_ENUM   NOT NULL,
-  creation_date TIMESTAMP DEFAULT now() NOT NULL,
-  group_type    INTEGRATION_GROUP_ENUM       NOT NULL,
+  name          VARCHAR(128)               NOT NULL,
+  auth_flow     INTEGRATION_AUTH_FLOW_ENUM NOT NULL,
+  creation_date TIMESTAMP DEFAULT now()    NOT NULL,
+  group_type    INTEGRATION_GROUP_ENUM     NOT NULL,
   details       JSONB
 );
 
@@ -188,21 +188,47 @@ CREATE TABLE dashboard (
   project_id    INTEGER REFERENCES project (id) ON DELETE CASCADE,
   creation_date TIMESTAMP DEFAULT now() NOT NULL,
   CONSTRAINT unq_name_project UNIQUE (name, project_id)
-  -- acl ??
+  -- acl
 );
 
 CREATE TABLE widget (
   id             BIGSERIAL CONSTRAINT widget_id PRIMARY KEY,
-  name           VARCHAR NOT NULL,
-  widget_type    VARCHAR NOT NULL,
+  name           VARCHAR    NOT NULL,
+  widget_type    VARCHAR    NOT NULL,
   items_count    SMALLINT,
-  widget_options JSONB,
-  -- content options ??
+  content_fields VARCHAR [] NOT NULL,
   project_id     BIGINT REFERENCES project (id) ON DELETE CASCADE
 );
 
+CREATE TABLE widget_options (
+  id            BIGSERIAL PRIMARY KEY,
+  widget_id     BIGINT REFERENCES widget (id) ON DELETE CASCADE,
+  widget_option VARCHAR    NOT NULL,
+  values        VARCHAR [] NOT NULL
+);
+
 CREATE TABLE filter (
-  id BIGSERIAL CONSTRAINT filter_pk PRIMARY KEY
+  id          BIGSERIAL CONSTRAINT filter_pk PRIMARY KEY,
+  name        VARCHAR                        NOT NULL,
+  project_id  BIGINT REFERENCES project (id) NOT NULL,
+  target      VARCHAR                        NOT NULL,
+  description VARCHAR
+);
+
+CREATE TABLE filter_condition (
+  id              BIGSERIAL CONSTRAINT filter_condition_pk PRIMARY KEY,
+  filter_id       BIGINT REFERENCES filter (id) ON DELETE CASCADE,
+  condition       FILTER_CONDITION NOT NULL,
+  value           VARCHAR          NOT NULL,
+  search_criteria VARCHAR          NOT NULL,
+  negative        BOOLEAN          NOT NULL
+);
+
+CREATE TABLE filter_order (
+  id                  BIGSERIAL CONSTRAINT filter_order_pk PRIMARY KEY,
+  filter_id           BIGINT REFERENCES filter (id) ON DELETE CASCADE,
+  sorting_column_name VARCHAR NOT NULL,
+  ascending           BOOLEAN NOT NULL
 );
 
 CREATE TABLE dashboard_widget (
@@ -269,9 +295,9 @@ LANGUAGE plpgsql;
 
 
 CREATE TRIGGER last_launch_number_trigger
-  BEFORE INSERT
+BEFORE INSERT
   ON launch
-  FOR EACH ROW
+FOR EACH ROW
 EXECUTE PROCEDURE update_last_launch_number();
 
 CREATE TABLE test_item (
@@ -371,6 +397,6 @@ $BODY$
 LANGUAGE plpgsql;
 
 CREATE TRIGGER after_ticket_delete
-  AFTER DELETE
+AFTER DELETE
   ON issue_ticket
-  FOR EACH ROW EXECUTE PROCEDURE check_wired_tickets();
+FOR EACH ROW EXECUTE PROCEDURE check_wired_tickets();
