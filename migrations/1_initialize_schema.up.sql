@@ -25,7 +25,7 @@ CREATE TYPE INTEGRATION_AUTH_FLOW_ENUM AS ENUM ('OAUTH', 'BASIC', 'TOKEN', 'FORM
 
 CREATE TYPE INTEGRATION_GROUP_ENUM AS ENUM ('BTS', 'NOTIFICATION');
 
-CREATE TYPE FILTER_CONDITION AS ENUM ('EQUALS', 'NOT_EQUALS', 'CONTAINS', 'EXISTS', 'IN', 'HAS', 'GREATER_THAN', 'GREATER_THAN_OR_EQUALS',
+CREATE TYPE FILTER_CONDITION_ENUM AS ENUM ('EQUALS', 'NOT_EQUALS', 'CONTAINS', 'EXISTS', 'IN', 'HAS', 'GREATER_THAN', 'GREATER_THAN_OR_EQUALS',
   'LOWER_THAN', 'LOWER_THAN_OR_EQUALS', 'BETWEEN');
 
 CREATE TABLE server_settings (
@@ -192,19 +192,27 @@ CREATE TABLE dashboard (
 );
 
 CREATE TABLE widget (
-  id             BIGSERIAL CONSTRAINT widget_id PRIMARY KEY,
-  name           VARCHAR    NOT NULL,
-  widget_type    VARCHAR    NOT NULL,
-  items_count    SMALLINT,
-  content_fields VARCHAR [] NOT NULL,
-  project_id     BIGINT REFERENCES project (id) ON DELETE CASCADE
+  id          BIGSERIAL CONSTRAINT widget_id PRIMARY KEY,
+  name        VARCHAR NOT NULL,
+  widget_type VARCHAR NOT NULL,
+  items_count SMALLINT,
+  project_id  BIGINT REFERENCES project (id) ON DELETE CASCADE
 );
 
-CREATE TABLE widget_options (
-  id            BIGSERIAL PRIMARY KEY,
-  widget_id     BIGINT REFERENCES widget (id) ON DELETE CASCADE,
-  widget_option VARCHAR    NOT NULL,
-  values        VARCHAR [] NOT NULL
+CREATE TABLE content_field (
+  id    BIGINT REFERENCES widget (id) ON DELETE CASCADE,
+  field VARCHAR NOT NULL
+);
+
+CREATE TABLE widget_option (
+  id        BIGSERIAL CONSTRAINT widget_option_pk PRIMARY KEY,
+  widget_id BIGINT REFERENCES widget (id) ON DELETE CASCADE,
+  option    VARCHAR NOT NULL
+);
+
+CREATE TABLE widget_option_value (
+  id    BIGINT REFERENCES widget_option (id) ON DELETE CASCADE,
+  value VARCHAR NOT NULL
 );
 
 CREATE TABLE filter (
@@ -218,10 +226,10 @@ CREATE TABLE filter (
 CREATE TABLE filter_condition (
   id              BIGSERIAL CONSTRAINT filter_condition_pk PRIMARY KEY,
   filter_id       BIGINT REFERENCES filter (id) ON DELETE CASCADE,
-  condition       FILTER_CONDITION NOT NULL,
-  value           VARCHAR          NOT NULL,
-  search_criteria VARCHAR          NOT NULL,
-  negative        BOOLEAN          NOT NULL
+  condition       FILTER_CONDITION_ENUM NOT NULL,
+  value           VARCHAR               NOT NULL,
+  search_criteria VARCHAR               NOT NULL,
+  negative        BOOLEAN               NOT NULL
 );
 
 CREATE TABLE filter_order (
