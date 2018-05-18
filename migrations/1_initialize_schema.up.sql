@@ -185,6 +185,7 @@ CREATE TABLE integration (
 CREATE TABLE dashboard (
   id            SERIAL CONSTRAINT dashboard_pk PRIMARY KEY,
   name          VARCHAR                 NOT NULL,
+  description   VARCHAR,
   project_id    INTEGER REFERENCES project (id) ON DELETE CASCADE,
   creation_date TIMESTAMP DEFAULT now() NOT NULL,
   CONSTRAINT unq_name_project UNIQUE (name, project_id)
@@ -243,7 +244,7 @@ CREATE TABLE dashboard_widget (
   dashboard_id      INTEGER REFERENCES dashboard (id) ON DELETE CASCADE,
   widget_id         INTEGER REFERENCES widget (id) ON DELETE CASCADE,
   widget_name       VARCHAR NOT NULL, -- make it as reference ??
-  wdiget_width      INT     NOT NULL,
+  widget_width      INT     NOT NULL,
   widget_heigth     INT     NOT NULL,
   widget_position_x INT     NOT NULL,
   widget_position_y INT     NOT NULL,
