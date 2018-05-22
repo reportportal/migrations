@@ -164,7 +164,7 @@ CREATE TABLE defect_form_field_value (
 -----------------------------------------------------------------------------------
 
 
--------------------------- Dashboards and widgets -----------------------------
+-------------------------- Integrations -----------------------------
 CREATE TABLE integration_type (
   id            SERIAL CONSTRAINT integration_type_pk PRIMARY KEY,
   name          VARCHAR(128)            NOT NULL,
