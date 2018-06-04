@@ -245,7 +245,7 @@ CREATE TABLE dashboard_widget (
   widget_id         INTEGER REFERENCES widget (id) ON DELETE CASCADE,
   widget_name       VARCHAR NOT NULL, -- make it as reference ??
   widget_width      INT     NOT NULL,
-  widget_heigth     INT     NOT NULL,
+  widget_height     INT     NOT NULL,
   widget_position_x INT     NOT NULL,
   widget_position_y INT     NOT NULL,
   CONSTRAINT dashboard_widget_pk PRIMARY KEY (dashboard_id, widget_id),
