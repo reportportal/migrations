@@ -164,7 +164,7 @@ CREATE TABLE defect_form_field_value (
 -----------------------------------------------------------------------------------
 
 
--------------------------- Dashboards and widgets -----------------------------
+-------------------------- Integrations -----------------------------
 CREATE TABLE integration_type (
   id            SERIAL CONSTRAINT integration_type_pk PRIMARY KEY,
   name          VARCHAR(128)               NOT NULL,
@@ -347,12 +347,15 @@ CREATE TABLE item_tag (
 
 
 CREATE TABLE log (
-  id            BIGSERIAL CONSTRAINT log_pk PRIMARY KEY,
-  log_time      TIMESTAMP                                                NOT NULL,
-  log_message   TEXT                                                     NOT NULL,
-  item_id       BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE  NOT NULL,
-  last_modified TIMESTAMP                                                NOT NULL,
-  log_level     INTEGER                                                  NOT NULL
+  id                  BIGSERIAL CONSTRAINT log_pk PRIMARY KEY,
+  log_time            TIMESTAMP                                                NOT NULL,
+  log_message         TEXT                                                     NOT NULL,
+  item_id             BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE  NOT NULL,
+  last_modified       TIMESTAMP                                                NOT NULL,
+  log_level           INTEGER                                                  NOT NULL,
+  file_path           TEXT,
+  thumbnail_file_path TEXT,
+  content_type        TEXT
 );
 
 CREATE TABLE activity (
