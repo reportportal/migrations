@@ -216,30 +216,6 @@ CREATE TABLE widget_option_value (
   value VARCHAR NOT NULL
 );
 
-CREATE TABLE filter (
-  id          BIGSERIAL CONSTRAINT filter_pk PRIMARY KEY,
-  name        VARCHAR                        NOT NULL,
-  project_id  BIGINT REFERENCES project (id) NOT NULL,
-  target      VARCHAR                        NOT NULL,
-  description VARCHAR
-);
-
-CREATE TABLE filter_condition (
-  id              BIGSERIAL CONSTRAINT filter_condition_pk PRIMARY KEY,
-  filter_id       BIGINT REFERENCES filter (id) ON DELETE CASCADE,
-  condition       FILTER_CONDITION_ENUM NOT NULL,
-  value           VARCHAR               NOT NULL,
-  search_criteria VARCHAR               NOT NULL,
-  negative        BOOLEAN               NOT NULL
-);
-
-CREATE TABLE filter_order (
-  id                  BIGSERIAL CONSTRAINT filter_order_pk PRIMARY KEY,
-  filter_id           BIGINT REFERENCES filter (id) ON DELETE CASCADE,
-  sorting_column_name VARCHAR NOT NULL,
-  ascending           BOOLEAN NOT NULL
-);
-
 CREATE TABLE dashboard_widget (
   dashboard_id      INTEGER REFERENCES dashboard (id) ON DELETE CASCADE,
   widget_id         INTEGER REFERENCES widget (id) ON DELETE CASCADE,
@@ -250,6 +226,30 @@ CREATE TABLE dashboard_widget (
   widget_position_y INT     NOT NULL,
   CONSTRAINT dashboard_widget_pk PRIMARY KEY (dashboard_id, widget_id),
   CONSTRAINT widget_on_dashboard_unq UNIQUE (dashboard_id, widget_name)
+);
+
+CREATE TABLE filter (
+  id          BIGSERIAL CONSTRAINT filter_pk PRIMARY KEY,
+  name        VARCHAR                        NOT NULL,
+  project_id  BIGINT REFERENCES project (id) NOT NULL,
+  target      VARCHAR                        NOT NULL,
+  description VARCHAR
+);
+
+CREATE TABLE filter_condition (
+  id        BIGSERIAL CONSTRAINT filter_condition_pk PRIMARY KEY,
+  filter_id BIGINT REFERENCES filter (id) ON DELETE CASCADE,
+  condition FILTER_CONDITION_ENUM NOT NULL,
+  value     VARCHAR               NOT NULL,
+  field     VARCHAR               NOT NULL,
+  negative  BOOLEAN               NOT NULL
+);
+
+CREATE TABLE filter_sort (
+  id        BIGSERIAL CONSTRAINT filter_sort_pk PRIMARY KEY,
+  filter_id BIGINT REFERENCES filter (id) ON DELETE CASCADE,
+  field     VARCHAR NOT NULL,
+  ascending BOOLEAN NOT NULL
 );
 
 CREATE TABLE widget_filter (
