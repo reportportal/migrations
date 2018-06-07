@@ -195,6 +195,7 @@ CREATE TABLE dashboard (
 CREATE TABLE widget (
   id          BIGSERIAL CONSTRAINT widget_id PRIMARY KEY,
   name        VARCHAR NOT NULL,
+  description VARCHAR,
   widget_type VARCHAR NOT NULL,
   items_count SMALLINT,
   project_id  BIGINT REFERENCES project (id) ON DELETE CASCADE
