@@ -237,9 +237,13 @@ CREATE TABLE filter (
   description VARCHAR
 );
 
+CREATE TABLE user_filter (
+  id BIGINT NOT NULL CONSTRAINT user_filter_pk PRIMARY KEY CONSTRAINT user_filter_id_fk REFERENCES filter (id)
+);
+
 CREATE TABLE filter_condition (
   id        BIGSERIAL CONSTRAINT filter_condition_pk PRIMARY KEY,
-  filter_id BIGINT REFERENCES filter (id) ON DELETE CASCADE,
+  filter_id BIGINT REFERENCES user_filter (id) ON DELETE CASCADE,
   condition FILTER_CONDITION_ENUM NOT NULL,
   value     VARCHAR               NOT NULL,
   field     VARCHAR               NOT NULL,
@@ -248,7 +252,7 @@ CREATE TABLE filter_condition (
 
 CREATE TABLE filter_sort (
   id        BIGSERIAL CONSTRAINT filter_sort_pk PRIMARY KEY,
-  filter_id BIGINT REFERENCES filter (id) ON DELETE CASCADE,
+  filter_id BIGINT REFERENCES user_filter (id) ON DELETE CASCADE,
   field     VARCHAR NOT NULL,
   ascending BOOLEAN NOT NULL
 );
