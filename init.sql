@@ -13,19 +13,26 @@ VALUES (1, 'vasia', '698d51a19d8a121ce581499d7b701668', 'vasia@domain.com', 'USE
 
 INSERT INTO project_user (user_id, project_id, project_role) VALUES (1, 1, 'MEMBER');
 
+INSERT INTO issue_group(issue_group) VALUES ('TO_INVESTIGATE');
+INSERT INTO issue_group(issue_group) VALUES ('AUTOMATION_BUG');
+INSERT INTO issue_group(issue_group) VALUES ('PRODUCT_BUG');
+INSERT INTO issue_group(issue_group) VALUES ('NO_DEFECT');
+INSERT INTO issue_group(issue_group) VALUES ('SYSTEM_ISSUE');
+INSERT INTO issue_group(issue_group) VALUES ('AUTOMATION_BUG');
 
-INSERT INTO issue_type (issue_group, locator, issue_name, abbreviation, hex_color)
-VALUES ('TO_INVESTIGATE', 'TI001', 'To Investigate', 'TI', '#ffb743');
-INSERT INTO issue_type (issue_group, locator, issue_name, abbreviation, hex_color)
-VALUES ('AUTOMATION_BUG', 'AB001', 'Automation Bug', 'AB', '#f7d63e');
-INSERT INTO issue_type (issue_group, locator, issue_name, abbreviation, hex_color)
-VALUES ('PRODUCT_BUG', 'PB001', 'Product Bug', 'PB', '#ec3900');
-INSERT INTO issue_type (issue_group, locator, issue_name, abbreviation, hex_color)
-VALUES ('NO_DEFECT', 'ND001', 'No Defect', 'ND', '#777777');
-INSERT INTO issue_type (issue_group, locator, issue_name, abbreviation, hex_color)
-VALUES ('SYSTEM_ISSUE', 'SI001', 'System Issue', 'SI', '#0274d1');
-INSERT INTO issue_type (issue_group, locator, issue_name, abbreviation, hex_color)
-VALUES ('AUTOMATION_BUG', 'AB002', 'My custom automation', 'CA', '#0276d1');
+
+INSERT INTO issue_type (issue_group_id, locator, issue_name, abbreviation, hex_color)
+VALUES (1, 'TI001', 'To Investigate', 'TI', '#ffb743');
+INSERT INTO issue_type (issue_group_id, locator, issue_name, abbreviation, hex_color)
+VALUES (2, 'AB001', 'Automation Bug', 'AB', '#f7d63e');
+INSERT INTO issue_type (issue_group_id, locator, issue_name, abbreviation, hex_color)
+VALUES (3, 'PB001', 'Product Bug', 'PB', '#ec3900');
+INSERT INTO issue_type (issue_group_id, locator, issue_name, abbreviation, hex_color)
+VALUES (4, 'ND001', 'No Defect', 'ND', '#777777');
+INSERT INTO issue_type (issue_group_id, locator, issue_name, abbreviation, hex_color)
+VALUES (5, 'SI001', 'System Issue', 'SI', '#0274d1');
+INSERT INTO issue_type (issue_group_id, locator, issue_name, abbreviation, hex_color)
+VALUES (2, 'AB002', 'My custom automation', 'CA', '#0276d1');
 INSERT INTO issue_type_project_configuration (configuration_id, issue_type_id) VALUES (1, 1);
 INSERT INTO issue_type_project_configuration (configuration_id, issue_type_id) VALUES (1, 2);
 INSERT INTO issue_type_project_configuration (configuration_id, issue_type_id) VALUES (1, 3);

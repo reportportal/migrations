@@ -20,6 +20,7 @@ DROP TABLE IF EXISTS dashboard CASCADE;
 DROP TABLE IF EXISTS widget CASCADE;
 DROP TABLE IF EXISTS dashboard_widget CASCADE;
 DROP TABLE IF EXISTS filter CASCADE;
+DROP TABLE IF EXISTS user_filter CASCADE;
 DROP TABLE IF EXISTS filter_condition CASCADE;
 DROP TABLE IF EXISTS filter_sort CASCADE;
 DROP TABLE IF EXISTS widget_filter CASCADE;
@@ -30,15 +31,20 @@ DROP TABLE IF EXISTS widget_option_value CASCADE;
 DROP TABLE IF EXISTS test_item_structure CASCADE;
 DROP TABLE IF EXISTS test_item_results CASCADE;
 
+
+DROP TABLE IF EXISTS execution_statistics CASCADE;
+DROP TABLE IF EXISTS issue_statistics CASCADE;
+DROP TABLE IF EXISTS issue_group CASCADE;
+DROP TABLE IF EXISTS issue_statistics_issue_group CASCADE;
+DROP TABLE IF EXISTS issue_statistics_issue_type CASCADE;
+DROP TABLE IF EXISTS issue_type_project_configuration CASCADE;
+
 DROP TABLE IF EXISTS issue CASCADE;
 DROP TABLE IF EXISTS issue_ticket CASCADE;
 DROP TABLE IF EXISTS ticket CASCADE;
 DROP TABLE IF EXISTS defect_form_field_value CASCADE;
 DROP TABLE IF EXISTS parameter CASCADE;
 
-DROP TRIGGER IF EXISTS last_launch_number_trigger
-ON launch;
-DROP FUNCTION update_last_launch_number();
 DROP TABLE IF EXISTS launch CASCADE;
 DROP TABLE IF EXISTS launch_tag CASCADE;
 DROP TABLE IF EXISTS item_tag CASCADE;
@@ -49,10 +55,17 @@ DROP TABLE IF EXISTS integration CASCADE;
 DROP TABLE IF EXISTS integration_type CASCADE;
 DROP TABLE IF EXISTS activity CASCADE;
 
+DROP TRIGGER IF EXISTS last_launch_number_trigger
+ON launch;
+DROP FUNCTION update_last_launch_number();
+
 DROP FUNCTION IF EXISTS check_wired_tickets();
 DROP TRIGGER IF EXISTS after_ticket_delete
 ON issue_ticket;
 
+DROP FUNCTION IF EXISTS check_wired_widgets();
+DROP TRIGGER IF EXISTS after_widget_delete
+ON dashboard_widget;
 
 DROP TYPE IF EXISTS PROJECT_TYPE_ENUM CASCADE;
 DROP TYPE IF EXISTS USER_ROLE_ENUM CASCADE;
