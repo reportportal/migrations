@@ -95,6 +95,7 @@ CREATE TABLE oauth_registration_scope (
 );
 -----------------------------------------------------------------------------------
 
+
 ------------------------------ Project configurations ------------------------------
 CREATE TABLE project_email_configuration (
   id         BIGSERIAL CONSTRAINT project_email_configuration_pk PRIMARY KEY,
@@ -115,6 +116,7 @@ CREATE TABLE project_configuration (
   created_on                TIMESTAMP DEFAULT now()    NOT NULL
 );
 -----------------------------------------------------------------------------------
+
 
 ------------------------------ Bug tracking systems ------------------------------
 CREATE TABLE bug_tracking_system (
@@ -161,7 +163,7 @@ CREATE TABLE integration_type (
 
 CREATE TABLE integration (
   id            SERIAL CONSTRAINT integration_pk PRIMARY KEY,
-  project_id    INTEGER REFERENCES project (id) ON DELETE CASCADE,
+  project_id    BIGINT REFERENCES project (id) ON DELETE CASCADE,
   type          INTEGER REFERENCES integration_type (id) ON DELETE CASCADE,
   params        JSONB,
   creation_date TIMESTAMP DEFAULT now() NOT NULL
@@ -252,30 +254,20 @@ CREATE TABLE widget_filter (
 
 --------------------------- Launches, items, logs --------------------------------------
 
-CREATE TABLE execution_statistics (
-  id      BIGSERIAL CONSTRAINT pk_execution_statistics PRIMARY KEY,
-  passed  INT DEFAULT 0,
-  failed  INT DEFAULT 0,
-  skipped INT DEFAULT 0,
-  total   INT DEFAULT 0
-);
-
 CREATE TABLE launch (
-  id                   BIGSERIAL CONSTRAINT launch_pk PRIMARY KEY,
-  uuid                 VARCHAR                                                             NOT NULL,
-  project_id           BIGINT REFERENCES project (id) ON DELETE CASCADE                    NOT NULL,
-  user_id              BIGINT REFERENCES users (id) ON DELETE SET NULL,
-  name                 VARCHAR(256)                                                        NOT NULL,
-  description          TEXT,
-  start_time           TIMESTAMP                                                           NOT NULL,
-  end_time             TIMESTAMP,
-  number               INTEGER                                                             NOT NULL,
-  last_modified        TIMESTAMP DEFAULT now()                                             NOT NULL,
-  mode                 LAUNCH_MODE_ENUM                                                    NOT NULL,
-  status               STATUS_ENUM                                                         NOT NULL,
-  execution_statistics BIGINT UNIQUE,
-  CONSTRAINT unq_name_number UNIQUE (name, number, project_id, uuid),
-  CONSTRAINT execution_statistics_fk FOREIGN KEY (execution_statistics) REFERENCES execution_statistics (id)
+  id            BIGSERIAL CONSTRAINT launch_pk PRIMARY KEY,
+  uuid          VARCHAR                                                             NOT NULL,
+  project_id    BIGINT REFERENCES project (id) ON DELETE CASCADE                    NOT NULL,
+  user_id       BIGINT REFERENCES users (id) ON DELETE SET NULL,
+  name          VARCHAR(256)                                                        NOT NULL,
+  description   TEXT,
+  start_time    TIMESTAMP                                                           NOT NULL,
+  end_time      TIMESTAMP,
+  number        INTEGER                                                             NOT NULL,
+  last_modified TIMESTAMP DEFAULT now()                                             NOT NULL,
+  mode          LAUNCH_MODE_ENUM                                                    NOT NULL,
+  status        STATUS_ENUM                                                         NOT NULL,
+  CONSTRAINT unq_name_number UNIQUE (NAME, number, project_id, uuid)
 );
 
 CREATE TABLE launch_tag (
@@ -303,11 +295,10 @@ CREATE TABLE test_item_structure (
 );
 
 CREATE TABLE test_item_results (
-  item_id              BIGINT CONSTRAINT test_item_results_pk PRIMARY KEY REFERENCES test_item (item_id) ON DELETE CASCADE UNIQUE,
-  status               STATUS_ENUM NOT NULL,
-  end_time             TIMESTAMP,
-  duration             DOUBLE PRECISION,
-  execution_statistics BIGINT      NOT NULL REFERENCES execution_statistics (id) ON DELETE CASCADE UNIQUE
+  item_id  BIGINT CONSTRAINT test_item_results_pk PRIMARY KEY REFERENCES test_item (item_id) ON DELETE CASCADE UNIQUE,
+  status   STATUS_ENUM NOT NULL,
+  end_time TIMESTAMP,
+  duration DOUBLE PRECISION
 );
 
 CREATE TABLE parameter (
@@ -355,7 +346,7 @@ CREATE TABLE issue_group (
 );
 
 CREATE TABLE issue_type (
-  id             SERIAL CONSTRAINT issue_type_pk PRIMARY KEY,
+  id             BIGSERIAL CONSTRAINT issue_type_pk PRIMARY KEY,
   issue_group_id SMALLINT REFERENCES issue_group (issue_group_id) ON DELETE CASCADE,
   locator        VARCHAR(64), -- issue string identifier
   issue_name     VARCHAR(256), -- issue full name
@@ -363,9 +354,34 @@ CREATE TABLE issue_type (
   hex_color      VARCHAR(7)
 );
 
+CREATE TABLE issue_statistics (
+  id            BIGSERIAL NOT NULL CONSTRAINT pk_issue_statistics PRIMARY KEY,
+  issue_type_id BIGINT REFERENCES issue_type (id),
+  counter       INT DEFAULT 0,
+  item_id       BIGINT REFERENCES test_item_results (item_id) ON DELETE CASCADE,
+  CONSTRAINT unique_issue_item UNIQUE (issue_type_id, item_id)
+);
+
+CREATE TABLE issue_type_project_configuration (
+  configuration_id BIGINT REFERENCES project_configuration,
+  issue_type_id    BIGINT REFERENCES issue_type,
+  CONSTRAINT issue_type_project_configuration_pk PRIMARY KEY (configuration_id, issue_type_id)
+);
+
+CREATE TABLE execution_statistics (
+  id       BIGSERIAL CONSTRAINT pk_execution_statistics PRIMARY KEY,
+  counter  INT     DEFAULT 0,
+  status   TEXT NOT NULL,
+  positive BOOLEAN DEFAULT FALSE,
+  item_id  BIGINT REFERENCES test_item_results (item_id) ON DELETE CASCADE,
+  CONSTRAINT unique_status_item UNIQUE (status, item_id)
+);
+----------------------------------------------------------------------------------------
+
+
 CREATE TABLE issue (
   issue_id          BIGINT CONSTRAINT issue_pk PRIMARY KEY REFERENCES test_item_results (item_id) ON DELETE CASCADE,
-  issue_type        INTEGER NOT NULL REFERENCES issue_type (id) ON DELETE CASCADE UNIQUE,
+  issue_type        BIGINT NOT NULL REFERENCES issue_type (id) ON DELETE CASCADE UNIQUE,
   issue_description TEXT,
   auto_analyzed     BOOLEAN DEFAULT FALSE,
   ignore_analyzer   BOOLEAN DEFAULT FALSE
@@ -386,71 +402,40 @@ CREATE TABLE issue_ticket (
   CONSTRAINT issue_ticket_pk PRIMARY KEY (issue_id, ticket_id)
 );
 
-CREATE TABLE issue_statistics (
-  id           BIGSERIAL NOT NULL CONSTRAINT pk_issue_statistics PRIMARY KEY,
-  launch_id    BIGINT    NULL REFERENCES launch (id) ON DELETE CASCADE UNIQUE,
-  test_item_id BIGINT    NULL REFERENCES test_item (item_id) ON DELETE CASCADE UNIQUE
-);
+------- Functions and triggers -----------------------
 
-CREATE TABLE issue_statistics_issue_group (
-  statistics_id  BIGINT REFERENCES issue_statistics (id) ON DELETE CASCADE,
-  issue_group_id SMALLINT REFERENCES issue_group (issue_group_id) ON DELETE CASCADE,
-  total          INT DEFAULT 0,
-  CONSTRAINT issue_statistics_issue_group_pk PRIMARY KEY (statistics_id, issue_group_id)
-);
-
-CREATE TABLE issue_statistics_issue_type (
-  statistics_id BIGINT REFERENCES issue_statistics (id) ON DELETE CASCADE,
-  issue_type_id BIGINT REFERENCES issue_type (id) ON DELETE CASCADE,
-  count         INT DEFAULT 0,
-  CONSTRAINT issue_statistics_issue_type_pk PRIMARY KEY (statistics_id, issue_type_id)
-);
-
-
-CREATE TABLE issue_type_project_configuration (
-  configuration_id BIGINT REFERENCES project_configuration,
-  issue_type_id    INTEGER REFERENCES issue_type,
-  CONSTRAINT issue_type_project_configuration_pk PRIMARY KEY (configuration_id, issue_type_id)
-);
-----------------------------------------------------------------------------------------
-
-
-CREATE FUNCTION check_wired_tickets()
-  RETURNS TRIGGER AS
-$BODY$
+CREATE OR REPLACE FUNCTION update_parent_stats()
+  RETURNS TRIGGER AS $$
+DECLARE r BIGINT;
 BEGIN
-  DELETE FROM ticket
-  WHERE (SELECT count(issue_ticket.ticket_id)
-         FROM issue_ticket
-         WHERE issue_ticket.ticket_id = old.ticket_id) = 0 AND ticket.id = old.ticket_id;
+  FOR r IN
+  (WITH RECURSIVE item_structure(parent_id, item_id) AS (
+    SELECT
+      parent_id,
+      tir.item_id
+    FROM test_item_structure tis
+      JOIN test_item_results tir ON tis.item_id = tir.item_id
+    WHERE tir.item_id = NEW.item_id
+    UNION ALL
+    SELECT
+      tis.parent_id,
+      tis.item_id
+    FROM item_structure tis_r, test_item_structure tis
+      JOIN test_item_results tir ON tis.item_id = tir.item_id
+    WHERE tis.item_id = tis_r.parent_id)
+  SELECT item_structure.item_id
+  FROM item_structure
+  WHERE NOT item_id = NEW.item_id)
+
+  LOOP
+    INSERT INTO execution_statistics (counter, status, positive, item_id) VALUES (1, new.status :: TEXT, TRUE, r)
+    ON CONFLICT (status, item_id)
+      DO UPDATE SET counter = execution_statistics.counter + 1;
+  END LOOP;
   RETURN NULL;
 END;
-$BODY$
+$$
 LANGUAGE plpgsql;
-
-CREATE TRIGGER after_ticket_delete
-AFTER DELETE
-  ON issue_ticket
-FOR EACH ROW EXECUTE PROCEDURE check_wired_tickets();
-
-
-CREATE FUNCTION check_wired_widgets()
-  RETURNS TRIGGER AS
-$BODY$
-BEGIN
-  DELETE FROM widget
-  WHERE (SELECT count(dashboard_widget.widget_id)
-         FROM dashboard_widget
-         WHERE dashboard_widget.widget_id = old.widget_id) = 0 AND widget.id = old.widget_id;
-  RETURN NULL;
-END;
-$BODY$
-LANGUAGE plpgsql;
-
-CREATE TRIGGER after_widget_delete
-AFTER DELETE
-  ON dashboard_widget
-FOR EACH ROW EXECUTE PROCEDURE check_wired_widgets();
 
 
 CREATE OR REPLACE FUNCTION update_last_launch_number()
@@ -470,9 +455,90 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
+CREATE FUNCTION check_wired_tickets()
+  RETURNS TRIGGER AS
+$BODY$
+BEGIN
+  DELETE FROM ticket
+  WHERE (SELECT count(issue_ticket.ticket_id)
+         FROM issue_ticket
+         WHERE issue_ticket.ticket_id = old.ticket_id) = 0 AND ticket.id = old.ticket_id;
+  RETURN NULL;
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+
+CREATE FUNCTION check_wired_widgets()
+  RETURNS TRIGGER AS
+$BODY$
+BEGIN
+  DELETE FROM widget
+  WHERE (SELECT count(dashboard_widget.widget_id)
+         FROM dashboard_widget
+         WHERE dashboard_widget.widget_id = old.widget_id) = 0 AND widget.id = old.widget_id;
+  RETURN NULL;
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION update_parent_issue_stats()
+  RETURNS TRIGGER AS $$
+DECLARE r BIGINT;
+BEGIN
+  FOR r IN
+  (WITH RECURSIVE item_structure(parent_id, item_id) AS (
+    SELECT
+      parent_id,
+      tir.item_id
+    FROM test_item_structure tis
+      JOIN test_item_results tir ON tis.item_id = tir.item_id
+    WHERE tir.item_id = NEW.item_id
+    UNION ALL
+    SELECT
+      tis.parent_id,
+      tis.item_id
+    FROM item_structure tis_r, test_item_structure tis
+      JOIN test_item_results tir ON tis.item_id = tir.item_id
+    WHERE tis.item_id = tis_r.parent_id)
+  SELECT item_structure.item_id
+  FROM item_structure
+  WHERE NOT item_id = NEW.item_id)
+
+  LOOP
+    INSERT INTO issue_statistics (issue_type_id, counter, item_id) VALUES (new.issue_type_id, 1, r)
+    ON CONFLICT (issue_type_id, item_id)
+      DO UPDATE SET counter = issue_statistics.counter + 1;
+  END LOOP;
+  RETURN NULL;
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE TRIGGER after_ticket_delete
+AFTER DELETE
+  ON issue_ticket
+FOR EACH ROW EXECUTE PROCEDURE check_wired_tickets();
+
+
+CREATE TRIGGER after_widget_delete
+AFTER DELETE
+  ON dashboard_widget
+FOR EACH ROW EXECUTE PROCEDURE check_wired_widgets();
+
 
 CREATE TRIGGER last_launch_number_trigger
 BEFORE INSERT
   ON launch
 FOR EACH ROW
 EXECUTE PROCEDURE update_last_launch_number();
+
+
+CREATE TRIGGER before_results_insert
+AFTER UPDATE ON execution_statistics
+FOR EACH ROW WHEN (pg_trigger_depth() = 0) EXECUTE PROCEDURE update_parent_stats();
+
+CREATE TRIGGER after_issue_results_insert
+AFTER INSERT OR UPDATE ON issue_statistics
+FOR EACH ROW WHEN (pg_trigger_depth() = 0) EXECUTE PROCEDURE update_parent_issue_stats();
+

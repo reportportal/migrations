@@ -35,8 +35,6 @@ DROP TABLE IF EXISTS test_item_results CASCADE;
 DROP TABLE IF EXISTS execution_statistics CASCADE;
 DROP TABLE IF EXISTS issue_statistics CASCADE;
 DROP TABLE IF EXISTS issue_group CASCADE;
-DROP TABLE IF EXISTS issue_statistics_issue_group CASCADE;
-DROP TABLE IF EXISTS issue_statistics_issue_type CASCADE;
 DROP TABLE IF EXISTS issue_type_project_configuration CASCADE;
 
 DROP TABLE IF EXISTS issue CASCADE;

@@ -18,7 +18,6 @@ INSERT INTO issue_group(issue_group) VALUES ('AUTOMATION_BUG');
 INSERT INTO issue_group(issue_group) VALUES ('PRODUCT_BUG');
 INSERT INTO issue_group(issue_group) VALUES ('NO_DEFECT');
 INSERT INTO issue_group(issue_group) VALUES ('SYSTEM_ISSUE');
-INSERT INTO issue_group(issue_group) VALUES ('AUTOMATION_BUG');
 
 
 INSERT INTO issue_type (issue_group_id, locator, issue_name, abbreviation, hex_color)
