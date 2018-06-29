@@ -359,7 +359,11 @@ CREATE TABLE issue_statistics (
   issue_type_id BIGINT REFERENCES issue_type (id),
   counter       INT DEFAULT 0,
   item_id       BIGINT REFERENCES test_item_results (item_id) ON DELETE CASCADE,
-  CONSTRAINT unique_issue_item UNIQUE (issue_type_id, item_id)
+  launch_id     BIGINT REFERENCES launch (id) ON DELETE CASCADE,
+
+  CONSTRAINT unique_issue_item UNIQUE (issue_type_id, item_id),
+  CONSTRAINT unique_issue_launch UNIQUE (issue_type_id, launch_id),
+  CHECK (issue_statistics.counter >= 0)
 );
 
 CREATE TABLE issue_type_project_configuration (
@@ -369,19 +373,23 @@ CREATE TABLE issue_type_project_configuration (
 );
 
 CREATE TABLE execution_statistics (
-  id       BIGSERIAL CONSTRAINT pk_execution_statistics PRIMARY KEY,
-  counter  INT     DEFAULT 0,
-  status   TEXT NOT NULL,
-  positive BOOLEAN DEFAULT FALSE,
-  item_id  BIGINT REFERENCES test_item_results (item_id) ON DELETE CASCADE,
-  CONSTRAINT unique_status_item UNIQUE (status, item_id)
+  id        BIGSERIAL CONSTRAINT pk_execution_statistics PRIMARY KEY,
+  counter   INT     DEFAULT 0,
+  status    TEXT NOT NULL,
+  positive  BOOLEAN DEFAULT FALSE,
+  item_id   BIGINT REFERENCES test_item_results (item_id) ON DELETE CASCADE,
+  launch_id BIGINT REFERENCES launch (id) ON DELETE CASCADE,
+
+  CONSTRAINT unique_status_item UNIQUE (status, item_id),
+  CONSTRAINT unique_status_launch UNIQUE (status, launch_id),
+  CHECK (execution_statistics.counter >= 0)
 );
 ----------------------------------------------------------------------------------------
 
 
 CREATE TABLE issue (
   issue_id          BIGINT CONSTRAINT issue_pk PRIMARY KEY REFERENCES test_item_results (item_id) ON DELETE CASCADE,
-  issue_type        BIGINT NOT NULL REFERENCES issue_type (id) ON DELETE CASCADE UNIQUE,
+  issue_type        BIGINT NOT NULL REFERENCES issue_type (id) ON DELETE CASCADE,
   issue_description TEXT,
   auto_analyzed     BOOLEAN DEFAULT FALSE,
   ignore_analyzer   BOOLEAN DEFAULT FALSE
@@ -404,7 +412,7 @@ CREATE TABLE issue_ticket (
 
 ------- Functions and triggers -----------------------
 
-CREATE OR REPLACE FUNCTION update_parent_stats()
+CREATE OR REPLACE FUNCTION increment_parent_execution_statistics()
   RETURNS TRIGGER AS $$
 DECLARE r BIGINT;
 BEGIN
@@ -426,19 +434,89 @@ BEGIN
   SELECT item_structure.item_id
   FROM item_structure
   WHERE NOT item_id = NEW.item_id)
-
   LOOP
-    INSERT INTO execution_statistics (counter, status, positive, item_id) VALUES (1, new.status :: TEXT, TRUE, r)
+    INSERT INTO execution_statistics (counter, status, positive, item_id) VALUES (1, new.status, CASE WHEN new.positive = FALSE
+      THEN FALSE END, r)
     ON CONFLICT (status, item_id)
-      DO UPDATE SET counter = execution_statistics.counter + 1;
+      DO UPDATE SET counter = execution_statistics.counter + 1, positive = CASE WHEN new.positive = FALSE
+        THEN FALSE END;
   END LOOP;
+
+  INSERT INTO execution_statistics (counter, status, positive, launch_id) VALUES (1, new.status, CASE WHEN new.positive = FALSE
+    THEN FALSE END,
+                                                                                  (SELECT launch_id
+                                                                                   FROM launch
+                                                                                     JOIN test_item ON launch.id = test_item.launch_id
+                                                                                   WHERE test_item.item_id = new.item_id)
+  )
+  ON CONFLICT (status, launch_id)
+    DO UPDATE SET counter = execution_statistics.counter + 1, positive = CASE WHEN new.positive = FALSE
+      THEN FALSE END;
   RETURN NULL;
 END;
 $$
 LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION update_last_launch_number()
+CREATE OR REPLACE FUNCTION increment_parent_issue_stats()
+  RETURNS TRIGGER AS $$
+DECLARE   cur_item_id   BIGINT;
+  DECLARE cur_launch_id BIGINT;
+BEGIN
+  FOR cur_item_id IN
+
+  (WITH RECURSIVE item_structure(parent_id, item_id) AS (
+    SELECT
+      parent_id,
+      tir.item_id
+    FROM test_item_structure tis
+      JOIN test_item_results tir ON tis.item_id = tir.item_id
+    WHERE tir.item_id = NEW.item_id
+    UNION ALL
+    SELECT
+      tis.parent_id,
+      tis.item_id
+    FROM item_structure tis_r, test_item_structure tis
+      JOIN test_item_results tir ON tis.item_id = tir.item_id
+    WHERE tis.item_id = tis_r.parent_id)
+  SELECT item_structure.item_id
+  FROM item_structure
+  WHERE NOT item_id = NEW.item_id)
+
+  LOOP
+
+    UPDATE issue_statistics
+    SET counter = issue_statistics.counter - 1
+    WHERE issue_type_id = old.issue_type_id AND item_id = cur_item_id;
+
+    INSERT INTO issue_statistics (issue_type_id, counter, item_id) VALUES (new.issue_type_id, 1, cur_item_id)
+    ON CONFLICT (issue_type_id, item_id)
+      DO UPDATE SET counter = issue_statistics.counter + 1;
+
+  END LOOP;
+
+  cur_launch_id = (SELECT launch.id
+                   FROM launch
+                     JOIN test_item
+                       ON launch.id = test_item.launch_id
+                   WHERE
+                     test_item.item_id = new.item_id);
+
+  UPDATE issue_statistics
+  SET counter = issue_statistics.counter - 1
+  WHERE issue_type_id = old.issue_type_id AND launch_id = cur_launch_id;
+
+  INSERT INTO issue_statistics (issue_type_id, counter, launch_id) VALUES (new.issue_type_id, 1, cur_launch_id)
+  ON CONFLICT (issue_type_id, launch_id)
+    DO UPDATE SET counter = issue_statistics.counter + 1;
+
+  RETURN NULL;
+END;
+$$
+LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION get_last_launch_number()
   RETURNS TRIGGER AS
 $BODY$
 BEGIN
@@ -482,39 +560,6 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION update_parent_issue_stats()
-  RETURNS TRIGGER AS $$
-DECLARE r BIGINT;
-BEGIN
-  FOR r IN
-  (WITH RECURSIVE item_structure(parent_id, item_id) AS (
-    SELECT
-      parent_id,
-      tir.item_id
-    FROM test_item_structure tis
-      JOIN test_item_results tir ON tis.item_id = tir.item_id
-    WHERE tir.item_id = NEW.item_id
-    UNION ALL
-    SELECT
-      tis.parent_id,
-      tis.item_id
-    FROM item_structure tis_r, test_item_structure tis
-      JOIN test_item_results tir ON tis.item_id = tir.item_id
-    WHERE tis.item_id = tis_r.parent_id)
-  SELECT item_structure.item_id
-  FROM item_structure
-  WHERE NOT item_id = NEW.item_id)
-
-  LOOP
-    INSERT INTO issue_statistics (issue_type_id, counter, item_id) VALUES (new.issue_type_id, 1, r)
-    ON CONFLICT (issue_type_id, item_id)
-      DO UPDATE SET counter = issue_statistics.counter + 1;
-  END LOOP;
-  RETURN NULL;
-END;
-$$
-LANGUAGE plpgsql;
-
 CREATE TRIGGER after_ticket_delete
 AFTER DELETE
   ON issue_ticket
@@ -531,14 +576,14 @@ CREATE TRIGGER last_launch_number_trigger
 BEFORE INSERT
   ON launch
 FOR EACH ROW
-EXECUTE PROCEDURE update_last_launch_number();
+EXECUTE PROCEDURE get_last_launch_number();
 
 
-CREATE TRIGGER before_results_insert
+CREATE TRIGGER after_update_on_execution_statistics
 AFTER UPDATE ON execution_statistics
-FOR EACH ROW WHEN (pg_trigger_depth() = 0) EXECUTE PROCEDURE update_parent_stats();
+FOR EACH ROW WHEN (pg_trigger_depth() = 0) EXECUTE PROCEDURE increment_parent_execution_statistics();
 
-CREATE TRIGGER after_issue_results_insert
-AFTER INSERT OR UPDATE ON issue_statistics
-FOR EACH ROW WHEN (pg_trigger_depth() = 0) EXECUTE PROCEDURE update_parent_issue_stats();
+CREATE TRIGGER after_update_on_issue_statistics
+AFTER UPDATE ON issue_statistics
+FOR EACH ROW WHEN (pg_trigger_depth() = 0) EXECUTE PROCEDURE increment_parent_issue_stats();
 
