@@ -80,12 +80,9 @@ DROP FUNCTION IF EXISTS check_wired_widgets();
 DROP TRIGGER IF EXISTS after_widget_delete
 ON dashboard_widget;
 
-DROP FUNCTION IF EXISTS increment_parent_execution_statistics();
+DROP FUNCTION IF EXISTS increment_execution_statistics();
 DROP TRIGGER IF EXISTS after_update_on_execution_statistics
 ON execution_statistics;
 
-DROP FUNCTION IF EXISTS increment_parent_issue_stats();
-DROP TRIGGER IF EXISTS after_update_on_issue_statistics
-ON issue_statistics;
 
 
