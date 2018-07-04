@@ -277,8 +277,21 @@ CREATE TABLE launch_tag (
 );
 
 
+CREATE TABLE test_item_structure (
+  structure_id BIGINT CONSTRAINT test_item_structure_pk PRIMARY KEY,
+  parent_id    BIGINT REFERENCES test_item_structure (structure_id) ON DELETE CASCADE,
+  retry_of     BIGINT REFERENCES test_item_structure (structure_id) ON DELETE CASCADE
+);
+
+CREATE TABLE test_item_results (
+  result_id BIGINT CONSTRAINT test_item_results_pk PRIMARY KEY REFERENCES test_item_structure (structure_id) ON DELETE CASCADE UNIQUE,
+  status    STATUS_ENUM NOT NULL,
+  end_time  TIMESTAMP,
+  duration  DOUBLE PRECISION
+);
+
 CREATE TABLE test_item (
-  item_id       BIGSERIAL CONSTRAINT test_item_pk PRIMARY KEY,
+  item_id       BIGSERIAL CONSTRAINT test_item_pk PRIMARY KEY REFERENCES test_item_structure (structure_id) ON DELETE CASCADE UNIQUE,
   launch_id     BIGINT REFERENCES launch (id) ON DELETE CASCADE,
   name          VARCHAR(256),
   type          TEST_ITEM_TYPE_ENUM NOT NULL,
@@ -286,19 +299,6 @@ CREATE TABLE test_item (
   description   TEXT,
   last_modified TIMESTAMP           NOT NULL,
   unique_id     VARCHAR(256)        NOT NULL
-);
-
-CREATE TABLE test_item_structure (
-  item_id   BIGINT CONSTRAINT test_item_structure_pk PRIMARY KEY REFERENCES test_item (item_id) ON DELETE CASCADE UNIQUE,
-  parent_id BIGINT REFERENCES test_item_structure ON DELETE CASCADE,
-  retry_of  BIGINT REFERENCES test_item_structure ON DELETE CASCADE
-);
-
-CREATE TABLE test_item_results (
-  item_id  BIGINT CONSTRAINT test_item_results_pk PRIMARY KEY REFERENCES test_item (item_id) ON DELETE CASCADE UNIQUE,
-  status   STATUS_ENUM NOT NULL,
-  end_time TIMESTAMP,
-  duration DOUBLE PRECISION
 );
 
 CREATE TABLE parameter (
@@ -358,7 +358,7 @@ CREATE TABLE issue_statistics (
   id            BIGSERIAL NOT NULL CONSTRAINT pk_issue_statistics PRIMARY KEY,
   issue_type_id BIGINT REFERENCES issue_type (id),
   counter       INT DEFAULT 0,
-  item_id       BIGINT REFERENCES test_item_results (item_id) ON DELETE CASCADE,
+  item_id       BIGINT REFERENCES test_item_results (result_id) ON DELETE CASCADE,
   launch_id     BIGINT REFERENCES launch (id) ON DELETE CASCADE,
 
   CONSTRAINT unique_issue_item UNIQUE (issue_type_id, item_id),
@@ -377,7 +377,7 @@ CREATE TABLE execution_statistics (
   counter   INT     DEFAULT 0,
   status    TEXT,
   positive  BOOLEAN DEFAULT FALSE,
-  item_id   BIGINT REFERENCES test_item_results (item_id) ON DELETE CASCADE,
+  item_id   BIGINT REFERENCES test_item_results (result_id) ON DELETE CASCADE,
   launch_id BIGINT REFERENCES launch (id) ON DELETE CASCADE,
 
   CONSTRAINT unique_status_item UNIQUE (status, item_id),
@@ -388,7 +388,7 @@ CREATE TABLE execution_statistics (
 
 
 CREATE TABLE issue (
-  issue_id          BIGINT CONSTRAINT issue_pk PRIMARY KEY REFERENCES test_item_results (item_id) ON DELETE CASCADE,
+  issue_id          BIGINT CONSTRAINT issue_pk PRIMARY KEY REFERENCES test_item_results (result_id) ON DELETE CASCADE,
   issue_type        BIGINT REFERENCES issue_type (id),
   issue_description TEXT,
   auto_analyzed     BOOLEAN DEFAULT FALSE,
@@ -412,10 +412,6 @@ CREATE TABLE issue_ticket (
 
 ------- Functions and triggers -----------------------
 
-CREATE TRIGGER after_test_item_finish
-AFTER UPDATE ON test_item_results
-FOR EACH ROW EXECUTE PROCEDURE increment_execution_statistics();
-
 CREATE OR REPLACE FUNCTION increment_execution_statistics()
   RETURNS TRIGGER AS $$
 DECLARE cur_id BIGINT;
@@ -423,7 +419,7 @@ BEGIN
   IF exists(SELECT 1
             FROM test_item_structure AS s
               JOIN test_item_structure AS s2 ON s.item_id = s2.parent_id
-            WHERE s.item_id = new.item_id)
+            WHERE s.item_id = new.result_id)
   THEN RETURN NULL;
   END IF;
 
@@ -431,16 +427,16 @@ BEGIN
   (WITH RECURSIVE item_structure(parent_id, item_id) AS (
     SELECT
       parent_id,
-      tir.item_id
+      tir.result_id
     FROM test_item_structure tis
-      JOIN test_item_results tir ON tis.item_id = tir.item_id
-    WHERE tir.item_id = NEW.item_id
+      JOIN test_item_results tir ON tis.item_id = tir.result_id
+    WHERE tir.result_id = NEW.result_id
     UNION ALL
     SELECT
       tis.parent_id,
       tis.item_id
     FROM item_structure tis_r, test_item_structure tis
-      JOIN test_item_results tir ON tis.item_id = tir.item_id
+      JOIN test_item_results tir ON tis.item_id = tir.result_id
     WHERE tis.item_id = tis_r.parent_id)
   SELECT item_structure.item_id
   FROM item_structure)
@@ -454,15 +450,18 @@ BEGIN
   INSERT INTO execution_statistics (counter, status, positive, launch_id) VALUES (1, new.status, TRUE,
                                                                                   (SELECT launch_id
                                                                                    FROM test_item
-                                                                                   WHERE test_item.item_id = new.item_id)
+                                                                                   WHERE test_item.item_id = new.result_id)
   )
   ON CONFLICT (status, launch_id)
     DO UPDATE SET counter = execution_statistics.counter + 1;
-  RETURN NULL;
+  RETURN new;
 END;
 $$
 LANGUAGE plpgsql;
 
+CREATE TRIGGER after_test_item_finish
+AFTER UPDATE ON test_item_results
+FOR EACH ROW EXECUTE PROCEDURE increment_execution_statistics();
 
 
 CREATE OR REPLACE FUNCTION get_last_launch_number()
@@ -527,3 +526,93 @@ BEFORE INSERT
 FOR EACH ROW
 EXECUTE PROCEDURE get_last_launch_number();
 
+
+CREATE OR REPLACE FUNCTION delete_item_statistics()
+  RETURNS TRIGGER AS
+$$
+BEGIN
+  DELETE FROM execution_statistics
+  WHERE execution_statistics.item_id = old.result_id;
+  RETURN old;
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE TRIGGER before_test_item_results_delete
+BEFORE DELETE ON test_item_results
+FOR EACH ROW EXECUTE PROCEDURE delete_item_statistics();
+
+
+CREATE OR REPLACE FUNCTION decrease_execution_statistics()
+  RETURNS TRIGGER AS $$
+DECLARE   asc_id  BIGINT;
+  DECLARE desc_id BIGINT;
+BEGIN
+
+  FOR asc_id IN
+  (WITH RECURSIVE item_structure(parent_id, item_id) AS (
+    SELECT
+      parent_id,
+      tir.result_id
+    FROM test_item_structure tis
+      JOIN test_item_results tir ON tis.item_id = tir.result_id
+    WHERE tir.result_id = old.item_id
+    UNION ALL
+    SELECT
+      tis.parent_id,
+      tis.item_id
+    FROM item_structure tis_r, test_item_structure tis
+      JOIN test_item_results tir ON tis.item_id = tir.result_id
+    WHERE tis.item_id = tis_r.parent_id)
+  SELECT item_structure.item_id
+  FROM item_structure
+  WHERE NOT item_id = old.item_id)
+
+  LOOP
+    UPDATE execution_statistics AS es
+    SET counter = es.counter - old.counter
+    WHERE es.item_id = asc_id AND status = old.status;
+  END LOOP;
+
+  UPDATE execution_statistics AS es
+  SET counter = es.counter - old.counter
+  WHERE es.launch_id = (SELECT launch_id
+                        FROM test_item
+                        WHERE test_item.item_id = old.item_id) AND status = old.status;
+
+  FOR desc_id IN
+  (WITH RECURSIVE item_structure(parent_id, item_id) AS (
+    SELECT
+      parent_id,
+      tir.result_id
+    FROM test_item_structure tis
+      JOIN test_item_results tir ON tis.item_id = tir.result_id
+    WHERE tir.result_id = old.item_id
+    UNION ALL
+    SELECT
+      tis.parent_id,
+      tis.item_id
+    FROM item_structure tis_r, test_item_structure tis
+      JOIN test_item_results tir ON tis.item_id = tir.result_id
+    WHERE tis.parent_id = tis_r.item_id)
+  SELECT item_structure.item_id
+  FROM item_structure
+  WHERE NOT item_id = old.item_id)
+
+  LOOP
+    DELETE FROM execution_statistics
+    WHERE execution_statistics.item_id = desc_id AND execution_statistics.status = old.status;
+    --     DELETE FROM test_item_results
+    --     WHERE test_item_results.item_id = desc_id;
+  END LOOP;
+
+  RETURN OLD;
+END;
+$$
+LANGUAGE plpgsql;
+
+
+CREATE TRIGGER before_test_item_delete
+BEFORE DELETE ON execution_statistics
+FOR EACH ROW WHEN (pg_trigger_depth() = 0)
+EXECUTE PROCEDURE decrease_execution_statistics();
