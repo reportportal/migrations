@@ -617,7 +617,7 @@ LANGUAGE plpgsql;
 ------------------------------- Statistics triggers ----------------------------
 
 
-CREATE TRIGGER after_test_item_finish
+CREATE TRIGGER after_test_results_update
 AFTER UPDATE ON test_item_results
 FOR EACH ROW EXECUTE PROCEDURE increment_execution_statistics();
 

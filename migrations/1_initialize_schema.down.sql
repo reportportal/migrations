@@ -81,8 +81,27 @@ DROP TRIGGER IF EXISTS after_widget_delete
 ON dashboard_widget;
 
 DROP FUNCTION IF EXISTS increment_execution_statistics();
-DROP TRIGGER IF EXISTS after_update_on_execution_statistics
+DROP TRIGGER IF EXISTS after_test_results_update
+ON test_item_results;
+
+DROP FUNCTION IF EXISTS increment_issue_statistics();
+DROP TRIGGER on_issue_insert
+ON issue;
+
+
+DROP FUNCTION IF EXISTS delete_item_statistics();
+DROP TRIGGER IF EXISTS before_test_item_delete
+ON test_item_results;
+
+DROP FUNCTION IF EXISTS decrease_execution_statistics();
+DROP TRIGGER IF EXISTS delete_execution_statistics
 ON execution_statistics;
+
+DROP FUNCTION IF EXISTS decrease_issue_statistics();
+DROP TRIGGER IF EXISTS delete_issue_statistics
+ON issue_statistics;
+
+
 
 
 
