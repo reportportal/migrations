@@ -356,7 +356,7 @@ CREATE TABLE issue_type (
 
 CREATE TABLE issue_statistics (
   id            BIGSERIAL NOT NULL CONSTRAINT pk_issue_statistics PRIMARY KEY,
-  issue_type_id BIGINT REFERENCES issue_type (id),
+  issue_type_id BIGINT REFERENCES issue_type (id) ON UPDATE NO ACTION,
   counter       INT DEFAULT 0,
   item_id       BIGINT REFERENCES test_item_results (result_id) ON DELETE CASCADE,
   launch_id     BIGINT REFERENCES launch (id) ON DELETE CASCADE,
@@ -502,6 +502,7 @@ BEGIN
   THEN RETURN new;
   END IF;
 
+
   FOR cur_id IN
   (WITH RECURSIVE item_structure(parent_id, item_id) AS (
     SELECT
@@ -635,7 +636,9 @@ EXECUTE PROCEDURE decrease_execution_statistics();
 
 CREATE OR REPLACE FUNCTION increment_issue_statistics()
   RETURNS TRIGGER AS $$
-DECLARE cur_id BIGINT;
+DECLARE   cur_id    BIGINT;
+  DECLARE is_update BOOLEAN;
+  DECLARE launch    BIGINT;
 BEGIN
 
   IF exists(SELECT 1
@@ -644,6 +647,11 @@ BEGIN
             WHERE s.structure_id = new.issue_id)
   THEN RETURN new;
   END IF;
+
+
+  is_update = exists(SELECT 1
+                     FROM issue_statistics
+                     WHERE item_id = new.issue_id);
 
   FOR cur_id IN
   (WITH RECURSIVE item_structure(parent_id, item_id) AS (
@@ -664,18 +672,32 @@ BEGIN
   FROM item_structure)
 
   LOOP
+    IF is_update
+    THEN UPDATE issue_statistics
+    SET counter = issue_statistics.counter - 1
+    WHERE issue_statistics.item_id = cur_id AND issue_statistics.issue_type_id = old.issue_type;
+    END IF;
+
     INSERT INTO issue_statistics (issue_type_id, counter, item_id, launch_id) VALUES (new.issue_type, 1, cur_id, NULL)
     ON CONFLICT (issue_type_id, item_id)
       DO UPDATE SET counter = issue_statistics.counter + 1;
   END LOOP;
 
-  INSERT INTO issue_statistics (issue_type_id, counter, item_id, launch_id) VALUES (new.issue_type, 1, NULL,
-                                                                                    (SELECT launch_id
-                                                                                     FROM test_item_structure
-                                                                                     WHERE test_item_structure.structure_id = new.issue_id)
-  )
+  launch = (SELECT launch
+            FROM test_item_structure
+            WHERE
+              test_item_structure.structure_id = new.issue_id);
+
+  INSERT INTO issue_statistics (issue_type_id, counter, item_id, launch_id) VALUES (new.issue_type, 1, NULL, launch_id)
   ON CONFLICT (issue_type_id, launch_id)
     DO UPDATE SET counter = issue_statistics.counter + 1;
+
+  IF is_update
+  THEN UPDATE issue_statistics
+  SET counter = issue_statistics.counter - 1
+  WHERE issue_statistics.launch_id = launch_id AND issue_statistics.issue_type_id = old.issue_type;
+  END IF;
+
   RETURN new;
 END;
 $$
@@ -762,6 +784,10 @@ LANGUAGE plpgsql;
 CREATE TRIGGER on_issue_insert
 AFTER INSERT ON issue
 FOR EACH ROW EXECUTE PROCEDURE increment_issue_statistics();
+
+CREATE TRIGGER on_issue_update
+AFTER UPDATE ON issue
+FOR EACH ROW WHEN (pg_trigger_depth() = 0) EXECUTE PROCEDURE increment_issue_statistics();
 
 CREATE TRIGGER delete_issue_statistics
 AFTER DELETE ON issue_statistics
