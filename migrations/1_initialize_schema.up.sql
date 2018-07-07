@@ -683,12 +683,12 @@ BEGIN
       DO UPDATE SET counter = issue_statistics.counter + 1;
   END LOOP;
 
-  launch = (SELECT launch
+  launch = (SELECT launch_id
             FROM test_item_structure
             WHERE
               test_item_structure.structure_id = new.issue_id);
 
-  INSERT INTO issue_statistics (issue_type_id, counter, item_id, launch_id) VALUES (new.issue_type, 1, NULL, launch_id)
+  INSERT INTO issue_statistics (issue_type_id, counter, item_id, launch_id) VALUES (new.issue_type, 1, NULL, launch)
   ON CONFLICT (issue_type_id, launch_id)
     DO UPDATE SET counter = issue_statistics.counter + 1;
 
