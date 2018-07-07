@@ -1,4 +1,4 @@
-DROP TABLE IF EXISTS server_settings;
+DROP TABLE IF EXISTS server_settings CASCADE;
 DROP TABLE IF EXISTS bug_tracking_system CASCADE;
 DROP TABLE IF EXISTS defect_form_field CASCADE;
 DROP TABLE IF EXISTS defect_field_allowed_value CASCADE;
@@ -13,7 +13,7 @@ DROP TABLE IF EXISTS project CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS project_user CASCADE;
 DROP TABLE IF EXISTS oauth_access_token CASCADE;
-DROP TABLE IF EXISTS oauth_registration_scope;
+DROP TABLE IF EXISTS oauth_registration_scope CASCADE;
 DROP TABLE IF EXISTS oauth_registration CASCADE;
 
 DROP TABLE IF EXISTS dashboard CASCADE;
@@ -52,7 +52,6 @@ DROP TABLE IF EXISTS integration CASCADE;
 DROP TABLE IF EXISTS integration_type CASCADE;
 DROP TABLE IF EXISTS activity CASCADE;
 
-
 DROP TYPE IF EXISTS PROJECT_TYPE_ENUM CASCADE;
 DROP TYPE IF EXISTS USER_ROLE_ENUM CASCADE;
 DROP TYPE IF EXISTS USER_TYPE_ENUM CASCADE;
@@ -70,38 +69,26 @@ DROP TYPE IF EXISTS FILTER_CONDITION_ENUM;
 
 DROP TRIGGER IF EXISTS last_launch_number_trigger
 ON launch;
-DROP FUNCTION get_last_launch_number();
-
-DROP FUNCTION IF EXISTS check_wired_tickets();
 DROP TRIGGER IF EXISTS after_ticket_delete
 ON issue_ticket;
-
-DROP FUNCTION IF EXISTS check_wired_widgets();
 DROP TRIGGER IF EXISTS after_widget_delete
 ON dashboard_widget;
-
-DROP FUNCTION IF EXISTS increment_execution_statistics();
 DROP TRIGGER IF EXISTS after_test_results_update
 ON test_item_results;
-
-DROP FUNCTION IF EXISTS increment_issue_statistics();
 DROP TRIGGER on_issue_insert
 ON issue;
-
-
-DROP FUNCTION IF EXISTS delete_item_statistics();
 DROP TRIGGER IF EXISTS before_test_item_delete
 ON test_item_results;
-
-DROP FUNCTION IF EXISTS decrease_execution_statistics();
 DROP TRIGGER IF EXISTS delete_execution_statistics
 ON execution_statistics;
-
-DROP FUNCTION IF EXISTS decrease_issue_statistics();
 DROP TRIGGER IF EXISTS delete_issue_statistics
 ON issue_statistics;
 
-
-
-
-
+DROP FUNCTION get_last_launch_number();
+DROP FUNCTION IF EXISTS check_wired_tickets();
+DROP FUNCTION IF EXISTS check_wired_widgets();
+DROP FUNCTION IF EXISTS increment_execution_statistics();
+DROP FUNCTION IF EXISTS increment_issue_statistics();
+DROP FUNCTION IF EXISTS delete_item_statistics();
+DROP FUNCTION IF EXISTS decrease_execution_statistics();
+DROP FUNCTION IF EXISTS decrease_issue_statistics();
