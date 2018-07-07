@@ -75,7 +75,9 @@ DROP TRIGGER IF EXISTS after_widget_delete
 ON dashboard_widget;
 DROP TRIGGER IF EXISTS after_test_results_update
 ON test_item_results;
-DROP TRIGGER on_issue_insert
+DROP TRIGGER IF EXISTS on_issue_update
+ON issue;
+DROP TRIGGER IF EXISTS on_issue_insert
 ON issue;
 DROP TRIGGER IF EXISTS before_test_item_delete
 ON test_item_results;
