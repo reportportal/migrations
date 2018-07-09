@@ -17,7 +17,7 @@ node {
                         }
 
                         stage('Run Migrations') {
-                            sh "docker-compose -p reportportal run --rm migrations up"
+                            sh "docker-compose -p reportportal5 run --rm migrations up"
                         }
             }
         }
