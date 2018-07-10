@@ -355,15 +355,15 @@ CREATE TABLE issue_type (
 );
 
 CREATE TABLE issue_statistics (
-  id            BIGSERIAL NOT NULL CONSTRAINT pk_issue_statistics PRIMARY KEY,
+  is_id         BIGSERIAL NOT NULL CONSTRAINT pk_issue_statistics PRIMARY KEY,
   issue_type_id BIGINT REFERENCES issue_type (id) ON UPDATE NO ACTION,
-  counter       INT DEFAULT 0,
+  is_counter    INT DEFAULT 0,
   item_id       BIGINT REFERENCES test_item_results (result_id) ON DELETE CASCADE,
   launch_id     BIGINT REFERENCES launch (id) ON DELETE CASCADE,
 
   CONSTRAINT unique_issue_item UNIQUE (issue_type_id, item_id),
   CONSTRAINT unique_issue_launch UNIQUE (issue_type_id, launch_id),
-  CHECK (issue_statistics.counter >= 0)
+  CHECK (issue_statistics.is_counter >= 0)
 );
 
 CREATE TABLE issue_type_project_configuration (
@@ -373,16 +373,16 @@ CREATE TABLE issue_type_project_configuration (
 );
 
 CREATE TABLE execution_statistics (
-  id        BIGSERIAL CONSTRAINT pk_execution_statistics PRIMARY KEY,
-  counter   INT     DEFAULT 0,
-  status    TEXT,
-  positive  BOOLEAN DEFAULT FALSE,
-  item_id   BIGINT REFERENCES test_item_results (result_id) ON DELETE CASCADE,
-  launch_id BIGINT REFERENCES launch (id) ON DELETE CASCADE,
+  es_id      BIGSERIAL CONSTRAINT pk_execution_statistics PRIMARY KEY,
+  es_counter INT     DEFAULT 0,
+  es_status  TEXT,
+  positive   BOOLEAN DEFAULT FALSE,
+  item_id    BIGINT REFERENCES test_item_results (result_id) ON DELETE CASCADE,
+  launch_id  BIGINT REFERENCES launch (id) ON DELETE CASCADE,
 
-  CONSTRAINT unique_status_item UNIQUE (status, item_id),
-  CONSTRAINT unique_status_launch UNIQUE (status, launch_id),
-  CHECK (execution_statistics.counter >= 0)
+  CONSTRAINT unique_status_item UNIQUE (es_status, item_id),
+  CONSTRAINT unique_status_launch UNIQUE (es_status, launch_id),
+  CHECK (execution_statistics.es_counter >= 0)
 );
 ----------------------------------------------------------------------------------------
 
@@ -522,18 +522,19 @@ BEGIN
   FROM item_structure)
 
   LOOP
-    INSERT INTO execution_statistics (counter, status, positive, item_id) VALUES (1, new.status, TRUE, cur_id)
-    ON CONFLICT (status, item_id)
-      DO UPDATE SET counter = execution_statistics.counter + 1;
+    INSERT INTO execution_statistics (es_counter, es_status, positive, item_id) VALUES (1, new.status, TRUE, cur_id)
+    ON CONFLICT (es_status, item_id)
+      DO UPDATE SET es_counter = execution_statistics.es_counter + 1;
   END LOOP;
 
-  INSERT INTO execution_statistics (counter, status, positive, launch_id) VALUES (1, new.status, TRUE,
-                                                                                  (SELECT launch_id
-                                                                                   FROM test_item_structure
-                                                                                   WHERE test_item_structure.structure_id = new.result_id)
+  INSERT INTO execution_statistics (es_counter, es_status, positive, launch_id) VALUES (1, new.status, TRUE,
+                                                                                        (SELECT launch_id
+                                                                                         FROM test_item_structure
+                                                                                         WHERE
+                                                                                           test_item_structure.structure_id = new.result_id)
   )
-  ON CONFLICT (status, launch_id)
-    DO UPDATE SET counter = execution_statistics.counter + 1;
+  ON CONFLICT (es_status, launch_id)
+    DO UPDATE SET es_counter = execution_statistics.es_counter + 1;
   RETURN new;
 END;
 $$
@@ -576,15 +577,15 @@ BEGIN
 
   LOOP
     UPDATE execution_statistics AS es
-    SET counter = es.counter - old.counter
-    WHERE es.item_id = asc_id AND status = old.status;
+    SET es_counter = es.es_counter - old.es_counter
+    WHERE es.item_id = asc_id AND es_status = old.es_status;
   END LOOP;
 
   UPDATE execution_statistics AS es
-  SET counter = es.counter - old.counter
+  SET es_counter = es.es_counter - old.es_counter
   WHERE es.launch_id = (SELECT launch_id
                         FROM test_item
-                        WHERE test_item.item_id = old.item_id) AND status = old.status;
+                        WHERE test_item.item_id = old.item_id) AND es_status = old.es_status;
 
   FOR desc_id IN
   (WITH RECURSIVE item_structure(parent_id, item_id) AS (
@@ -607,7 +608,7 @@ BEGIN
 
   LOOP
     DELETE FROM execution_statistics
-    WHERE execution_statistics.item_id = desc_id AND execution_statistics.status = old.status;
+    WHERE execution_statistics.item_id = desc_id AND execution_statistics.es_status = old.es_status;
   END LOOP;
 
   RETURN OLD;
@@ -674,13 +675,13 @@ BEGIN
   LOOP
     IF is_update
     THEN UPDATE issue_statistics
-    SET counter = issue_statistics.counter - 1
+    SET is_counter = issue_statistics.is_counter - 1
     WHERE issue_statistics.item_id = cur_id AND issue_statistics.issue_type_id = old.issue_type;
     END IF;
 
-    INSERT INTO issue_statistics (issue_type_id, counter, item_id, launch_id) VALUES (new.issue_type, 1, cur_id, NULL)
+    INSERT INTO issue_statistics (issue_type_id, is_counter, item_id, launch_id) VALUES (new.issue_type, 1, cur_id, NULL)
     ON CONFLICT (issue_type_id, item_id)
-      DO UPDATE SET counter = issue_statistics.counter + 1;
+      DO UPDATE SET is_counter = issue_statistics.is_counter + 1;
   END LOOP;
 
   launch = (SELECT launch_id
@@ -688,13 +689,13 @@ BEGIN
             WHERE
               test_item_structure.structure_id = new.issue_id);
 
-  INSERT INTO issue_statistics (issue_type_id, counter, item_id, launch_id) VALUES (new.issue_type, 1, NULL, launch)
+  INSERT INTO issue_statistics (issue_type_id, is_counter, item_id, launch_id) VALUES (new.issue_type, 1, NULL, launch)
   ON CONFLICT (issue_type_id, launch_id)
-    DO UPDATE SET counter = issue_statistics.counter + 1;
+    DO UPDATE SET is_counter = issue_statistics.is_counter + 1;
 
   IF is_update
   THEN UPDATE issue_statistics
-  SET counter = issue_statistics.counter - 1
+  SET is_counter = issue_statistics.is_counter - 1
   WHERE issue_statistics.launch_id = launch_id AND issue_statistics.issue_type_id = old.issue_type;
   END IF;
 
@@ -740,12 +741,12 @@ BEGIN
 
   LOOP
     UPDATE issue_statistics
-    SET counter = issue_statistics.counter - old.counter
+    SET is_counter = issue_statistics.is_counter - old.is_counter
     WHERE issue_statistics.item_id = asc_id AND issue_statistics.issue_type_id = old.issue_type_id;
   END LOOP;
 
   UPDATE issue_statistics
-  SET counter = issue_statistics.counter - old.counter
+  SET is_counter = issue_statistics.is_counter - old.is_counter
   WHERE issue_statistics.launch_id = (SELECT launch_id
                                       FROM test_item
                                       WHERE test_item.item_id = old.item_id) AND issue_statistics.issue_type_id = old.issue_type_id;
