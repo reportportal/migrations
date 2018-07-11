@@ -28,6 +28,10 @@ CREATE TYPE INTEGRATION_AUTH_FLOW_ENUM AS ENUM ('OAUTH', 'BASIC', 'TOKEN', 'FORM
 
 CREATE TYPE INTEGRATION_GROUP_ENUM AS ENUM ('BTS', 'NOTIFICATION');
 
+CREATE TYPE PROJECT_SPECIFIC_ENUM AS ENUM ('DEFAULT', 'BDD');
+
+CREATE TYPE PASSWORD_ENCODER_TYPE AS ENUM ('PLAIN', 'SHA', 'LDAP_SHA', 'MD4', 'MD5');
+
 CREATE TABLE server_settings (
   id    SMALLSERIAL CONSTRAINT server_settings_id PRIMARY KEY,
   key   VARCHAR NOT NULL UNIQUE,
@@ -35,10 +39,23 @@ CREATE TABLE server_settings (
 );
 
 ---------------------------- Project and users ------------------------------------
+CREATE TABLE meta_data (
+  id BIGSERIAL CONSTRAINT meta_data_pk PRIMARY KEY
+);
+
+CREATE TABLE demo_data_postfix (
+  id BIGSERIAL CONSTRAINT demo_data_postfix_pk PRIMARY KEY,
+  data VARCHAR NOT NULL,
+  metadata_id BIGINT REFERENCES meta_data (id) ON DELETE CASCADE
+);
+
 CREATE TABLE project (
   id       BIGSERIAL CONSTRAINT project_pk PRIMARY KEY,
   name     VARCHAR NOT NULL,
-  metadata JSONB   NULL
+  customer VARCHAR NOT NULL,
+  additional_info VARCHAR,
+  creation_date TIMESTAMP DEFAULT now() NOT NULL,
+  metadata_id BIGINT REFERENCES meta_data (id) ON DELETE CASCADE
 );
 
 CREATE TABLE users (
@@ -47,12 +64,22 @@ CREATE TABLE users (
   password           VARCHAR        NOT NULL,
   email              VARCHAR        NOT NULL,
   -- photos ?
+  photo_path         VARCHAR,
   role               USER_ROLE_ENUM NOT NULL,
-  type               USER_TYPE_ENUM NOT NULL,
+  userType           VARCHAR        NOT NULL,
   -- isExpired ?
+  expired            BOOLEAN        NOT NULL,
   default_project_id INTEGER REFERENCES project (id) ON DELETE CASCADE,
   full_name          VARCHAR        NOT NULL,
   metadata           JSONB          NULL
+);
+
+CREATE TABLE user_config (
+  id                BIGSERIAL CONSTRAINT user_config_pk PRIMARY KEY,
+  user_id           BIGINT REFERENCES users (id) ON DELETE CASCADE,
+  project_id        BIGINT REFERENCES project (id) ON DELETE CASCADE,
+  proposedRole      VARCHAR,
+  projectRole       VARCHAR
 );
 
 CREATE TABLE project_user (
@@ -96,23 +123,46 @@ CREATE TABLE oauth_registration_scope (
 -----------------------------------------------------------------------------------
 
 ------------------------------ Project configurations ------------------------------
+CREATE TABLE project_analyzer_configuration (
+  id                        BIGSERIAL CONSTRAINT project_analyzer_configuration_pk PRIMARY KEY,
+  min_doc_freq              INTEGER,
+  min_term_freq             INTEGER,
+  min_should_match          INTEGER,
+  number_of_log_lines       INTEGER,
+  indexing_running          BOOLEAN,
+  auto_analyzer_enabled     BOOLEAN,
+  analyzerMode              VARCHAR(64)
+);
+
 CREATE TABLE project_email_configuration (
   id         BIGSERIAL CONSTRAINT project_email_configuration_pk PRIMARY KEY,
   enabled    BOOLEAN DEFAULT FALSE NOT NULL,
-  recipients VARCHAR ARRAY         NOT NULL
+  email_from     VARCHAR(256) NOT NULL
   --   email cases?
 );
 
+CREATE TABLE email_sender_case (
+  id                            BIGSERIAL CONSTRAINT email_sender_case_pk PRIMARY KEY,
+  sendCase                      VARCHAR(64),
+  project_email_config_id       BIGINT REFERENCES project_email_configuration (id) ON DELETE CASCADE
+);
+
+CREATE TABLE recipients (
+  email_sender_case_id      BIGINT REFERENCES email_sender_case (id) ON DELETE CASCADE,
+  recipient                 VARCHAR(256)
+);
+
 CREATE TABLE project_configuration (
-  id                        BIGINT CONSTRAINT project_configuration_pk PRIMARY KEY REFERENCES project (id) ON DELETE CASCADE UNIQUE,
-  project_type              PROJECT_TYPE_ENUM          NOT NULL,
-  interrupt_timeout         INTERVAL                   NOT NULL,
-  keep_logs_interval        INTERVAL                   NOT NULL,
-  keep_screenshots_interval INTERVAL                   NOT NULL,
-  aa_enabled                BOOLEAN DEFAULT TRUE       NOT NULL,
-  metadata                  JSONB                      NULL,
-  email_configuration_id    BIGINT REFERENCES project_email_configuration (id) ON DELETE CASCADE UNIQUE,
-  created_on                TIMESTAMP DEFAULT now()    NOT NULL
+  id                            BIGINT CONSTRAINT project_configuration_pk PRIMARY KEY REFERENCES project (id) ON DELETE CASCADE UNIQUE,
+  project_type                  PROJECT_TYPE_ENUM          NOT NULL,
+  project_specific              PROJECT_SPECIFIC_ENUM      NOT NULL,
+  interrupt_timeout             INTERVAL                   NOT NULL,
+  keep_logs_interval            INTERVAL                   NOT NULL,
+  keep_screenshots_interval     INTERVAL                   NOT NULL,
+  project_analyzer_config_id    BIGINT REFERENCES project_analyzer_configuration (id) ON DELETE CASCADE,
+  metadata                      JSONB                      NULL,
+  email_configuration_id        BIGINT REFERENCES project_email_configuration (id) ON DELETE CASCADE UNIQUE,
+  created_on                    TIMESTAMP DEFAULT now()    NOT NULL
 );
 
 CREATE TABLE issue_type (
@@ -178,9 +228,54 @@ CREATE TABLE integration (
   id            SERIAL CONSTRAINT integration_pk PRIMARY KEY,
   project_id    INTEGER REFERENCES project (id) ON DELETE CASCADE,
   type          INTEGER REFERENCES integration_type (id) ON DELETE CASCADE,
+  enabled       BOOLEAN,
   params        JSONB,
   creation_date TIMESTAMP DEFAULT now() NOT NULL
 );
+
+-------------------------------- LDAP configurations ------------------------------
+
+CREATE TABLE public.active_directory_config
+(
+  id                    BIGINT CONSTRAINT active_directory_config_pk PRIMARY KEY REFERENCES integration (id) ON DELETE CASCADE UNIQUE,
+  url                   VARCHAR(256),
+  base_dn               VARCHAR(256),
+  sync_attributes_id    BIGINT,
+  domain                VARCHAR(256)
+);
+
+CREATE TABLE synchronization_attributes
+(
+  id            BIGSERIAL CONSTRAINT synchronization_attributes_pk PRIMARY KEY,
+  email         VARCHAR(256) UNIQUE,
+  full_name     VARCHAR(256),
+  photo         VARCHAR(128)
+);
+
+CREATE TABLE ldap_config
+(
+  id                    BIGINT CONSTRAINT ldap_config_pk PRIMARY KEY REFERENCES integration (id) ON DELETE CASCADE UNIQUE,
+  url                   VARCHAR(256),
+  base_dn               VARCHAR(256),
+  sync_attributes_id    BIGINT REFERENCES synchronization_attributes (id) ON DELETE CASCADE,
+  user_dn_pattern       VARCHAR(256),
+  user_search_filter    VARCHAR(256),
+  group_search_base     VARCHAR(256),
+  group_search_filter   VARCHAR(256),
+  password_attributes   VARCHAR(256),
+  manager_dn            VARCHAR(256),
+  manager_password      VARCHAR(256),
+  password_encoder_type PASSWORD_ENCODER_TYPE
+);
+
+CREATE TABLE auth_config (
+  id VARCHAR CONSTRAINT auth_config_pk PRIMARY KEY,
+  ldap_config_id BIGINT REFERENCES ldap_config (id) ON DELETE CASCADE,
+  active_directory_config_id BIGINT REFERENCES active_directory_config (id) ON DELETE CASCADE
+);
+
+-----------------------------------------------------------------------------------
+
 -------------------------- Dashboards and widgets -----------------------------
 CREATE TABLE dashboard (
   id            SERIAL CONSTRAINT dashboard_pk PRIMARY KEY,
