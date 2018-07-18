@@ -50,7 +50,7 @@ CREATE TABLE users (
   role               USER_ROLE_ENUM NOT NULL,
   type               USER_TYPE_ENUM NOT NULL,
   -- isExpired ?
-  default_project_id INTEGER REFERENCES project (id) ON DELETE CASCADE,
+  default_project_id BIGINT REFERENCES project (id) ON DELETE CASCADE,
   full_name          VARCHAR        NOT NULL,
   metadata           JSONB          NULL
 );
