@@ -1,9 +1,3 @@
-CREATE TYPE PROJECT_TYPE_ENUM AS ENUM ('INTERNAL', 'PERSONAL', 'UPSA');
-
-CREATE TYPE USER_ROLE_ENUM AS ENUM ('ADMINISTRATOR', 'USER');
-
-CREATE TYPE USER_TYPE_ENUM AS ENUM ('INTERNAL', 'UPSA', 'GITHUB', 'LDAP');
-
 CREATE TYPE PROJECT_ROLE_ENUM AS ENUM ('OPERATOR', 'CUSTOMER', 'MEMBER', 'PROJECT_MANAGER');
 
 CREATE TYPE STATUS_ENUM AS ENUM ('IN_PROGRESS', 'PASSED', 'FAILED', 'STOPPED', 'SKIPPED', 'INTERRUPTED', 'RESETED', 'CANCELLED');
@@ -21,12 +15,14 @@ CREATE TYPE TEST_ITEM_TYPE_ENUM AS ENUM ('SUITE', 'STORY', 'TEST', 'SCENARIO', '
 
 CREATE TYPE ISSUE_GROUP_ENUM AS ENUM ('PRODUCT_BUG', 'AUTOMATION_BUG', 'SYSTEM_ISSUE', 'TO_INVESTIGATE', 'NO_DEFECT');
 
-CREATE TYPE INTEGRATION_AUTH_FLOW_ENUM AS ENUM ('OAUTH', 'BASIC', 'TOKEN', 'FORM');
+CREATE TYPE INTEGRATION_AUTH_FLOW_ENUM AS ENUM ('OAUTH', 'BASIC', 'TOKEN', 'FORM', 'LDAP');
 
 CREATE TYPE INTEGRATION_GROUP_ENUM AS ENUM ('BTS', 'NOTIFICATION');
 
 CREATE TYPE FILTER_CONDITION_ENUM AS ENUM ('EQUALS', 'NOT_EQUALS', 'CONTAINS', 'EXISTS', 'IN', 'HAS', 'GREATER_THAN', 'GREATER_THAN_OR_EQUALS',
   'LOWER_THAN', 'LOWER_THAN_OR_EQUALS', 'BETWEEN');
+
+CREATE TYPE PASSWORD_ENCODER_TYPE AS ENUM ('PLAIN', 'SHA', 'LDAP_SHA', 'MD4', 'MD5');
 
 CREATE TABLE server_settings (
   id    SMALLSERIAL CONSTRAINT server_settings_id PRIMARY KEY,
@@ -38,21 +34,37 @@ CREATE TABLE server_settings (
 CREATE TABLE project (
   id       BIGSERIAL CONSTRAINT project_pk PRIMARY KEY,
   name     VARCHAR NOT NULL,
+  additional_info VARCHAR,
+  creation_date TIMESTAMP DEFAULT now() NOT NULL,
   metadata JSONB   NULL
+);
+
+CREATE TABLE demo_data_postfix (
+  id BIGSERIAL CONSTRAINT demo_data_postfix_pk PRIMARY KEY,
+  data VARCHAR NOT NULL,
+  project_id BIGINT REFERENCES project (id) ON DELETE CASCADE
 );
 
 CREATE TABLE users (
   id                 BIGSERIAL CONSTRAINT users_pk PRIMARY KEY,
   login              VARCHAR        NOT NULL UNIQUE,
-  password           VARCHAR        NOT NULL,
+  password           VARCHAR,
   email              VARCHAR        NOT NULL,
-  -- photos ?
-  role               USER_ROLE_ENUM NOT NULL,
-  type               USER_TYPE_ENUM NOT NULL,
-  -- isExpired ?
+  photo_path         VARCHAR        NULL,
+  role               VARCHAR        NOT NULL,
+  type               VARCHAR        NOT NULL,
+  expired            BOOLEAN        NOT NULL,
   default_project_id BIGINT REFERENCES project (id) ON DELETE CASCADE,
   full_name          VARCHAR        NOT NULL,
   metadata           JSONB          NULL
+);
+
+CREATE TABLE user_config (
+  id                BIGSERIAL CONSTRAINT user_config_pk PRIMARY KEY,
+  user_id           BIGINT REFERENCES users (id) ON DELETE CASCADE,
+  project_id        BIGINT REFERENCES project (id) ON DELETE CASCADE,
+  proposedRole      VARCHAR,
+  projectRole       VARCHAR
 );
 
 CREATE TABLE project_user (
@@ -60,7 +72,6 @@ CREATE TABLE project_user (
   project_id   BIGINT REFERENCES project (id) ON DELETE CASCADE,
   CONSTRAINT users_project_pk PRIMARY KEY (user_id, project_id),
   project_role PROJECT_ROLE_ENUM NOT NULL
-  -- proposed role ??
 );
 
 CREATE TABLE oauth_access_token (
@@ -97,23 +108,44 @@ CREATE TABLE oauth_registration_scope (
 
 
 ------------------------------ Project configurations ------------------------------
+CREATE TABLE project_analyzer_configuration (
+  id                        BIGSERIAL CONSTRAINT project_analyzer_configuration_pk PRIMARY KEY,
+  min_doc_freq              INTEGER,
+  min_term_freq             INTEGER,
+  min_should_match          INTEGER,
+  number_of_log_lines       INTEGER,
+  indexing_running          BOOLEAN,
+  auto_analyzer_enabled     BOOLEAN,
+  analyzerMode              VARCHAR(64)
+);
+
 CREATE TABLE project_email_configuration (
   id         BIGSERIAL CONSTRAINT project_email_configuration_pk PRIMARY KEY,
   enabled    BOOLEAN DEFAULT FALSE NOT NULL,
-  recipients VARCHAR ARRAY         NOT NULL
-  --   email cases?
+  email_from     VARCHAR(256) NOT NULL
+);
+
+CREATE TABLE email_sender_case (
+  id                            BIGSERIAL CONSTRAINT email_sender_case_pk PRIMARY KEY,
+  sendCase                      VARCHAR(64),
+  project_email_config_id       BIGINT REFERENCES project_email_configuration (id) ON DELETE CASCADE
+);
+
+CREATE TABLE recipients (
+  email_sender_case_id      BIGINT REFERENCES email_sender_case (id) ON DELETE CASCADE,
+  recipient                 VARCHAR(256)
 );
 
 CREATE TABLE project_configuration (
-  id                        BIGINT CONSTRAINT project_configuration_pk PRIMARY KEY REFERENCES project (id) ON DELETE CASCADE UNIQUE,
-  project_type              PROJECT_TYPE_ENUM          NOT NULL,
-  interrupt_timeout         INTERVAL                   NOT NULL,
-  keep_logs_interval        INTERVAL                   NOT NULL,
-  keep_screenshots_interval INTERVAL                   NOT NULL,
-  aa_enabled                BOOLEAN DEFAULT TRUE       NOT NULL,
-  metadata                  JSONB                      NULL,
-  email_configuration_id    BIGINT REFERENCES project_email_configuration (id) ON DELETE CASCADE UNIQUE,
-  created_on                TIMESTAMP DEFAULT now()    NOT NULL
+  id                                BIGINT CONSTRAINT project_configuration_pk PRIMARY KEY REFERENCES project (id) ON DELETE CASCADE UNIQUE,
+  project_type                      VARCHAR(128)                   NOT NULL,
+  interrupt_timeout                 VARCHAR(128)                   NOT NULL,
+  keep_logs_interval                VARCHAR(128)                   NOT NULL,
+  keep_screenshots_interval         VARCHAR(128)                   NOT NULL,
+  project_analyzer_config_id        BIGINT REFERENCES project_analyzer_configuration (id) ON DELETE CASCADE,
+  metadata                          JSONB                      NULL,
+  project_email_config_id           BIGINT REFERENCES project_email_configuration (id) ON DELETE CASCADE UNIQUE,
+  created_on                        TIMESTAMP DEFAULT now()    NOT NULL
 );
 -----------------------------------------------------------------------------------
 
@@ -158,16 +190,61 @@ CREATE TABLE integration_type (
   auth_flow     INTEGRATION_AUTH_FLOW_ENUM NOT NULL,
   creation_date TIMESTAMP DEFAULT now()    NOT NULL,
   group_type    INTEGRATION_GROUP_ENUM     NOT NULL,
-  details       JSONB
+  details       JSONB                      NULL
 );
 
 CREATE TABLE integration (
   id            SERIAL CONSTRAINT integration_pk PRIMARY KEY,
   project_id    BIGINT REFERENCES project (id) ON DELETE CASCADE,
   type          INTEGER REFERENCES integration_type (id) ON DELETE CASCADE,
-  params        JSONB,
+  enabled       BOOLEAN,
+  params        JSONB       NULL,
   creation_date TIMESTAMP DEFAULT now() NOT NULL
 );
+
+-------------------------------- LDAP configurations ------------------------------
+
+CREATE TABLE public.active_directory_config
+(
+  id                    BIGINT CONSTRAINT active_directory_config_pk PRIMARY KEY REFERENCES integration (id) ON DELETE CASCADE UNIQUE,
+  url                   VARCHAR(256),
+  base_dn               VARCHAR(256),
+  sync_attributes_id    BIGINT,
+  domain                VARCHAR(256)
+);
+
+CREATE TABLE synchronization_attributes
+(
+  id            BIGSERIAL CONSTRAINT synchronization_attributes_pk PRIMARY KEY,
+  email         VARCHAR(256) UNIQUE,
+  full_name     VARCHAR(256),
+  photo         VARCHAR(128)
+);
+
+CREATE TABLE ldap_config
+(
+  id                    BIGINT CONSTRAINT ldap_config_pk PRIMARY KEY REFERENCES integration (id) ON DELETE CASCADE UNIQUE,
+  url                   VARCHAR(256),
+  base_dn               VARCHAR(256),
+  sync_attributes_id    BIGINT REFERENCES synchronization_attributes (id) ON DELETE CASCADE,
+  user_dn_pattern       VARCHAR(256),
+  user_search_filter    VARCHAR(256),
+  group_search_base     VARCHAR(256),
+  group_search_filter   VARCHAR(256),
+  password_attributes   VARCHAR(256),
+  manager_dn            VARCHAR(256),
+  manager_password      VARCHAR(256),
+  passwordEncoderType   PASSWORD_ENCODER_TYPE
+);
+
+CREATE TABLE auth_config (
+  id VARCHAR CONSTRAINT auth_config_pk PRIMARY KEY,
+  ldap_config_id BIGINT REFERENCES ldap_config (id) ON DELETE CASCADE,
+  active_directory_config_id BIGINT REFERENCES active_directory_config (id) ON DELETE CASCADE
+);
+
+-----------------------------------------------------------------------------------
+
 -------------------------- Dashboards, widgets, user filters -----------------------------
 CREATE TABLE dashboard (
   id            SERIAL CONSTRAINT dashboard_pk PRIMARY KEY,
@@ -267,12 +344,14 @@ CREATE TABLE launch (
   last_modified TIMESTAMP DEFAULT now()                                             NOT NULL,
   mode          LAUNCH_MODE_ENUM                                                    NOT NULL,
   status        STATUS_ENUM                                                         NOT NULL,
+  email_sender_case_id     BIGINT REFERENCES email_sender_case (id) ON DELETE CASCADE,
   CONSTRAINT unq_name_number UNIQUE (NAME, number, project_id, uuid)
 );
 
 CREATE TABLE launch_tag (
   id        BIGSERIAL CONSTRAINT launch_tag_pk PRIMARY KEY,
   value     TEXT NOT NULL,
+  email_sender_case_id     BIGINT REFERENCES email_sender_case (id) ON DELETE CASCADE,
   launch_id BIGINT REFERENCES launch (id) ON DELETE CASCADE
 );
 
