@@ -31,11 +31,3 @@ INSERT INTO integration(
 INSERT INTO ldap_synchronization_attributes(
 	email, full_name, photo)
 	VALUES ('mail', 'displayName', 'thumbnailPhoto');
-
-INSERT INTO active_directory_config(
-	id, url, base_dn, sync_attributes_id, domain)
-	VALUES ((SELECT currval(pg_get_serial_sequence('integration', 'id'))), 'ldap://minsk.epam.com:3268', 'dc=epam,dc=com', (SELECT currval(pg_get_serial_sequence('ldap_synchronization_attributes', 'id'))), 'epam.com');
-
-INSERT INTO auth_config(
-	id, ldap_config_id, active_directory_config_id)
-	VALUES ('default', null, (SELECT currval(pg_get_serial_sequence('integration', 'id'))));
