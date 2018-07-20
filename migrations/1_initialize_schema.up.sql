@@ -117,7 +117,7 @@ CREATE TABLE project_analyzer_configuration (
   number_of_log_lines       INTEGER,
   indexing_running          BOOLEAN,
   enabled                   BOOLEAN,
-  mode                      VARCHAR(64)
+  analyzerMode              VARCHAR(64)
 );
 
 CREATE TABLE project_email_configuration (
