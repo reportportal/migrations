@@ -117,7 +117,7 @@ CREATE TABLE project_analyzer_configuration (
   number_of_log_lines       INTEGER,
   indexing_running          BOOLEAN,
   enabled                   BOOLEAN,
-  mode                      VARCHAR(64)
+  analyzerMode              VARCHAR(64)
 );
 
 CREATE TABLE project_email_configuration (
@@ -204,6 +204,13 @@ CREATE TABLE integration (
 );
 
 -------------------------------- LDAP configurations ------------------------------
+CREATE TABLE ldap_synchronization_attributes
+(
+  id            BIGSERIAL CONSTRAINT ldap_synchronization_attributes_pk PRIMARY KEY,
+  email         VARCHAR(256) UNIQUE,
+  full_name     VARCHAR(256),
+  photo         VARCHAR(128)
+);
 
 CREATE TABLE active_directory_config
 (
@@ -212,14 +219,6 @@ CREATE TABLE active_directory_config
   base_dn               VARCHAR(256),
   sync_attributes_id    BIGINT REFERENCES ldap_synchronization_attributes (id) ON DELETE CASCADE,
   domain                VARCHAR(256)
-);
-
-CREATE TABLE ldap_synchronization_attributes
-(
-  id            BIGSERIAL CONSTRAINT ldap_synchronization_attributes_pk PRIMARY KEY,
-  email         VARCHAR(256) UNIQUE,
-  full_name     VARCHAR(256),
-  photo         VARCHAR(128)
 );
 
 CREATE TABLE ldap_config
