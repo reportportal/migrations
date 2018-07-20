@@ -47,16 +47,17 @@ CREATE TABLE demo_data_postfix (
 
 CREATE TABLE users (
   id                 BIGSERIAL CONSTRAINT users_pk PRIMARY KEY,
-  login              VARCHAR        NOT NULL UNIQUE,
-  password           VARCHAR,
-  email              VARCHAR        NOT NULL,
-  photo_path         VARCHAR        NULL,
-  role               VARCHAR        NOT NULL,
-  type               VARCHAR        NOT NULL,
-  expired            BOOLEAN        NOT NULL,
-  default_project_id BIGINT REFERENCES project (id) ON DELETE CASCADE,
-  full_name          VARCHAR        NOT NULL,
-  metadata           JSONB          NULL
+  login                 VARCHAR        NOT NULL UNIQUE,
+  password              VARCHAR        NULL,
+  email                 VARCHAR        NOT NULL,
+  attachment            VARCHAR        NULL,
+  attachment_thumbnail  VARCHAR        NULL,
+  role                  VARCHAR        NOT NULL,
+  type                  VARCHAR        NOT NULL,
+  expired               BOOLEAN        NOT NULL,
+  default_project_id    BIGINT REFERENCES project (id) ON DELETE CASCADE,
+  full_name             VARCHAR        NOT NULL,
+  metadata              JSONB          NULL
 );
 
 CREATE TABLE user_config (
