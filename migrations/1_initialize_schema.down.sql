@@ -26,6 +26,7 @@ DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS project_user CASCADE;
 DROP TABLE IF EXISTS oauth_access_token CASCADE;
 DROP TABLE IF EXISTS oauth_registration_scope CASCADE;
+DROP TABLE IF EXISTS oauth_registration_restriction CASCADE;
 DROP TABLE IF EXISTS oauth_registration CASCADE;
 
 DROP TABLE IF EXISTS test_item_structure CASCADE;
