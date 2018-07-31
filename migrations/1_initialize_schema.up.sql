@@ -33,7 +33,7 @@ CREATE TABLE server_settings (
 ---------------------------- Project and users ------------------------------------
 CREATE TABLE project (
   id       BIGSERIAL CONSTRAINT project_pk PRIMARY KEY,
-  name     VARCHAR NOT NULL,
+  name     VARCHAR NOT NULL UNIQUE,
   additional_info VARCHAR,
   creation_date TIMESTAMP DEFAULT now() NOT NULL,
   metadata JSONB   NULL
@@ -246,52 +246,6 @@ CREATE TABLE auth_config (
 -----------------------------------------------------------------------------------
 
 -------------------------- Dashboards, widgets, user filters -----------------------------
-CREATE TABLE dashboard (
-  id            SERIAL CONSTRAINT dashboard_pk PRIMARY KEY,
-  name          VARCHAR                 NOT NULL,
-  description   VARCHAR,
-  project_id    INTEGER REFERENCES project (id) ON DELETE CASCADE,
-  creation_date TIMESTAMP DEFAULT now() NOT NULL,
-  CONSTRAINT unq_name_project UNIQUE (name, project_id)
-  -- acl
-);
-
-CREATE TABLE widget (
-  id          BIGSERIAL CONSTRAINT widget_id PRIMARY KEY,
-  name        VARCHAR NOT NULL,
-  description VARCHAR,
-  widget_type VARCHAR NOT NULL,
-  items_count SMALLINT,
-  project_id  BIGINT REFERENCES project (id) ON DELETE CASCADE
-);
-
-CREATE TABLE content_field (
-  id    BIGINT REFERENCES widget (id) ON DELETE CASCADE,
-  field VARCHAR NOT NULL
-);
-
-CREATE TABLE widget_option (
-  id        BIGSERIAL CONSTRAINT widget_option_pk PRIMARY KEY,
-  widget_id BIGINT REFERENCES widget (id) ON DELETE CASCADE,
-  option    VARCHAR NOT NULL
-);
-
-CREATE TABLE widget_option_value (
-  id    BIGINT REFERENCES widget_option (id) ON DELETE CASCADE,
-  value VARCHAR NOT NULL
-);
-
-CREATE TABLE dashboard_widget (
-  dashboard_id      INTEGER REFERENCES dashboard (id) ON DELETE CASCADE,
-  widget_id         INTEGER REFERENCES widget (id) ON DELETE CASCADE,
-  widget_name       VARCHAR NOT NULL, -- make it as reference ??
-  widget_width      INT     NOT NULL,
-  widget_height     INT     NOT NULL,
-  widget_position_x INT     NOT NULL,
-  widget_position_y INT     NOT NULL,
-  CONSTRAINT dashboard_widget_pk PRIMARY KEY (dashboard_id, widget_id),
-  CONSTRAINT widget_on_dashboard_unq UNIQUE (dashboard_id, widget_name)
-);
 
 CREATE TABLE filter (
   id          BIGSERIAL CONSTRAINT filter_pk PRIMARY KEY,
@@ -321,10 +275,52 @@ CREATE TABLE filter_sort (
   ascending BOOLEAN NOT NULL
 );
 
-CREATE TABLE widget_filter (
-  widget_id INTEGER REFERENCES widget (id) ON DELETE CASCADE,
-  filter_id BIGINT REFERENCES filter (id) ON DELETE CASCADE,
-  CONSTRAINT widget_filter_po PRIMARY KEY (widget_id, filter_id)
+CREATE TABLE dashboard (
+  id            SERIAL CONSTRAINT dashboard_pk PRIMARY KEY,
+  name          VARCHAR                 NOT NULL,
+  description   VARCHAR,
+  project_id    INTEGER REFERENCES project (id) ON DELETE CASCADE,
+  creation_date TIMESTAMP DEFAULT now() NOT NULL,
+  CONSTRAINT unq_name_project UNIQUE (name, project_id)
+  -- acl
+);
+
+CREATE TABLE widget (
+  id          BIGSERIAL CONSTRAINT widget_id PRIMARY KEY,
+  name        VARCHAR NOT NULL,
+  description VARCHAR,
+  widget_type VARCHAR NOT NULL,
+  items_count SMALLINT,
+  filter_id   BIGINT REFERENCES filter(id),
+  project_id  BIGINT REFERENCES project (id) ON DELETE CASCADE
+);
+
+CREATE TABLE content_field (
+  id    BIGINT REFERENCES widget (id) ON DELETE CASCADE,
+  field VARCHAR NOT NULL
+);
+
+CREATE TABLE widget_option (
+  id        BIGSERIAL CONSTRAINT widget_option_pk PRIMARY KEY,
+  widget_id BIGINT REFERENCES widget (id) ON DELETE CASCADE,
+  option    VARCHAR NOT NULL
+);
+
+CREATE TABLE widget_option_value (
+  id    BIGINT REFERENCES widget_option (id) ON DELETE CASCADE,
+  value VARCHAR NOT NULL
+);
+
+CREATE TABLE dashboard_widget (
+  dashboard_id      INTEGER REFERENCES dashboard (id) ON DELETE CASCADE,
+  widget_id         INTEGER REFERENCES widget (id) ON DELETE CASCADE,
+  widget_name       VARCHAR NOT NULL, -- make it as reference ??
+  widget_width      INT     NOT NULL,
+  widget_height     INT     NOT NULL,
+  widget_position_x INT     NOT NULL,
+  widget_position_y INT     NOT NULL,
+  CONSTRAINT dashboard_widget_pk PRIMARY KEY (dashboard_id, widget_id),
+  CONSTRAINT widget_on_dashboard_unq UNIQUE (dashboard_id, widget_name)
 );
 -----------------------------------------------------------------------------------
 

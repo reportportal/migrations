@@ -8,6 +8,7 @@ DECLARE   counter       INT = 0;
   DECLARE cur_item_id   BIGINT;
   DECLARE cur_step_id   BIGINT;
   DECLARE rand_status   STATUS_ENUM;
+  DECLARE rand_name VARCHAR;
 BEGIN
   WHILE counter < 20 LOOP
     INSERT INTO launch (uuid, project_id, user_id, name, description, start_time, end_time, number, mode, status)
@@ -30,12 +31,13 @@ BEGIN
 
     WHILE step_counter < 250 LOOP
       rand_status = (ARRAY ['PASSED' :: STATUS_ENUM, 'SKIPPED' :: STATUS_ENUM, 'FAILED' :: STATUS_ENUM]) [floor(random() * 3) + 1];
+      rand_name = (ARRAY ['step1', 'step2', 'step3', 'step4', 'step5']) [floor(random() * 5) + 1];
 
       INSERT INTO test_item_structure (parent_id, launch_id) VALUES (cur_item_id, cur_launch_id);
       cur_step_id = (SELECT currval(pg_get_serial_sequence('test_item_structure', 'structure_id')));
 
       INSERT INTO test_item (item_id, NAME, TYPE, start_time, description, last_modified, unique_id)
-      VALUES (cur_step_id, 'Step', 'STEP', now(), 'description', now(), 'uniqueId3');
+      VALUES (cur_step_id, rand_name, 'STEP', now(), 'description', now(), rand_name);
 
       INSERT INTO test_item_results (result_id, status, duration, end_time) VALUES (cur_step_id, rand_status, 0.35, now());
 
