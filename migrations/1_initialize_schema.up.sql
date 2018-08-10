@@ -296,8 +296,14 @@ CREATE TABLE widget (
 );
 
 CREATE TABLE content_field (
-  id    BIGINT REFERENCES widget (id) ON DELETE CASCADE,
-  field VARCHAR NOT NULL
+  id        BIGSERIAL CONSTRAINT content_field_pk PRIMARY KEY,
+  widget_id BIGINT REFERENCES widget (id) ON DELETE CASCADE,
+  field     VARCHAR NOT NULL
+);
+
+CREATE TABLE content_field_value (
+  id    BIGINT REFERENCES content_field (id) ON DELETE CASCADE,
+  value VARCHAR NOT NULL
 );
 
 CREATE TABLE widget_option (
