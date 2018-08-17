@@ -305,25 +305,15 @@ CREATE TABLE widget (
 );
 
 CREATE TABLE content_field (
-  id        BIGSERIAL CONSTRAINT content_field_pk PRIMARY KEY,
-  widget_id BIGINT REFERENCES widget (id) ON DELETE CASCADE,
-  field     VARCHAR NOT NULL
-);
-
-CREATE TABLE content_field_value (
-  id    BIGINT REFERENCES content_field (id) ON DELETE CASCADE,
-  value VARCHAR NOT NULL
+  id    BIGINT REFERENCES widget (id) ON DELETE CASCADE,
+  field VARCHAR NOT NULL
 );
 
 CREATE TABLE widget_option (
   id        BIGSERIAL CONSTRAINT widget_option_pk PRIMARY KEY,
   widget_id BIGINT REFERENCES widget (id) ON DELETE CASCADE,
-  option    VARCHAR NOT NULL
-);
-
-CREATE TABLE widget_option_value (
-  id    BIGINT REFERENCES widget_option (id) ON DELETE CASCADE,
-  value VARCHAR NOT NULL
+  option    VARCHAR NOT NULL,
+  value     VARCHAR NOT NULL
 );
 
 CREATE TABLE dashboard_widget (
@@ -444,35 +434,22 @@ CREATE TABLE issue_type (
   hex_color      VARCHAR(7)
 );
 
-CREATE TABLE issue_statistics (
-  is_id         BIGSERIAL NOT NULL CONSTRAINT pk_issue_statistics PRIMARY KEY,
-  issue_type_id BIGINT REFERENCES issue_type (id) ON UPDATE NO ACTION,
-  is_counter    INT DEFAULT 0,
-  item_id       BIGINT REFERENCES test_item_results (result_id) ON DELETE CASCADE,
+CREATE TABLE statistics (
+  s_id          BIGSERIAL NOT NULL CONSTRAINT pk_statistics PRIMARY KEY,
+  s_field       VARCHAR NOT NULL,
+  s_counter     INT DEFAULT 0,
+  item_id       BIGINT REFERENCES test_item_structure (structure_id) ON DELETE CASCADE,
   launch_id     BIGINT REFERENCES launch (id) ON DELETE CASCADE,
 
-  CONSTRAINT unique_issue_item UNIQUE (issue_type_id, item_id),
-  CONSTRAINT unique_issue_launch UNIQUE (issue_type_id, launch_id),
-  CHECK (issue_statistics.is_counter >= 0)
+  CONSTRAINT unique_status_item UNIQUE (s_field, item_id),
+  CONSTRAINT unique_status_launch UNIQUE (s_field, launch_id),
+  CHECK (statistics.s_counter >= 0)
 );
 
 CREATE TABLE issue_type_project_configuration (
   configuration_id BIGINT REFERENCES project_configuration,
   issue_type_id    BIGINT REFERENCES issue_type,
   CONSTRAINT issue_type_project_configuration_pk PRIMARY KEY (configuration_id, issue_type_id)
-);
-
-CREATE TABLE execution_statistics (
-  es_id      BIGSERIAL CONSTRAINT pk_execution_statistics PRIMARY KEY,
-  es_counter INT     DEFAULT 0,
-  es_status  TEXT,
-  positive   BOOLEAN DEFAULT FALSE,
-  item_id    BIGINT REFERENCES test_item_results (result_id) ON DELETE CASCADE,
-  launch_id  BIGINT REFERENCES launch (id) ON DELETE CASCADE,
-
-  CONSTRAINT unique_status_item UNIQUE (es_status, item_id),
-  CONSTRAINT unique_status_launch UNIQUE (es_status, launch_id),
-  CHECK (execution_statistics.es_counter >= 0)
 );
 ----------------------------------------------------------------------------------------
 
@@ -499,6 +476,8 @@ CREATE TABLE issue_ticket (
   ticket_id BIGINT REFERENCES ticket (id),
   CONSTRAINT issue_ticket_pk PRIMARY KEY (issue_id, ticket_id)
 );
+
+CREATE EXTENSION IF NOT EXISTS tablefunc;
 
 ------- Functions and triggers -----------------------
 
