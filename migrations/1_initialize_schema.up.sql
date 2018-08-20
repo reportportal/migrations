@@ -664,3 +664,84 @@ CREATE TRIGGER after_test_results_update
   AFTER UPDATE
   ON test_item_results
   FOR EACH ROW EXECUTE PROCEDURE update_execution_statistics();
+
+
+CREATE OR REPLACE FUNCTION increment_defect_statistics()
+  RETURNS TRIGGER AS $$
+DECLARE   cur_id             BIGINT;
+  DECLARE defect_field       VARCHAR;
+  DECLARE defect_field_total VARCHAR;
+  DECLARE cur_launch_id      BIGINT;
+
+BEGIN
+  IF exists(SELECT 1
+            FROM test_item_structure AS s
+              JOIN test_item_structure AS s2 ON s.structure_id = s2.parent_id
+            WHERE s.structure_id = new.issue_id)
+  THEN RETURN new;
+  END IF;
+
+  cur_launch_id := (SELECT launch_id
+                    FROM test_item_structure
+                    WHERE
+                      test_item_structure.structure_id = new.issue_id);
+
+  defect_field := (SELECT
+                     concat('statistics$defects$', lower(public.issue_group.issue_group :: VARCHAR), '$', lower(public.issue_type.locator))
+                   FROM issue
+                     JOIN issue_type ON issue.issue_type = issue_type.id
+                     JOIN issue_group ON issue_type.issue_group_id = issue_group.issue_group_id
+                   WHERE issue.issue_id = new.issue_id);
+
+  defect_field_total := (SELECT concat('statistics$defects$', lower(public.issue_group.issue_group :: VARCHAR), '$total')
+                         FROM issue
+                           JOIN issue_type ON issue.issue_type = issue_type.id
+                           JOIN issue_group ON issue_type.issue_group_id = issue_group.issue_group_id
+                         WHERE issue.issue_id = new.issue_id);
+  FOR cur_id IN
+  (WITH RECURSIVE item_structure(parent_id, item_id) AS (
+    SELECT
+      parent_id,
+      tir.result_id
+    FROM test_item_structure tis
+      JOIN test_item_results tir ON tis.structure_id = tir.result_id
+    WHERE tir.result_id = NEW.issue_id
+    UNION ALL
+    SELECT
+      tis.parent_id,
+      tis.structure_id
+    FROM item_structure tis_r, test_item_structure tis
+      JOIN test_item_results tir ON tis.structure_id = tir.result_id
+    WHERE tis.structure_id = tis_r.parent_id)
+  SELECT item_structure.item_id
+  FROM item_structure)
+
+  LOOP
+    /* increment item defect statistics for concrete field */
+    INSERT INTO statistics (s_counter, s_field, item_id) VALUES (1, defect_field, cur_id)
+    ON CONFLICT (s_field, item_id)
+      DO UPDATE SET s_counter = statistics.s_counter + 1;
+    /* increment item defect statistics for total field */
+    INSERT INTO statistics (s_counter, s_field, item_id) VALUES (1, defect_field_total, cur_id)
+    ON CONFLICT (s_field, item_id)
+      DO UPDATE SET s_counter = statistics.s_counter + 1;
+  END LOOP;
+
+  /* increment launch defect statistics for concrete field */
+  INSERT INTO statistics (s_counter, s_field, launch_id) VALUES (1, defect_field, cur_launch_id)
+  ON CONFLICT (s_field, launch_id)
+    DO UPDATE SET s_counter = statistics.s_counter + 1;
+  /* increment launch defect statistics for total field */
+  INSERT INTO statistics (s_counter, s_field, launch_id) VALUES (1, defect_field_total, cur_launch_id)
+  ON CONFLICT (s_field, launch_id)
+    DO UPDATE SET s_counter = statistics.s_counter + 1;
+  RETURN new;
+END;
+$$
+LANGUAGE plpgsql;
+
+
+CREATE TRIGGER after_issue_insert
+  AFTER INSERT
+  ON issue
+  FOR EACH ROW EXECUTE PROCEDURE increment_defect_statistics();
