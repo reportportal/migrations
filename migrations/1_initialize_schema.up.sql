@@ -543,3 +543,124 @@ BEFORE INSERT
   ON launch
 FOR EACH ROW
 EXECUTE PROCEDURE get_last_launch_number();
+
+
+-------------------------- Execution statistics triggers end functions ------------------------------
+
+CREATE OR REPLACE FUNCTION update_execution_statistics()
+  RETURNS TRIGGER AS $$
+DECLARE   cur_id                BIGINT;
+  DECLARE execution_field       VARCHAR;
+  DECLARE execution_field_old   VARCHAR;
+  DECLARE execution_field_total VARCHAR;
+  DECLARE cur_launch_id         BIGINT;
+
+BEGIN
+  IF exists(SELECT 1
+            FROM test_item_structure AS s
+              JOIN test_item_structure AS s2 ON s.structure_id = s2.parent_id
+            WHERE s.structure_id = new.result_id)
+  THEN RETURN new;
+  END IF;
+
+  cur_launch_id := (SELECT launch_id
+                    FROM test_item_structure
+                    WHERE
+                      test_item_structure.structure_id = new.result_id);
+
+  execution_field := concat('statistics$execution$', lower(new.status :: VARCHAR));
+  execution_field_total := 'statistics$execution$total';
+
+  IF old.status = 'IN_PROGRESS' :: STATUS_ENUM
+  THEN
+    FOR cur_id IN
+    (WITH RECURSIVE item_structure(parent_id, item_id) AS (
+      SELECT
+        parent_id,
+        tir.result_id
+      FROM test_item_structure tis
+        JOIN test_item_results tir ON tis.structure_id = tir.result_id
+      WHERE tir.result_id = NEW.result_id
+      UNION ALL
+      SELECT
+        tis.parent_id,
+        tis.structure_id
+      FROM item_structure tis_r, test_item_structure tis
+        JOIN test_item_results tir ON tis.structure_id = tir.result_id
+      WHERE tis.structure_id = tis_r.parent_id)
+    SELECT item_structure.item_id
+    FROM item_structure)
+    LOOP
+      /* increment item execution statistics for concrete field */
+      INSERT INTO statistics (s_counter, s_field, item_id) VALUES (1, execution_field, cur_id)
+      ON CONFLICT (s_field, item_id)
+        DO UPDATE SET s_counter = statistics.s_counter + 1;
+      /* increment item execution statistics for total field */
+      INSERT INTO statistics (s_counter, s_field, item_id) VALUES (1, execution_field_total, cur_id)
+      ON CONFLICT (s_field, item_id)
+        DO UPDATE SET s_counter = statistics.s_counter + 1;
+    END LOOP;
+
+    /* increment launch execution statistics for concrete field */
+    INSERT INTO statistics (s_counter, s_field, launch_id) VALUES (1, execution_field, cur_launch_id)
+    ON CONFLICT (s_field, launch_id)
+      DO UPDATE SET s_counter = statistics.s_counter + 1;
+    /* increment launch execution statistics for total field */
+    INSERT INTO statistics (s_counter, s_field, launch_id) VALUES (1, execution_field_total, cur_launch_id)
+    ON CONFLICT (s_field, launch_id)
+      DO UPDATE SET s_counter = statistics.s_counter + 1;
+    RETURN new;
+  END IF;
+
+  IF old.status != 'IN_PROGRESS' :: STATUS_ENUM AND old.status != new.status
+  THEN
+    execution_field_old := concat('statistics$execution$', lower(old.status :: VARCHAR));
+    FOR cur_id IN
+    (WITH RECURSIVE item_structure(parent_id, item_id) AS (
+      SELECT
+        parent_id,
+        tir.result_id
+      FROM test_item_structure tis
+        JOIN test_item_results tir ON tis.structure_id = tir.result_id
+      WHERE tir.result_id = NEW.result_id
+      UNION ALL
+      SELECT
+        tis.parent_id,
+        tis.structure_id
+      FROM item_structure tis_r, test_item_structure tis
+        JOIN test_item_results tir ON tis.structure_id = tir.result_id
+      WHERE tis.structure_id = tis_r.parent_id)
+    SELECT item_structure.item_id
+    FROM item_structure)
+
+    LOOP
+      /* decrease item execution statistics for old field */
+      UPDATE statistics
+      SET s_counter = s_counter - 1
+      WHERE s_field = execution_field_old AND item_id = cur_id;
+
+      /* increment item execution statistics for concrete field */
+      INSERT INTO STATISTICS (s_counter, s_field, item_id) VALUES (1, execution_field, cur_id)
+      ON CONFLICT (s_field, item_id)
+        DO UPDATE SET s_counter = STATISTICS.s_counter + 1;
+    END LOOP;
+
+    /* decrease item execution statistics for old field */
+    UPDATE statistics
+    SET s_counter = s_counter - 1
+    WHERE s_field = execution_field_old AND launch_id = cur_launch_id;
+    /* increment launch execution statistics for concrete field */
+    INSERT INTO statistics (s_counter, s_field, launch_id) VALUES (1, execution_field, cur_launch_id)
+    ON CONFLICT (s_field, launch_id)
+      DO UPDATE SET s_counter = statistics.s_counter + 1;
+    RETURN new;
+  END IF;
+END;
+$$
+LANGUAGE plpgsql;
+
+
+CREATE TRIGGER after_test_results_update
+  AFTER UPDATE
+  ON test_item_results
+  FOR EACH ROW EXECUTE PROCEDURE update_execution_statistics();

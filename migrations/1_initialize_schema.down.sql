@@ -85,4 +85,6 @@ ON issue_ticket;
 DROP TRIGGER IF EXISTS after_widget_delete
 ON dashboard_widget;
 
+DROP TRIGGER IF EXISTS after_test_results_update ON test_item_results;
+
 DROP EXTENSION IF EXISTS tablefunc;
