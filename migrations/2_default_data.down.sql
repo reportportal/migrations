@@ -1,2 +1,2 @@
-DELETE FROM project;
-DELETE FROM users;
+DELETE FROM project CASCADE ;
+DELETE FROM users CASCADE ;

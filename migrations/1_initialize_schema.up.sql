@@ -401,9 +401,9 @@ CREATE TABLE log (
   item_id             BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE  NOT NULL,
   last_modified       TIMESTAMP                                                NOT NULL,
   log_level           INTEGER                                                  NOT NULL,
-  file_path           TEXT,
-  thumbnail_file_path TEXT,
-  content_type        TEXT
+  attachment           TEXT,
+  attachment_thumbnail TEXT,
+  content_type         TEXT
 );
 
 CREATE TABLE activity (
