@@ -765,11 +765,7 @@ BEGIN
   THEN RETURN new;
   END IF;
 
-  IF (SELECT issue_type
-      FROM issue
-      WHERE issue_id = old.issue_id) != (SELECT issue_type
-                                         FROM issue
-                                         WHERE issue_id = new.issue_id)
+  IF old.issue_type = new.issue_type
   THEN RETURN new;
   END IF;
 
