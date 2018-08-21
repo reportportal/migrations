@@ -1,4 +1,3 @@
-DROP TABLE IF EXISTS schema_migrations CASCADE;
 DROP TABLE IF EXISTS server_settings CASCADE;
 DROP TABLE IF EXISTS bug_tracking_system CASCADE;
 DROP TABLE IF EXISTS defect_form_field CASCADE;
