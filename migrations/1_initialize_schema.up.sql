@@ -619,19 +619,18 @@ BEGIN
     (WITH RECURSIVE item_structure(parent_id, item_id) AS (
       SELECT
         parent_id,
-        tir.result_id
+        tis.structure_id
       FROM test_item_structure tis
-        JOIN test_item_results tir ON tis.structure_id = tir.result_id
-      WHERE tir.result_id = NEW.result_id
+      WHERE tis.structure_id = new.result_id
       UNION ALL
       SELECT
         tis.parent_id,
         tis.structure_id
       FROM item_structure tis_r, test_item_structure tis
-        JOIN test_item_results tir ON tis.structure_id = tir.result_id
       WHERE tis.structure_id = tis_r.parent_id)
     SELECT item_structure.item_id
-    FROM item_structure)
+    FROM item_structure
+    )
 
     LOOP
       /* decrease item execution statistics for old field */
@@ -702,19 +701,18 @@ BEGIN
   (WITH RECURSIVE item_structure(parent_id, item_id) AS (
     SELECT
       parent_id,
-      tir.result_id
+      tis.structure_id
     FROM test_item_structure tis
-      JOIN test_item_results tir ON tis.structure_id = tir.result_id
-    WHERE tir.result_id = NEW.issue_id
+    WHERE tis.structure_id = new.issue_id
     UNION ALL
     SELECT
       tis.parent_id,
       tis.structure_id
     FROM item_structure tis_r, test_item_structure tis
-      JOIN test_item_results tir ON tis.structure_id = tir.result_id
     WHERE tis.structure_id = tis_r.parent_id)
   SELECT item_structure.item_id
-  FROM item_structure)
+  FROM item_structure
+  )
 
   LOOP
     /* increment item defect statistics for concrete field */
@@ -800,19 +798,18 @@ BEGIN
   (WITH RECURSIVE item_structure(parent_id, item_id) AS (
     SELECT
       parent_id,
-      tir.result_id
+      tis.structure_id
     FROM test_item_structure tis
-      JOIN test_item_results tir ON tis.structure_id = tir.result_id
-    WHERE tir.result_id = NEW.issue_id
+    WHERE tis.structure_id = new.issue_id
     UNION ALL
     SELECT
       tis.parent_id,
       tis.structure_id
     FROM item_structure tis_r, test_item_structure tis
-      JOIN test_item_results tir ON tis.structure_id = tir.result_id
     WHERE tis.structure_id = tis_r.parent_id)
   SELECT item_structure.item_id
-  FROM item_structure)
+  FROM item_structure
+  )
 
   LOOP
     /* decrease item defect statistics for concrete field */
@@ -855,3 +852,67 @@ CREATE TRIGGER after_issue_update
   AFTER UPDATE
   ON issue
   FOR EACH ROW EXECUTE PROCEDURE update_defect_statistics();
+
+
+CREATE OR REPLACE FUNCTION decrease_statistics()
+  RETURNS TRIGGER AS $$
+DECLARE   cur_launch_id         BIGINT;
+  DECLARE cur_id                BIGINT;
+  DECLARE cur_statistics_fields RECORD;
+BEGIN
+
+  cur_launch_id := (SELECT launch_id
+                    FROM test_item_structure
+                    WHERE structure_id = old.result_id);
+
+  FOR cur_id IN
+  (WITH RECURSIVE item_structure(parent_id, item_id) AS (
+    SELECT
+      parent_id,
+      tis.structure_id
+    FROM test_item_structure tis
+    WHERE tis.structure_id = old.result_id
+    UNION ALL
+    SELECT
+      tis.parent_id,
+      tis.structure_id
+    FROM item_structure tis_r, test_item_structure tis
+    WHERE tis.structure_id = tis_r.parent_id)
+  SELECT item_structure.item_id
+  FROM item_structure
+  WHERE item_structure.item_id != old.result_id
+  )
+
+  LOOP
+    FOR cur_statistics_fields IN (SELECT
+                                    s_field,
+                                    s_counter
+                                  FROM statistics
+                                  WHERE item_id = old.result_id)
+    LOOP
+      UPDATE STATISTICS
+      SET s_counter = s_counter - cur_statistics_fields.s_counter
+      WHERE STATISTICS.s_field = cur_statistics_fields.s_field AND item_id = cur_id;
+    END LOOP;
+  END LOOP;
+
+  FOR cur_statistics_fields IN (SELECT
+                                  s_field,
+                                  s_counter
+                                FROM statistics
+                                WHERE item_id = old.result_id)
+  LOOP
+    UPDATE statistics
+    SET s_counter = s_counter - cur_statistics_fields.s_counter
+    WHERE statistics.s_field = cur_statistics_fields.s_field AND launch_id = cur_launch_id;
+  END LOOP;
+
+  RETURN old;
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE TRIGGER before_item_delete
+  BEFORE DELETE
+  ON test_item_results
+  FOR EACH ROW EXECUTE PROCEDURE decrease_statistics();

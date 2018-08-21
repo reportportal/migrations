@@ -20,35 +20,6 @@ INSERT INTO widget (id, name, description, widget_type, items_count, project_id,
 INSERT INTO widget (id, name, description, widget_type, items_count, project_id, filter_id) VALUES (17, 'table', null, 'activity_stream', 1000, 1, 2);
 INSERT INTO widget (id, name, description, widget_type, items_count, project_id, filter_id) VALUES (1, 'start', null, 'overall_statistics', 1000, 1, 1);
 INSERT INTO widget (id, name, description, widget_type, items_count, project_id, filter_id) VALUES (18, 'unique', null, 'unique_bug_table', 1000, 1, 2);
-INSERT INTO widget_option (id, widget_id, option) VALUES (1, 1, 'filterName');
-INSERT INTO widget_option (id, widget_id, option) VALUES (2, 2, 'filterName');
-INSERT INTO widget_option (id, widget_id, option) VALUES (3, 3, 'filterName');
-INSERT INTO widget_option (id, widget_id, option) VALUES (5, 5, 'filterName');
-INSERT INTO widget_option (id, widget_id, option) VALUES (6, 6, 'filterName');
-INSERT INTO widget_option (id, widget_id, option) VALUES (7, 7, 'filterName');
-INSERT INTO widget_option (id, widget_id, option) VALUES (9, 9, 'filterName');
-INSERT INTO widget_option (id, widget_id, option) VALUES (10, 10, 'filterName');
-INSERT INTO widget_option (id, widget_id, option) VALUES (11, 11, 'launch_name_filter');
-INSERT INTO widget_option (id, widget_id, option) VALUES (12, 12, 'filterName');
-INSERT INTO widget_option (id, widget_id, option) VALUES (8, 8, 'launch_name_filter');
-INSERT INTO widget_option (id, widget_id, option) VALUES (4, 4, 'launch_name_filter');
-INSERT INTO widget_option (id, widget_id, option) VALUES (17, 17, 'login');
-INSERT INTO widget_option (id, widget_id, option) VALUES (18, 17, 'activity_type');
-INSERT INTO widget_option_value (id, value) VALUES (1, 'New_filter');
-INSERT INTO widget_option_value (id, value) VALUES (2, 'New_filter');
-INSERT INTO widget_option_value (id, value) VALUES (3, 'New_filter');
-INSERT INTO widget_option_value (id, value) VALUES (4, 'launch name');
-INSERT INTO widget_option_value (id, value) VALUES (5, 'New filter');
-INSERT INTO widget_option_value (id, value) VALUES (6, 'New filter');
-INSERT INTO widget_option_value (id, value) VALUES (7, 'New filter');
-INSERT INTO widget_option_value (id, value) VALUES (8, 'launch name');
-INSERT INTO widget_option_value (id, value) VALUES (9, 'New filter');
-INSERT INTO widget_option_value (id, value) VALUES (10, 'New filter');
-INSERT INTO widget_option_value (id, value) VALUES (11, 'launch name');
-INSERT INTO widget_option_value (id, value) VALUES (12, 'New filter');
-INSERT INTO widget_option_value (id, value) VALUES (17, 'default');
-INSERT INTO widget_option_value (id, value) VALUES (18, 'CREATE_ITEM');
-INSERT INTO widget_option_value (id, value) VALUES (18, 'UPDATE_LAUNCH');
 
 
 INSERT INTO content_field (id, field) VALUES (2,  'statistics$executions$passed');
