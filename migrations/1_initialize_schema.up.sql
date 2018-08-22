@@ -409,6 +409,7 @@ CREATE TABLE log (
 CREATE TABLE activity (
   id            BIGSERIAL CONSTRAINT activity_pk PRIMARY KEY,
   user_id       BIGINT REFERENCES users (id) ON DELETE CASCADE           NOT NULL,
+  project_id    BIGINT REFERENCES project (id) ON DELETE CASCADE         NOT NULL,
   entity        ACTIVITY_ENTITY_ENUM                                     NOT NULL,
   action        VARCHAR(128)                                             NOT NULL,
   details       JSONB                                                    NULL,
