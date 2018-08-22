@@ -1,3 +1,21 @@
+DROP TRIGGER IF EXISTS last_launch_number_trigger ON launch;
+DROP TRIGGER IF EXISTS after_ticket_delete ON issue_ticket;
+DROP TRIGGER IF EXISTS after_widget_delete ON dashboard_widget;
+DROP TRIGGER IF EXISTS after_test_results_update ON test_item_results;
+DROP TRIGGER IF EXISTS after_issue_insert ON issue;
+DROP TRIGGER IF EXISTS after_issue_update ON issue;
+DROP TRIGGER IF EXISTS before_item_delete ON test_item_results;
+
+DROP FUNCTION IF EXISTS get_last_launch_number();
+DROP FUNCTION IF EXISTS check_wired_tickets();
+DROP FUNCTION IF EXISTS check_wired_widgets();
+DROP FUNCTION IF EXISTS update_execution_statistics();
+DROP FUNCTION IF EXISTS increment_defect_statistics();
+DROP FUNCTION IF EXISTS update_defect_statistics();
+DROP FUNCTION IF EXISTS decrease_statistics();
+
+DROP EXTENSION IF EXISTS tablefunc;
+
 DROP TABLE IF EXISTS server_settings CASCADE;
 DROP TABLE IF EXISTS bug_tracking_system CASCADE;
 DROP TABLE IF EXISTS defect_form_field CASCADE;
@@ -77,20 +95,3 @@ DROP TYPE IF EXISTS INTEGRATION_GROUP_ENUM;
 DROP TYPE IF EXISTS FILTER_CONDITION_ENUM;
 DROP TYPE IF EXISTS PASSWORD_ENCODER_TYPE CASCADE;
 
-DROP TRIGGER IF EXISTS last_launch_number_trigger ON launch;
-DROP TRIGGER IF EXISTS after_ticket_delete ON issue_ticket;
-DROP TRIGGER IF EXISTS after_widget_delete ON dashboard_widget;
-DROP TRIGGER IF EXISTS after_test_results_update ON test_item_results;
-DROP TRIGGER IF EXISTS after_issue_insert ON issue;
-DROP TRIGGER IF EXISTS after_issue_update ON issue;
-DROP TRIGGER IF EXISTS before_item_delete ON test_item_results;
-
-DROP FUNCTION IF EXISTS get_last_launch_number();
-DROP FUNCTION IF EXISTS check_wired_tickets();
-DROP FUNCTION IF EXISTS check_wired_widgets();
-DROP FUNCTION IF EXISTS update_execution_statistics();
-DROP FUNCTION IF EXISTS increment_defect_statistics();
-DROP FUNCTION IF EXISTS update_defect_statistics();
-DROP FUNCTION IF EXISTS decrease_statistics();
-
-DROP EXTENSION IF EXISTS tablefunc;
