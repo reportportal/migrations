@@ -24,6 +24,8 @@ CREATE TYPE FILTER_CONDITION_ENUM AS ENUM ('EQUALS', 'NOT_EQUALS', 'CONTAINS', '
 
 CREATE TYPE PASSWORD_ENCODER_TYPE AS ENUM ('PLAIN', 'SHA', 'LDAP_SHA', 'MD4', 'MD5');
 
+CREATE EXTENSION ltree;
+
 CREATE TABLE server_settings (
   id    SMALLSERIAL CONSTRAINT server_settings_id PRIMARY KEY,
   key   VARCHAR NOT NULL UNIQUE,
@@ -360,9 +362,13 @@ CREATE TABLE launch_tag (
 CREATE TABLE test_item_structure (
   structure_id BIGSERIAL CONSTRAINT test_item_structure_pk PRIMARY KEY,
   parent_id    BIGINT REFERENCES test_item_structure (structure_id) ON DELETE CASCADE,
+  path         ltree,
   retry_of     BIGINT REFERENCES test_item_structure (structure_id) ON DELETE CASCADE,
   launch_id    BIGINT REFERENCES launch (id) ON DELETE CASCADE
 );
+
+CREATE INDEX path_gist_idx ON test_item_structure USING GIST (path);
+CREATE INDEX path_idx ON test_item_structure USING BTREE (path);
 
 CREATE TABLE test_item_results (
   result_id BIGINT CONSTRAINT test_item_results_pk PRIMARY KEY REFERENCES test_item_structure (structure_id) ON DELETE CASCADE UNIQUE,
