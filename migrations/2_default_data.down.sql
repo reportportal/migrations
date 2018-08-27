@@ -1,11 +1,5 @@
-DELETE FROM project
-WHERE project.name = 'default_personal';
-
-DELETE FROM project
-WHERE project.name = 'superadmin_personal';
-
-DELETE FROM users
-WHERE login = 'default';
-
-DELETE FROM users
-WHERE login = 'superadmin';
+DELETE FROM issue_type_project_configuration CASCADE ;
+DELETE FROM issue_type CASCADE ;
+DELETE FROM project_configuration CASCADE ;
+DELETE FROM project CASCADE ;
+DELETE FROM users CASCADE ;
