@@ -53,7 +53,6 @@ DROP TABLE IF EXISTS oauth_registration_scope CASCADE;
 DROP TABLE IF EXISTS oauth_registration_restriction CASCADE;
 DROP TABLE IF EXISTS oauth_registration CASCADE;
 
-DROP TABLE IF EXISTS test_item_structure CASCADE;
 DROP TABLE IF EXISTS test_item_results CASCADE;
 
 DROP TABLE IF EXISTS statistics CASCADE;
