@@ -24,6 +24,8 @@ CREATE TYPE FILTER_CONDITION_ENUM AS ENUM ('EQUALS', 'NOT_EQUALS', 'CONTAINS', '
 
 CREATE TYPE PASSWORD_ENCODER_TYPE AS ENUM ('PLAIN', 'SHA', 'LDAP_SHA', 'MD4', 'MD5');
 
+CREATE TYPE SORT_DIRECTION_ENUM AS ENUM ('ASC', 'DESC');
+
 CREATE EXTENSION ltree;
 
 CREATE TABLE server_settings (
@@ -283,7 +285,7 @@ CREATE TABLE filter_sort (
   id        BIGSERIAL CONSTRAINT filter_sort_pk PRIMARY KEY,
   filter_id BIGINT REFERENCES user_filter (id) ON DELETE CASCADE,
   field     VARCHAR NOT NULL,
-  ascending BOOLEAN NOT NULL
+  direction SORT_DIRECTION_ENUM NOT NULL default 'ASC'
 );
 
 CREATE TABLE dashboard (
@@ -472,7 +474,7 @@ CREATE TABLE issue (
 CREATE TABLE ticket (
   id           BIGSERIAL CONSTRAINT ticket_pk PRIMARY KEY,
   ticket_id    VARCHAR(64)                                                   NOT NULL UNIQUE,
-  submitter_id INTEGER REFERENCES users (id)                                 NOT NULL,
+  submitter_id BIGINT  REFERENCES users (id)                                 NOT NULL,
   submit_date  TIMESTAMP DEFAULT now()                                       NOT NULL,
   bts_id       INTEGER REFERENCES bug_tracking_system (id) ON DELETE CASCADE NOT NULL,
   url          VARCHAR(256)                                                  NOT NULL
