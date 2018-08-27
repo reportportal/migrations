@@ -1,3 +1,60 @@
+INSERT INTO filter (id, name, project_id, target, description) VALUES (1, 'launch name', 1, 'com.epam.ta.reportportal.entity.launch.Launch', null);
+INSERT INTO filter (id, name, project_id, target, description) VALUES (2, 'launch_name_filter', 1, 'com.epam.ta.reportportal.entity.Activity', null);
+INSERT INTO user_filter(id) VALUES (1);
+INSERT INTO user_filter(id) VALUES (2);
+INSERT INTO filter_condition (id, filter_id, condition, value, field, negative) VALUES (8, 1, 'NOT_EQUALS', 'IN_PROGRESS', 'status', false);
+INSERT INTO filter_condition (id, filter_id, condition, value, field, negative) VALUES (7, 1, 'EQUALS', 'DEFAULT', 'mode', false);
+INSERT INTO filter_condition (id, filter_id, condition, value, field, negative) VALUES (6, 1, 'EQUALS', '1', 'project_id', false);
+INSERT INTO filter_condition (id, filter_id, condition, value, field, negative) VALUES (10, 2, 'EQUALS', '1', 'project_id', false);
+INSERT INTO widget (id, name, description, widget_type, items_count, project_id, filter_id) VALUES (2, 'start', null, 'launch_statistics', 1000, 1, 1);
+INSERT INTO widget (id, name, description, widget_type, items_count, project_id, filter_id) VALUES (4, 'start', null, 'passing_rate_per_launch', 1000, 1, 1);
+INSERT INTO widget (id, name, description, widget_type, items_count, project_id, filter_id) VALUES (5, 'start', null, 'passing_rate_summary', 1000, 1, 1);
+INSERT INTO widget (id, name, description, widget_type, items_count, project_id, filter_id) VALUES (6, 'start', null, 'cases_trend', 1000, 1, 1);
+INSERT INTO widget (id, name, description, widget_type, items_count, project_id, filter_id) VALUES (7, 'my widget', null, 'bug_trend', 1000, 1, 1);
+INSERT INTO widget (id, name, description, widget_type, items_count, project_id, filter_id) VALUES (3, 'start', null, 'investigated_trend', 1000, 1, 1);
+INSERT INTO widget (id, name, description, widget_type, items_count, project_id, filter_id) VALUES (12, 'table', null, 'launches_table', 1000, 1, 1);
+INSERT INTO widget (id, name, description, widget_type, items_count, project_id, filter_id) VALUES (8, 'comparison', null, 'launches_comparison_chart', 1000, 1, 1);
+INSERT INTO widget (id, name, description, widget_type, items_count, project_id, filter_id) VALUES (9, 'duration', null, 'launches_duration_chart', 1000, 1, 1);
+INSERT INTO widget (id, name, description, widget_type, items_count, project_id, filter_id) VALUES (10, 'not passed', null, 'not_passed', 1000, 1, 1);
+INSERT INTO widget (id, name, description, widget_type, items_count, project_id, filter_id) VALUES (11, 'not passed', null, 'most_failed_test_cases', 1000, 1, 1);
+INSERT INTO widget (id, name, description, widget_type, items_count, project_id, filter_id) VALUES (17, 'table', null, 'activity_stream', 1000, 1, 2);
+INSERT INTO widget (id, name, description, widget_type, items_count, project_id, filter_id) VALUES (1, 'start', null, 'overall_statistics', 1000, 1, 1);
+INSERT INTO widget (id, name, description, widget_type, items_count, project_id, filter_id) VALUES (18, 'unique', null, 'unique_bug_table', 1000, 1, 2);
+
+
+INSERT INTO content_field (id, field) VALUES (2,  'statistics$executions$passed');
+INSERT INTO content_field (id, field) VALUES (2,  'statistics$defects$automation_bug$AB001');
+INSERT INTO content_field (id,  field) VALUES ( 4, 'statistics$executions$failed');
+INSERT INTO content_field (id,  field) VALUES ( 5, 'statistics$executions$skipped');
+INSERT INTO content_field (id,  field) VALUES ( 6, 'statistics$executions$passed');
+INSERT INTO content_field (id,  field) VALUES ( 7, 'statistics$defects$automation_bug$AB002');
+INSERT INTO content_field (id,  field) VALUES ( 8, 'statistics$executions$passed');
+INSERT INTO content_field (id,  field) VALUES ( 9, 'statistics$executions$failed');
+INSERT INTO content_field (id,  field) VALUES ( 10, 'statistics$executions$passed');
+INSERT INTO content_field (id,  field) VALUES ( 12, 'statistics$executions$skipped');
+INSERT INTO content_field (id,  field) VALUES ( 12, 'statistics$defects$product_bug$PB001');
+INSERT INTO content_field (id,  field) VALUES ( 8, 'groups');
+INSERT INTO content_field (id,  field) VALUES (12, 'columns');
+
+
+INSERT INTO issue_group(issue_group_id, issue_group) VALUES (1, 'TO_INVESTIGATE');
+INSERT INTO issue_group(issue_group_id, issue_group) VALUES (2, 'AUTOMATION_BUG');
+INSERT INTO issue_group(issue_group_id, issue_group) VALUES (3, 'PRODUCT_BUG');
+INSERT INTO issue_group(issue_group_id, issue_group) VALUES (4, 'NO_DEFECT');
+INSERT INTO issue_group(issue_group_id, issue_group) VALUES (5, 'SYSTEM_ISSUE');
+INSERT INTO issue_type (issue_group_id, locator, issue_name, abbreviation, hex_color)
+VALUES (1, 'TI001', 'To Investigate', 'TI', '#ffb743');
+INSERT INTO issue_type (issue_group_id, locator, issue_name, abbreviation, hex_color)
+VALUES (2, 'AB001', 'Automation Bug', 'AB', '#f7d63e');
+INSERT INTO issue_type (issue_group_id, locator, issue_name, abbreviation, hex_color)
+VALUES (3, 'PB001', 'Product Bug', 'PB', '#ec3900');
+INSERT INTO issue_type (issue_group_id, locator, issue_name, abbreviation, hex_color)
+VALUES (4, 'ND001', 'No Defect', 'ND', '#777777');
+INSERT INTO issue_type (issue_group_id, locator, issue_name, abbreviation, hex_color)
+VALUES (5, 'SI001', 'System Issue', 'SI', '#0274d1');
+INSERT INTO issue_type (issue_group_id, locator, issue_name, abbreviation, hex_color)
+VALUES (2, 'AB002', 'My custom automation', 'CA', '#0276d1');
+
 CREATE OR REPLACE FUNCTION initSteps()
   RETURNS INT8 AS
 $BODY$
@@ -10,9 +67,9 @@ DECLARE   counter       INT = 0;
   DECLARE rand_status   STATUS_ENUM;
 BEGIN
   WHILE counter < 20 LOOP
-    INSERT INTO launch (uuid, project_id, user_id, name, description, start_time, end_time, number, mode, status)
+    INSERT INTO launch (uuid, project_id, user_id, name, description, start_time, end_time, "number", mode, status)
     VALUES
-      ('fc51ec81-de6f-4f3b-9630-f3f3a3490def', 1, 1, 'launch name', 'Description', now(), now(), 1, 'DEFAULT',
+      ('fc51ec81-de6f-4f3b-9630-f3f3a3490def', 1, 1, 'launch name', 'Description', now(), now(), counter+1, 'DEFAULT',
        'FAILED');
     cur_launch_id = (SELECT currval(pg_get_serial_sequence('launch', 'id')));
 
@@ -58,49 +115,4 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-
-INSERT INTO oauth_registration (id, client_id, client_secret, token_uri, user_info_endpoint_uri, auth_grant_type, client_auth_method)
-VALUES ('github', 'f4cec43d4541283879c4', 'a31aa6de3e27c11d90762cad11936727d6b0759e',
-        'https://github.com/login/oauth/access_token', 'https://api.github.com/use', 'authorization_code', 'basic');
-
-INSERT INTO oauth_registration_scope (id, oauth_registration_fk, scope) VALUES (1, 'github', 'user');
-
-INSERT INTO project (name) VALUES ('default_personal');
-INSERT INTO project_configuration (id, project_type, interrupt_timeout, keep_logs_interval, keep_screenshots_interval)
-VALUES (1, 'PERSONAL', '1 day', '1 day', '1 day');
-
-INSERT INTO users (id, login, password, email, role, type, default_project_id, full_name)
-VALUES (1, 'vasia', '698d51a19d8a121ce581499d7b701668', 'vasia@domain.com', 'USER', 'INTERNAL', 1, 'Vasia Vasia');
-
-INSERT INTO project_user (user_id, project_id, project_role) VALUES (1, 1, 'MEMBER');
-
-INSERT INTO issue_group (issue_group) VALUES ('TO_INVESTIGATE');
-INSERT INTO issue_group (issue_group) VALUES ('AUTOMATION_BUG');
-INSERT INTO issue_group (issue_group) VALUES ('PRODUCT_BUG');
-INSERT INTO issue_group (issue_group) VALUES ('NO_DEFECT');
-INSERT INTO issue_group (issue_group) VALUES ('SYSTEM_ISSUE');
-
-
-INSERT INTO issue_type (issue_group_id, locator, issue_name, abbreviation, hex_color)
-VALUES (1, 'TI001', 'To Investigate', 'TI', '#ffb743');
-INSERT INTO issue_type (issue_group_id, locator, issue_name, abbreviation, hex_color)
-VALUES (2, 'AB001', 'Automation Bug', 'AB', '#f7d63e');
-INSERT INTO issue_type (issue_group_id, locator, issue_name, abbreviation, hex_color)
-VALUES (3, 'PB001', 'Product Bug', 'PB', '#ec3900');
-INSERT INTO issue_type (issue_group_id, locator, issue_name, abbreviation, hex_color)
-VALUES (4, 'ND001', 'No Defect', 'ND', '#777777');
-INSERT INTO issue_type (issue_group_id, locator, issue_name, abbreviation, hex_color)
-VALUES (5, 'SI001', 'System Issue', 'SI', '#0274d1');
-INSERT INTO issue_type (issue_group_id, locator, issue_name, abbreviation, hex_color)
-VALUES (2, 'AB002', 'My custom automation', 'CA', '#0276d1');
-INSERT INTO issue_type_project_configuration (configuration_id, issue_type_id) VALUES (1, 1);
-INSERT INTO issue_type_project_configuration (configuration_id, issue_type_id) VALUES (1, 2);
-INSERT INTO issue_type_project_configuration (configuration_id, issue_type_id) VALUES (1, 3);
-INSERT INTO issue_type_project_configuration (configuration_id, issue_type_id) VALUES (1, 4);
-INSERT INTO issue_type_project_configuration (configuration_id, issue_type_id) VALUES (1, 5);
-INSERT INTO issue_type_project_configuration (configuration_id, issue_type_id) VALUES (1, 6);
-
 SELECT initSteps();
-
-
-
