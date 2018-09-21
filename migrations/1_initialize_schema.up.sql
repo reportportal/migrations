@@ -122,27 +122,10 @@ CREATE TABLE oauth_registration_restriction (
 
 
 ------------------------------ Project configurations ------------------------------
-CREATE TABLE project_analyzer_configuration (
-  id                  BIGSERIAL CONSTRAINT project_analyzer_configuration_pk PRIMARY KEY,
-  min_doc_freq        INTEGER,
-  min_term_freq       INTEGER,
-  min_should_match    INTEGER,
-  number_of_log_lines INTEGER,
-  indexing_running    BOOLEAN,
-  enabled             BOOLEAN,
-  analyzerMode        VARCHAR(64)
-);
-
-CREATE TABLE project_email_configuration (
-  id         BIGSERIAL CONSTRAINT project_email_configuration_pk PRIMARY KEY,
-  enabled    BOOLEAN DEFAULT FALSE NOT NULL,
-  email_from VARCHAR(256)          NOT NULL
-);
-
 CREATE TABLE email_sender_case (
   id                      BIGSERIAL CONSTRAINT email_sender_case_pk PRIMARY KEY,
-  sendCase                VARCHAR(64),
-  project_email_config_id BIGINT REFERENCES project_email_configuration (id) ON DELETE CASCADE
+  send_case               VARCHAR(64),
+  project_id              BIGSERIAL REFERENCES project (id) ON DELETE CASCADE
 );
 
 CREATE TABLE recipients (
@@ -150,16 +133,16 @@ CREATE TABLE recipients (
   recipient            VARCHAR(256)
 );
 
-CREATE TABLE project_configuration (
-  id                         BIGINT CONSTRAINT project_configuration_pk PRIMARY KEY REFERENCES project (id) ON DELETE CASCADE UNIQUE,
-  project_type               VARCHAR(128)               NOT NULL,
-  interrupt_timeout          VARCHAR(128)               NOT NULL,
-  keep_logs_interval         VARCHAR(128)               NOT NULL,
-  keep_screenshots_interval  VARCHAR(128)               NOT NULL,
-  project_analyzer_config_id BIGINT REFERENCES project_analyzer_configuration (id) ON DELETE CASCADE,
-  metadata                   JSONB                      NULL,
-  project_email_config_id    BIGINT REFERENCES project_email_configuration (id) ON DELETE CASCADE UNIQUE,
-  created_on                 TIMESTAMP DEFAULT now()    NOT NULL
+CREATE table attribute (
+  id             BIGSERIAL CONSTRAINT attribute_pk PRIMARY KEY,
+  name           VARCHAR(256)
+);
+
+CREATE TABLE project_attribute (
+  attribute_id  BIGSERIAL REFERENCES  attribute (id),
+  value         VARCHAR(256) NOT NULL,
+  project_id    BIGSERIAL REFERENCES project (id),
+  CONSTRAINT PRIMARY  KEY (attribute_id, project_id)
 );
 -----------------------------------------------------------------------------------
 
@@ -454,10 +437,10 @@ CREATE TABLE statistics (
   CHECK (statistics.s_counter >= 0)
 );
 
-CREATE TABLE issue_type_project_configuration (
-  configuration_id BIGINT REFERENCES project_configuration,
+CREATE TABLE issue_type_project (
+  project_id BIGINT REFERENCES project,
   issue_type_id    BIGINT REFERENCES issue_type,
-  CONSTRAINT issue_type_project_configuration_pk PRIMARY KEY (configuration_id, issue_type_id)
+  CONSTRAINT issue_type_project_pk PRIMARY KEY (project_id, issue_type_id)
 );
 ----------------------------------------------------------------------------------------
 
