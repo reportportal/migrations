@@ -123,9 +123,9 @@ CREATE TABLE oauth_registration_restriction (
 
 ------------------------------ Project configurations ------------------------------
 CREATE TABLE email_sender_case (
-  id                      BIGSERIAL CONSTRAINT email_sender_case_pk PRIMARY KEY,
-  send_case               VARCHAR(64),
-  project_id              BIGSERIAL REFERENCES project (id) ON DELETE CASCADE
+  id         BIGSERIAL CONSTRAINT email_sender_case_pk PRIMARY KEY,
+  send_case  VARCHAR(64),
+  project_id BIGSERIAL REFERENCES project (id) ON DELETE CASCADE
 );
 
 CREATE TABLE recipients (
@@ -133,16 +133,17 @@ CREATE TABLE recipients (
   recipient            VARCHAR(256)
 );
 
-CREATE table attribute (
-  id             BIGSERIAL CONSTRAINT attribute_pk PRIMARY KEY,
-  name           VARCHAR(256)
+CREATE TABLE attribute (
+  id   BIGSERIAL CONSTRAINT attribute_pk PRIMARY KEY,
+  name VARCHAR(256)
 );
 
 CREATE TABLE project_attribute (
-  attribute_id  BIGSERIAL REFERENCES  attribute (id),
-  value         VARCHAR(256) NOT NULL,
-  project_id    BIGSERIAL REFERENCES project (id),
-  CONSTRAINT PRIMARY  KEY (attribute_id, project_id)
+  attribute_id BIGSERIAL REFERENCES attribute (id),
+  value        VARCHAR(256) NOT NULL,
+  project_id   BIGSERIAL REFERENCES project (id),
+  PRIMARY KEY (attribute_id, project_id),
+  CONSTRAINT unique_attribute_per_project UNIQUE (attribute_id, project_id)
 );
 -----------------------------------------------------------------------------------
 
@@ -315,8 +316,8 @@ CREATE TABLE dashboard_widget (
 );
 
 CREATE TABLE widget_filter (
-  widget_id   BIGINT REFERENCES widget (id) ON DELETE CASCADE         NOT NULL,
-  filter_id   BIGINT REFERENCES user_filter (id) ON DELETE CASCADE    NOT NULL,
+  widget_id BIGINT REFERENCES widget (id) ON DELETE CASCADE         NOT NULL,
+  filter_id BIGINT REFERENCES user_filter (id) ON DELETE CASCADE    NOT NULL,
   CONSTRAINT widget_filter_pk PRIMARY KEY (widget_id, filter_id)
 );
 -----------------------------------------------------------------------------------
@@ -424,10 +425,10 @@ CREATE TABLE issue_group (
 CREATE TABLE issue_type (
   id             BIGSERIAL CONSTRAINT issue_type_pk PRIMARY KEY,
   issue_group_id SMALLINT REFERENCES issue_group (issue_group_id) ON DELETE CASCADE,
-  locator        VARCHAR(64), -- issue string identifier
-  issue_name     VARCHAR(256), -- issue full name
-  abbreviation   VARCHAR(64), -- issue abbreviation
-  hex_color      VARCHAR(7)
+  locator        VARCHAR(64) UNIQUE NOT NULL, -- issue string identifier
+  issue_name     VARCHAR(256)       NOT NULL, -- issue full name
+  abbreviation   VARCHAR(64)        NOT NULL, -- issue abbreviation
+  hex_color      VARCHAR(7)         NOT NULL
 );
 
 CREATE TABLE statistics (
@@ -443,8 +444,8 @@ CREATE TABLE statistics (
 );
 
 CREATE TABLE issue_type_project (
-  project_id BIGINT REFERENCES project,
-  issue_type_id    BIGINT REFERENCES issue_type,
+  project_id    BIGINT REFERENCES project,
+  issue_type_id BIGINT REFERENCES issue_type,
   CONSTRAINT issue_type_project_pk PRIMARY KEY (project_id, issue_type_id)
 );
 ----------------------------------------------------------------------------------------
@@ -542,13 +543,13 @@ EXECUTE PROCEDURE get_last_launch_number();
 
 -------------------------- Execution statistics triggers end functions ------------------------------
 
-CREATE OR REPLACE FUNCTION update_execution_statistics()
+CREATE OR REPLACE FUNCTION update_executions_statistics()
   RETURNS TRIGGER AS $$
-DECLARE   cur_id                BIGINT;
-  DECLARE execution_field       VARCHAR;
-  DECLARE execution_field_old   VARCHAR;
-  DECLARE execution_field_total VARCHAR;
-  DECLARE cur_launch_id         BIGINT;
+DECLARE   cur_id                 BIGINT;
+  DECLARE executions_field       VARCHAR;
+  DECLARE executions_field_old   VARCHAR;
+  DECLARE executions_field_total VARCHAR;
+  DECLARE cur_launch_id          BIGINT;
 
 BEGIN
   IF exists(SELECT 1
@@ -563,8 +564,8 @@ BEGIN
                     WHERE
                       test_item.item_id = new.result_id);
 
-  execution_field := concat('statistics$execution$', lower(new.status :: VARCHAR));
-  execution_field_total := 'statistics$execution$total';
+  executions_field := concat('statistics$executions$', lower(new.status :: VARCHAR));
+  executions_field_total := 'statistics$executions$total';
 
   IF old.status = 'IN_PROGRESS' :: STATUS_ENUM
   THEN
@@ -575,22 +576,22 @@ BEGIN
                     FROM test_item
                     WHERE item_id = NEW.result_id))
     LOOP
-      /* increment item execution statistics for concrete field */
-      INSERT INTO statistics (s_counter, s_field, item_id) VALUES (1, execution_field, cur_id)
+      /* increment item executions statistics for concrete field */
+      INSERT INTO statistics (s_counter, s_field, item_id) VALUES (1, executions_field, cur_id)
       ON CONFLICT (s_field, item_id)
         DO UPDATE SET s_counter = statistics.s_counter + 1;
-      /* increment item execution statistics for total field */
-      INSERT INTO statistics (s_counter, s_field, item_id) VALUES (1, execution_field_total, cur_id)
+      /* increment item executions statistics for total field */
+      INSERT INTO statistics (s_counter, s_field, item_id) VALUES (1, executions_field_total, cur_id)
       ON CONFLICT (s_field, item_id)
         DO UPDATE SET s_counter = statistics.s_counter + 1;
     END LOOP;
 
-    /* increment launch execution statistics for concrete field */
-    INSERT INTO statistics (s_counter, s_field, launch_id) VALUES (1, execution_field, cur_launch_id)
+    /* increment launch executions statistics for concrete field */
+    INSERT INTO statistics (s_counter, s_field, launch_id) VALUES (1, executions_field, cur_launch_id)
     ON CONFLICT (s_field, launch_id)
       DO UPDATE SET s_counter = statistics.s_counter + 1;
-    /* increment launch execution statistics for total field */
-    INSERT INTO statistics (s_counter, s_field, launch_id) VALUES (1, execution_field_total, cur_launch_id)
+    /* increment launch executions statistics for total field */
+    INSERT INTO statistics (s_counter, s_field, launch_id) VALUES (1, executions_field_total, cur_launch_id)
     ON CONFLICT (s_field, launch_id)
       DO UPDATE SET s_counter = statistics.s_counter + 1;
     RETURN new;
@@ -598,7 +599,7 @@ BEGIN
 
   IF old.status != 'IN_PROGRESS' :: STATUS_ENUM AND old.status != new.status
   THEN
-    execution_field_old := concat('statistics$execution$', lower(old.status :: VARCHAR));
+    executions_field_old := concat('statistics$executions$', lower(old.status :: VARCHAR));
     FOR cur_id IN
     (SELECT item_id
      FROM test_item
@@ -607,23 +608,23 @@ BEGIN
                     WHERE item_id = NEW.result_id))
 
     LOOP
-      /* decrease item execution statistics for old field */
+      /* decrease item executions statistics for old field */
       UPDATE statistics
       SET s_counter = s_counter - 1
-      WHERE s_field = execution_field_old AND item_id = cur_id;
+      WHERE s_field = executions_field_old AND item_id = cur_id;
 
-      /* increment item execution statistics for concrete field */
-      INSERT INTO STATISTICS (s_counter, s_field, item_id) VALUES (1, execution_field, cur_id)
+      /* increment item executions statistics for concrete field */
+      INSERT INTO STATISTICS (s_counter, s_field, item_id) VALUES (1, executions_field, cur_id)
       ON CONFLICT (s_field, item_id)
         DO UPDATE SET s_counter = STATISTICS.s_counter + 1;
     END LOOP;
 
-    /* decrease item execution statistics for old field */
+    /* decrease item executions statistics for old field */
     UPDATE statistics
     SET s_counter = s_counter - 1
-    WHERE s_field = execution_field_old AND launch_id = cur_launch_id;
-    /* increment launch execution statistics for concrete field */
-    INSERT INTO statistics (s_counter, s_field, launch_id) VALUES (1, execution_field, cur_launch_id)
+    WHERE s_field = executions_field_old AND launch_id = cur_launch_id;
+    /* increment launch executions statistics for concrete field */
+    INSERT INTO statistics (s_counter, s_field, launch_id) VALUES (1, executions_field, cur_launch_id)
     ON CONFLICT (s_field, launch_id)
       DO UPDATE SET s_counter = statistics.s_counter + 1;
     RETURN new;
@@ -636,7 +637,7 @@ LANGUAGE plpgsql;
 CREATE TRIGGER after_test_results_update
   AFTER UPDATE
   ON test_item_results
-  FOR EACH ROW EXECUTE PROCEDURE update_execution_statistics();
+  FOR EACH ROW EXECUTE PROCEDURE update_executions_statistics();
 
 
 CREATE OR REPLACE FUNCTION increment_defect_statistics()
@@ -679,21 +680,21 @@ BEGIN
                   WHERE item_id = NEW.issue_id))
 
   LOOP
-    /* increment item defect statistics for concrete field */
+    /* increment item defects statistics for concrete field */
     INSERT INTO statistics (s_counter, s_field, item_id) VALUES (1, defect_field, cur_id)
     ON CONFLICT (s_field, item_id)
       DO UPDATE SET s_counter = statistics.s_counter + 1;
-    /* increment item defect statistics for total field */
+    /* increment item defects statistics for total field */
     INSERT INTO statistics (s_counter, s_field, item_id) VALUES (1, defect_field_total, cur_id)
     ON CONFLICT (s_field, item_id)
       DO UPDATE SET s_counter = statistics.s_counter + 1;
   END LOOP;
 
-  /* increment launch defect statistics for concrete field */
+  /* increment launch defects statistics for concrete field */
   INSERT INTO statistics (s_counter, s_field, launch_id) VALUES (1, defect_field, cur_launch_id)
   ON CONFLICT (s_field, launch_id)
     DO UPDATE SET s_counter = statistics.s_counter + 1;
-  /* increment launch defect statistics for total field */
+  /* increment launch defects statistics for total field */
   INSERT INTO statistics (s_counter, s_field, launch_id) VALUES (1, defect_field_total, cur_launch_id)
   ON CONFLICT (s_field, launch_id)
     DO UPDATE SET s_counter = statistics.s_counter + 1;
@@ -765,33 +766,33 @@ BEGIN
                   WHERE item_id = NEW.issue_id))
 
   LOOP
-    /* decrease item defect statistics for concrete field */
+    /* decrease item defects statistics for concrete field */
     UPDATE statistics
     SET s_counter = s_counter - 1
     WHERE s_field = defect_field_old AND statistics.item_id = cur_id;
 
-    /* increment item defect statistics for concrete field */
+    /* increment item defects statistics for concrete field */
     INSERT INTO statistics (s_counter, s_field, item_id) VALUES (1, defect_field, cur_id)
     ON CONFLICT (s_field, item_id)
       DO UPDATE SET s_counter = statistics.s_counter + 1;
   END LOOP;
 
-  /* decrease item defect statistics for concrete field */
+  /* decrease item defects statistics for concrete field */
   UPDATE statistics
   SET s_counter = s_counter - 1
   WHERE s_field = defect_field_old AND launch_id = cur_launch_id;
 
-  /* increment launch defect statistics for concrete field */
+  /* increment launch defects statistics for concrete field */
   INSERT INTO statistics (s_counter, s_field, launch_id) VALUES (1, defect_field, cur_launch_id)
   ON CONFLICT (s_field, launch_id)
     DO UPDATE SET s_counter = statistics.s_counter + 1;
 
-  /* decrease launch defect statistics for total field */
+  /* decrease launch defects statistics for total field */
   UPDATE statistics
   SET s_counter = s_counter - 1
   WHERE s_field = defect_field_old_total AND launch_id = cur_launch_id;
 
-  /* increment launch defect statistics for total field */
+  /* increment launch defects statistics for total field */
   INSERT INTO statistics (s_counter, s_field, launch_id) VALUES (1, defect_field_total, cur_launch_id)
   ON CONFLICT (s_field, launch_id)
     DO UPDATE SET s_counter = statistics.s_counter + 1;

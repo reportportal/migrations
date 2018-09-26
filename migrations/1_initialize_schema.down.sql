@@ -9,7 +9,7 @@ DROP TRIGGER IF EXISTS before_item_delete ON test_item_results;
 DROP FUNCTION IF EXISTS get_last_launch_number();
 DROP FUNCTION IF EXISTS check_wired_tickets();
 DROP FUNCTION IF EXISTS check_wired_widgets();
-DROP FUNCTION IF EXISTS update_execution_statistics();
+DROP FUNCTION IF EXISTS update_executions_statistics();
 DROP FUNCTION IF EXISTS increment_defect_statistics();
 DROP FUNCTION IF EXISTS update_defect_statistics();
 DROP FUNCTION IF EXISTS decrease_statistics();
