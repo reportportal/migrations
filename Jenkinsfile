@@ -13,7 +13,7 @@ node {
         stage('Build') {
             docker.withServer("$DOCKER_HOST") {
                         stage('Build Docker Image') {
-                            sh 'docker-compose build migrations'
+                            sh 'docker-compose -p reportportal5 build migrations'
                         }
 
                         stage('Run Migrations') {
