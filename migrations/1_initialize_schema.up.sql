@@ -767,9 +767,20 @@ BEGIN
     INSERT INTO statistics (s_counter, s_field, item_id) VALUES (1, defect_field, cur_id)
     ON CONFLICT (s_field, item_id)
       DO UPDATE SET s_counter = statistics.s_counter + 1;
+
+    /* decrease item defects statistics for total field */
+    UPDATE statistics
+    SET s_counter = s_counter - 1
+    WHERE s_field = defect_field_old_total AND item_id = cur_id;
+
+    /* increment item defects statistics for total field */
+    INSERT INTO statistics (s_counter, s_field, item_id) VALUES (1, defect_field_total, cur_id)
+    ON CONFLICT (s_field, item_id)
+      DO UPDATE SET s_counter = statistics.s_counter + 1;
+
   END LOOP;
 
-  /* decrease item defects statistics for concrete field */
+  /* decrease launch defects statistics for concrete field */
   UPDATE statistics
   SET s_counter = s_counter - 1
   WHERE s_field = defect_field_old AND launch_id = cur_launch_id;
