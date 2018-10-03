@@ -257,12 +257,12 @@ CREATE TABLE user_filter (
 );
 
 CREATE TABLE filter_condition (
-  id        BIGSERIAL CONSTRAINT filter_condition_pk PRIMARY KEY,
-  filter_id BIGINT REFERENCES user_filter (id) ON DELETE CASCADE,
-  condition FILTER_CONDITION_ENUM NOT NULL,
-  value     VARCHAR               NOT NULL,
-  field     VARCHAR               NOT NULL,
-  negative  BOOLEAN               NOT NULL
+  id              BIGSERIAL CONSTRAINT filter_condition_pk PRIMARY KEY,
+  filter_id       BIGINT REFERENCES user_filter (id) ON DELETE CASCADE,
+  condition       FILTER_CONDITION_ENUM NOT NULL,
+  value           VARCHAR               NOT NULL,
+  search_criteria VARCHAR               NOT NULL,
+  negative        BOOLEAN               NOT NULL
 );
 
 CREATE TABLE filter_sort (
