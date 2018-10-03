@@ -58,7 +58,7 @@ CREATE TABLE user_creation_bid (
 );
 
 CREATE TABLE restore_password_bid (
-  uuid          VARCHAR CONSTRAINT user_creation_bid_pk PRIMARY KEY,
+  uuid          VARCHAR CONSTRAINT restore_password_bid_pk PRIMARY KEY,
   last_modified TIMESTAMP DEFAULT now(),
   email         VARCHAR NOT NULL UNIQUE
 );
