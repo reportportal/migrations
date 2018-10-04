@@ -19,6 +19,7 @@ DROP EXTENSION IF EXISTS tablefunc;
 DROP EXTENSION IF EXISTS ltree CASCADE;
 
 DROP TABLE IF EXISTS server_settings CASCADE;
+DROP TABLE IF EXISTS server_email_details CASCADE;
 DROP TABLE IF EXISTS bug_tracking_system CASCADE;
 DROP TABLE IF EXISTS defect_form_field CASCADE;
 DROP TABLE IF EXISTS defect_field_allowed_value CASCADE;
