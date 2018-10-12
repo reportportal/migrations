@@ -64,14 +64,6 @@ CREATE TABLE users (
   metadata             JSONB   NULL
 );
 
-CREATE TABLE user_config (
-  id           BIGSERIAL CONSTRAINT user_config_pk PRIMARY KEY,
-  user_id      BIGINT REFERENCES users (id) ON DELETE CASCADE,
-  project_id   BIGINT REFERENCES project (id) ON DELETE CASCADE,
-  proposedRole VARCHAR,
-  projectRole  VARCHAR
-);
-
 CREATE TABLE project_user (
   user_id      BIGINT REFERENCES users (id) ON DELETE CASCADE,
   project_id   BIGINT REFERENCES project (id) ON DELETE CASCADE,
@@ -257,12 +249,12 @@ CREATE TABLE user_filter (
 );
 
 CREATE TABLE filter_condition (
-  id        BIGSERIAL CONSTRAINT filter_condition_pk PRIMARY KEY,
-  filter_id BIGINT REFERENCES user_filter (id) ON DELETE CASCADE,
-  condition FILTER_CONDITION_ENUM NOT NULL,
-  value     VARCHAR               NOT NULL,
-  field     VARCHAR               NOT NULL,
-  negative  BOOLEAN               NOT NULL
+  id              BIGSERIAL CONSTRAINT filter_condition_pk PRIMARY KEY,
+  filter_id       BIGINT REFERENCES user_filter (id) ON DELETE CASCADE,
+  condition       FILTER_CONDITION_ENUM NOT NULL,
+  value           VARCHAR               NOT NULL,
+  search_criteria VARCHAR               NOT NULL,
+  negative        BOOLEAN               NOT NULL
 );
 
 CREATE TABLE filter_sort (
@@ -775,9 +767,20 @@ BEGIN
     INSERT INTO statistics (s_counter, s_field, item_id) VALUES (1, defect_field, cur_id)
     ON CONFLICT (s_field, item_id)
       DO UPDATE SET s_counter = statistics.s_counter + 1;
+
+    /* decrease item defects statistics for total field */
+    UPDATE statistics
+    SET s_counter = s_counter - 1
+    WHERE s_field = defect_field_old_total AND item_id = cur_id;
+
+    /* increment item defects statistics for total field */
+    INSERT INTO statistics (s_counter, s_field, item_id) VALUES (1, defect_field_total, cur_id)
+    ON CONFLICT (s_field, item_id)
+      DO UPDATE SET s_counter = statistics.s_counter + 1;
+
   END LOOP;
 
-  /* decrease item defects statistics for concrete field */
+  /* decrease launch defects statistics for concrete field */
   UPDATE statistics
   SET s_counter = s_counter - 1
   WHERE s_field = defect_field_old AND launch_id = cur_launch_id;
