@@ -49,6 +49,20 @@ CREATE TABLE demo_data_postfix (
   project_id BIGINT REFERENCES project (id) ON DELETE CASCADE
 );
 
+CREATE TABLE user_creation_bid (
+  uuid               VARCHAR CONSTRAINT user_creation_bid_pk PRIMARY KEY,
+  last_modified      TIMESTAMP DEFAULT now(),
+  email              VARCHAR NOT NULL UNIQUE,
+  default_project_id BIGINT REFERENCES project (id) ON DELETE CASCADE,
+  role               VARCHAR NOT NULL
+);
+
+CREATE TABLE restore_password_bid (
+  uuid          VARCHAR CONSTRAINT restore_password_bid_pk PRIMARY KEY,
+  last_modified TIMESTAMP DEFAULT now(),
+  email         VARCHAR NOT NULL UNIQUE
+);
+
 CREATE TABLE users (
   id                   BIGSERIAL CONSTRAINT users_pk PRIMARY KEY,
   login                VARCHAR NOT NULL UNIQUE,
@@ -239,13 +253,13 @@ CREATE TABLE auth_config (
 CREATE TABLE filter (
   id          BIGSERIAL CONSTRAINT filter_pk PRIMARY KEY,
   name        VARCHAR                        NOT NULL,
-  project_id  BIGINT REFERENCES project (id) NOT NULL,
+  project_id  BIGINT REFERENCES project (id) ON DELETE CASCADE NOT NULL,
   target      VARCHAR                        NOT NULL,
   description VARCHAR
 );
 
 CREATE TABLE user_filter (
-  id BIGINT NOT NULL CONSTRAINT user_filter_pk PRIMARY KEY CONSTRAINT user_filter_id_fk REFERENCES filter (id)
+   id BIGINT NOT NULL CONSTRAINT user_filter_pk PRIMARY KEY CONSTRAINT user_filter_id_fk REFERENCES filter (id) ON DELETE CASCADE
 );
 
 CREATE TABLE filter_condition (
@@ -445,7 +459,7 @@ CREATE TABLE issue_type_project (
 
 CREATE TABLE issue (
   issue_id          BIGINT CONSTRAINT issue_pk PRIMARY KEY REFERENCES test_item_results (result_id) ON DELETE CASCADE,
-  issue_type        BIGINT REFERENCES issue_type (id),
+  issue_type        BIGINT REFERENCES issue_type (id) ON DELETE CASCADE,
   issue_description TEXT,
   auto_analyzed     BOOLEAN DEFAULT FALSE,
   ignore_analyzer   BOOLEAN DEFAULT FALSE
@@ -454,15 +468,15 @@ CREATE TABLE issue (
 CREATE TABLE ticket (
   id           BIGSERIAL CONSTRAINT ticket_pk PRIMARY KEY,
   ticket_id    VARCHAR(64)                                                   NOT NULL UNIQUE,
-  submitter_id BIGINT REFERENCES users (id)                                  NOT NULL,
+  submitter_id BIGINT REFERENCES users (id)                ON DELETE CASCADE NOT NULL,
   submit_date  TIMESTAMP DEFAULT now()                                       NOT NULL,
   bts_id       INTEGER REFERENCES bug_tracking_system (id) ON DELETE CASCADE NOT NULL,
   url          VARCHAR(256)                                                  NOT NULL
 );
 
 CREATE TABLE issue_ticket (
-  issue_id  BIGINT REFERENCES issue (issue_id),
-  ticket_id BIGINT REFERENCES ticket (id),
+  issue_id  BIGINT REFERENCES issue (issue_id) NOT NULL,
+  ticket_id BIGINT REFERENCES ticket (id) ON DELETE CASCADE NOT NULL,
   CONSTRAINT issue_ticket_pk PRIMARY KEY (issue_id, ticket_id)
 );
 
