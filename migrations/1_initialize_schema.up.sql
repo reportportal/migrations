@@ -490,6 +490,20 @@ CREATE EXTENSION IF NOT EXISTS tablefunc;
 
 ------- Functions and triggers -----------------------
 
+CREATE OR REPLACE FUNCTION has_child(path_value ltree)
+  RETURNS BOOLEAN
+AS $$
+DECLARE
+  hasChilds BOOLEAN;
+BEGIN
+  SELECT EXISTS(SELECT 1 FROM test_item t WHERE t.path <@ path_value
+                                            AND t.path != path_value LIMIT 1) INTO hasChilds;
+
+  RETURN hasChilds;
+END;
+$$
+LANGUAGE plpgsql;
+
 CREATE OR REPLACE FUNCTION merge_launch(LaunchId BIGINT)
   RETURNS INTEGER
 AS $$
