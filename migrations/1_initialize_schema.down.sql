@@ -13,6 +13,7 @@ DROP FUNCTION IF EXISTS update_executions_statistics();
 DROP FUNCTION IF EXISTS increment_defect_statistics();
 DROP FUNCTION IF EXISTS update_defect_statistics();
 DROP FUNCTION IF EXISTS decrease_statistics();
+DROP FUNCTION IF EXISTS merge_launch(LaunchId BIGINT);
 
 DROP EXTENSION IF EXISTS tablefunc;
 
@@ -56,6 +57,7 @@ DROP TABLE IF EXISTS oauth_registration CASCADE;
 DROP TABLE IF EXISTS test_item_results CASCADE;
 
 DROP TABLE IF EXISTS statistics CASCADE;
+DROP TABLE IF EXISTS statistics_field CASCADE;
 
 DROP TABLE IF EXISTS issue_group CASCADE;
 DROP TABLE IF EXISTS issue_type_project_configuration CASCADE;
