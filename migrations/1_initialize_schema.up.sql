@@ -8,7 +8,7 @@ CREATE TYPE AUTH_TYPE_ENUM AS ENUM ('OAUTH', 'NTLM', 'APIKEY', 'BASIC');
 
 CREATE TYPE ACCESS_TOKEN_TYPE_ENUM AS ENUM ('OAUTH', 'NTLM', 'APIKEY', 'BASIC');
 
-CREATE TYPE ACTIVITY_ENTITY_ENUM AS ENUM ('LAUNCH', 'ITEM');
+CREATE TYPE ACTIVITY_ENTITY_ENUM AS ENUM ('LAUNCH', 'ITEM', 'DASHBOARD', 'DEFECT_TYPE', 'EMAIL_CONFIG', 'FILTER', 'IMPORT','INTEGRATION', 'ITEM_ISSUE', 'PROJECT', 'SHARING', 'TICKET', 'USER', 'WIDGET');
 
 CREATE TYPE TEST_ITEM_TYPE_ENUM AS ENUM ('SUITE', 'STORY', 'TEST', 'SCENARIO', 'STEP', 'BEFORE_CLASS', 'BEFORE_GROUPS', 'BEFORE_METHOD',
   'BEFORE_SUITE', 'BEFORE_TEST', 'AFTER_CLASS', 'AFTER_GROUPS', 'AFTER_METHOD', 'AFTER_SUITE', 'AFTER_TEST');
@@ -75,7 +75,7 @@ CREATE TABLE users (
   expired              BOOLEAN NOT NULL,
   default_project_id   BIGINT REFERENCES project (id) ON DELETE CASCADE,
   full_name            VARCHAR NOT NULL,
-  metadata             JSONB   NULL
+  metadata             JSONB   NULL DEFAULT '{}'
 );
 
 CREATE TABLE project_user (
@@ -416,7 +416,8 @@ CREATE TABLE activity (
   entity        ACTIVITY_ENTITY_ENUM                                     NOT NULL,
   action        VARCHAR(128)                                             NOT NULL,
   details       JSONB                                                    NULL,
-  creation_date TIMESTAMP                                                NOT NULL
+  creation_date TIMESTAMP                                                NOT NULL,
+  object_id     BIGINT                                                   NULL
 );
 
 ----------------------------------------------------------------------------------------
@@ -438,16 +439,21 @@ CREATE TABLE issue_type (
   hex_color      VARCHAR(7)         NOT NULL
 );
 
-CREATE TABLE statistics (
-  s_id      BIGSERIAL NOT NULL CONSTRAINT pk_statistics PRIMARY KEY,
-  s_field   VARCHAR   NOT NULL,
-  s_counter INT DEFAULT 0,
-  item_id   BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE,
-  launch_id BIGINT REFERENCES launch (id) ON DELETE CASCADE,
+CREATE TABLE statistics_field (
+  sf_id   BIGSERIAL CONSTRAINT statistics_field_pk PRIMARY KEY,
+  name VARCHAR(256) NOT NULL UNIQUE
+);
 
-  CONSTRAINT unique_status_item UNIQUE (s_field, item_id),
-  CONSTRAINT unique_status_launch UNIQUE (s_field, launch_id),
-  CHECK (statistics.s_counter >= 0)
+CREATE TABLE statistics (
+  s_id BIGSERIAL CONSTRAINT statistics_pk PRIMARY KEY,
+  s_counter        INT DEFAULT 0,
+  launch_id    BIGINT REFERENCES launch (id) ON DELETE CASCADE ,
+  item_id      BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE,
+  statistics_field_id BIGINT REFERENCES statistics_field(sf_id) ON DELETE CASCADE,
+  CONSTRAINT unique_stats_item UNIQUE (statistics_field_id, item_id),
+  CONSTRAINT unique_stats_launch UNIQUE (statistics_field_id, launch_id),
+  CHECK (statistics.s_counter >= 0 AND ((item_id IS NOT NULL AND launch_id IS NULL) OR (launch_id IS NOT NULL AND item_id IS NULL))
+  )
 );
 
 CREATE TABLE issue_type_project (
@@ -481,9 +487,70 @@ CREATE TABLE issue_ticket (
   CONSTRAINT issue_ticket_pk PRIMARY KEY (issue_id, ticket_id)
 );
 
+----------------------------------------------------------------------------------------
+
+
+------------------------------ ACL Security --------------------------------------------
+
+CREATE TABLE acl_sid(
+    id BIGSERIAL NOT NULL PRIMARY KEY,
+    principal BOOLEAN NOT NULL,
+    sid VARCHAR(100) NOT NULL,
+    CONSTRAINT unique_uk_1 UNIQUE(sid,principal)
+);
+
+CREATE TABLE acl_class(
+    id BIGSERIAL NOT NULL PRIMARY KEY,
+    class VARCHAR(100) NOT NULL,
+    CONSTRAINT unique_uk_2 UNIQUE(class)
+);
+
+CREATE TABLE acl_object_identity(
+    id BIGSERIAL PRIMARY KEY,
+    object_id_class BIGINT NOT NULL,
+    object_id_identity VARCHAR(36) NOT NULL,
+    parent_object BIGINT,
+    owner_sid BIGINT,
+    entries_inheriting BOOLEAN NOT NULL,
+    CONSTRAINT unique_uk_3 UNIQUE(object_id_class,object_id_identity),
+    CONSTRAINT foreign_fk_1 FOREIGN KEY(parent_object)REFERENCES acl_object_identity(id),
+    CONSTRAINT foreign_fk_2 FOREIGN KEY(object_id_class)REFERENCES acl_class(id),
+    CONSTRAINT foreign_fk_3 FOREIGN KEY(owner_sid)REFERENCES acl_sid(id)
+);
+
+CREATE TABLE acl_entry(
+    id BIGSERIAL PRIMARY KEY,
+    acl_object_identity BIGINT NOT NULL,
+    ace_order int NOT NULL,
+    sid BIGINT NOT NULL,
+    mask INTEGER NOT NULL,
+    granting BOOLEAN NOT NULL,
+    audit_success BOOLEAN NOT NULL,
+    audit_failure BOOLEAN NOT NULL,
+    CONSTRAINT unique_uk_4 UNIQUE(acl_object_identity,ace_order),
+    CONSTRAINT foreign_fk_4 FOREIGN KEY(acl_object_identity) REFERENCES acl_object_identity(id),
+    CONSTRAINT foreign_fk_5 FOREIGN KEY(sid) REFERENCES acl_sid(id)
+);
+
+----------------------------------------------------------------------------------------
+
 CREATE EXTENSION IF NOT EXISTS tablefunc;
 
 ------- Functions and triggers -----------------------
+
+CREATE OR REPLACE FUNCTION has_child(path_value ltree)
+  RETURNS BOOLEAN
+AS $$
+DECLARE
+  hasChilds BOOLEAN;
+BEGIN
+  SELECT EXISTS(SELECT 1 FROM test_item t WHERE t.path <@ path_value
+                                            AND t.path != path_value LIMIT 1) INTO hasChilds;
+
+  RETURN hasChilds;
+END;
+$$
+LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION merge_launch(LaunchId BIGINT)
   RETURNS INTEGER
@@ -551,13 +618,13 @@ BEGIN
                         AND test_item.launch_id = LaunchId)
       WHERE test_item_results.result_id = parentItemId;
 
-      INSERT INTO statistics (s_field, item_id, launch_id, s_counter)
-      select s_field, parentItemId, null, sum(s_counter)
+      INSERT INTO statistics (statistics_field_id, item_id, launch_id, s_counter)
+      select statistics_field_id, parentItemId, null, sum(s_counter)
       from statistics
              join test_item ti on statistics.item_id = ti.item_id
       where ti.unique_id = firstItemId
-      group by s_field
-      ON CONFLICT ON CONSTRAINT unique_status_item
+      group by statistics_field_id
+      ON CONFLICT ON CONSTRAINT unique_stats_item
                                 DO UPDATE
                                   SET
                                     s_counter = EXCLUDED.s_counter;
@@ -607,13 +674,14 @@ BEGIN
 
   end loop;
 
-  INSERT INTO statistics (s_field, launch_id, s_counter)
-  select s_field, LaunchId, sum(s_counter)
+
+  INSERT INTO statistics (statistics_field_id, launch_id, s_counter)
+  select statistics_field_id, LaunchId, sum(s_counter)
   from statistics
          join test_item ti on statistics.item_id = ti.item_id
   where ti.launch_id = LaunchId
-  group by s_field
-  ON CONFLICT ON CONSTRAINT unique_status_launch
+  group by statistics_field_id
+  ON CONFLICT ON CONSTRAINT unique_stats_launch
                             DO UPDATE
                               SET
                                 s_counter = EXCLUDED.s_counter;
@@ -690,88 +758,104 @@ EXECUTE PROCEDURE get_last_launch_number();
 
 CREATE OR REPLACE FUNCTION update_executions_statistics()
   RETURNS TRIGGER AS $$
-DECLARE   cur_id                 BIGINT;
-  DECLARE executions_field       VARCHAR;
-  DECLARE executions_field_old   VARCHAR;
-  DECLARE executions_field_total VARCHAR;
-  DECLARE cur_launch_id          BIGINT;
+DECLARE   cur_id                    BIGINT;
+  DECLARE executions_field          VARCHAR;
+  DECLARE executions_field_id       BIGINT;
+  DECLARE executions_field_old      VARCHAR;
+  DECLARE executions_field_old_id   BIGINT;
+  DECLARE executions_field_total    VARCHAR;
+  DECLARE executions_field_total_id BIGINT;
+  DECLARE cur_launch_id             BIGINT;
 
 BEGIN
   IF exists(SELECT 1
             FROM test_item AS s
-              JOIN test_item AS s2 ON s.item_id = s2.parent_id
+                   JOIN test_item AS s2 ON s.item_id = s2.parent_id
             WHERE s.item_id = new.result_id)
   THEN RETURN new;
   END IF;
 
-  cur_launch_id := (SELECT launch_id
-                    FROM test_item
-                    WHERE
-                      test_item.item_id = new.result_id);
+  cur_launch_id := (SELECT launch_id FROM test_item WHERE test_item.item_id = new.result_id);
 
   executions_field := concat('statistics$executions$', lower(new.status :: VARCHAR));
   executions_field_total := 'statistics$executions$total';
 
+  INSERT INTO statistics_field (name) VALUES (executions_field) ON CONFLICT DO NOTHING;
+
+  INSERT INTO statistics_field (name) VALUES (executions_field_total) ON CONFLICT DO NOTHING;
+
+  executions_field_id = (SELECT DISTINCT ON (statistics_field.name) sf_id
+                         FROM statistics_field
+                         WHERE statistics_field.name = executions_field);
+  executions_field_total_id = (SELECT DISTINCT ON (statistics_field.name) sf_id
+                               FROM statistics_field
+                               WHERE statistics_field.name = executions_field_total);
+
   IF old.status = 'IN_PROGRESS' :: STATUS_ENUM
   THEN
     FOR cur_id IN
-    (SELECT item_id
-     FROM test_item
-     WHERE PATH @> (SELECT PATH
-                    FROM test_item
-                    WHERE item_id = NEW.result_id))
+    (SELECT item_id FROM test_item WHERE PATH @> (SELECT PATH FROM test_item WHERE item_id = NEW.result_id))
     LOOP
       /* increment item executions statistics for concrete field */
-      INSERT INTO statistics (s_counter, s_field, item_id) VALUES (1, executions_field, cur_id)
-      ON CONFLICT (s_field, item_id)
-        DO UPDATE SET s_counter = statistics.s_counter + 1;
+      INSERT INTO statistics (s_counter, statistics_field_id, item_id)
+      VALUES (1, executions_field_id, cur_id)
+      ON CONFLICT (statistics_field_id, item_id)
+                  DO UPDATE SET s_counter = statistics.s_counter + 1;
       /* increment item executions statistics for total field */
-      INSERT INTO statistics (s_counter, s_field, item_id) VALUES (1, executions_field_total, cur_id)
-      ON CONFLICT (s_field, item_id)
-        DO UPDATE SET s_counter = statistics.s_counter + 1;
+      INSERT INTO statistics (s_counter, statistics_field_id, item_id)
+      VALUES (1, executions_field_total_id, cur_id)
+      ON CONFLICT (statistics_field_id, item_id)
+                  DO UPDATE SET s_counter = statistics.s_counter + 1;
     END LOOP;
 
     /* increment launch executions statistics for concrete field */
-    INSERT INTO statistics (s_counter, s_field, launch_id) VALUES (1, executions_field, cur_launch_id)
-    ON CONFLICT (s_field, launch_id)
-      DO UPDATE SET s_counter = statistics.s_counter + 1;
+    INSERT INTO statistics (s_counter, statistics_field_id, launch_id)
+    VALUES (1, executions_field_id, cur_launch_id)
+    ON CONFLICT (statistics_field_id, launch_id)
+                DO UPDATE SET s_counter = statistics.s_counter + 1;
     /* increment launch executions statistics for total field */
-    INSERT INTO statistics (s_counter, s_field, launch_id) VALUES (1, executions_field_total, cur_launch_id)
-    ON CONFLICT (s_field, launch_id)
-      DO UPDATE SET s_counter = statistics.s_counter + 1;
+    INSERT INTO statistics (s_counter, statistics_field_id, launch_id)
+    VALUES (1, executions_field_total_id, cur_launch_id)
+    ON CONFLICT (statistics_field_id, launch_id)
+                DO UPDATE SET s_counter = statistics.s_counter + 1;
     RETURN new;
   END IF;
 
   IF old.status != 'IN_PROGRESS' :: STATUS_ENUM AND old.status != new.status
   THEN
     executions_field_old := concat('statistics$executions$', lower(old.status :: VARCHAR));
+
+    executions_field_old_id = (SELECT DISTINCT ON (statistics_field.name) sf_id
+                               FROM statistics_field
+                               WHERE statistics_field.name = executions_field_old);
+
     FOR cur_id IN
-    (SELECT item_id
-     FROM test_item
-     WHERE PATH @> (SELECT PATH
-                    FROM test_item
-                    WHERE item_id = NEW.result_id))
+    (SELECT item_id FROM test_item WHERE PATH @> (SELECT PATH FROM test_item WHERE item_id = NEW.result_id))
 
     LOOP
       /* decrease item executions statistics for old field */
       UPDATE statistics
       SET s_counter = s_counter - 1
-      WHERE s_field = executions_field_old AND item_id = cur_id;
+      WHERE statistics_field_id = executions_field_old_id
+        AND item_id = cur_id;
 
       /* increment item executions statistics for concrete field */
-      INSERT INTO STATISTICS (s_counter, s_field, item_id) VALUES (1, executions_field, cur_id)
-      ON CONFLICT (s_field, item_id)
-        DO UPDATE SET s_counter = STATISTICS.s_counter + 1;
+      INSERT INTO STATISTICS (s_counter, statistics_field_id, item_id)
+      VALUES (1, executions_field_id, cur_id)
+      ON CONFLICT (statistics_field_id, item_id)
+                  DO UPDATE SET s_counter = STATISTICS.s_counter + 1;
     END LOOP;
 
     /* decrease item executions statistics for old field */
     UPDATE statistics
     SET s_counter = s_counter - 1
-    WHERE s_field = executions_field_old AND launch_id = cur_launch_id;
+    WHERE statistics_field_id = executions_field_old_id
+      AND launch_id = cur_launch_id;
     /* increment launch executions statistics for concrete field */
-    INSERT INTO statistics (s_counter, s_field, launch_id) VALUES (1, executions_field, cur_launch_id)
-    ON CONFLICT (s_field, launch_id)
-      DO UPDATE SET s_counter = statistics.s_counter + 1;
+    INSERT INTO statistics (s_counter, statistics_field_id, launch_id)
+    VALUES (1, executions_field_id, cur_launch_id)
+    ON CONFLICT (statistics_field_id, launch_id)
+                DO UPDATE SET s_counter = statistics.s_counter + 1;
     RETURN new;
   END IF;
 END;
@@ -787,62 +871,72 @@ CREATE TRIGGER after_test_results_update
 
 CREATE OR REPLACE FUNCTION increment_defect_statistics()
   RETURNS TRIGGER AS $$
-DECLARE   cur_id             BIGINT;
-  DECLARE defect_field       VARCHAR;
-  DECLARE defect_field_total VARCHAR;
-  DECLARE cur_launch_id      BIGINT;
+DECLARE   cur_id                BIGINT;
+  DECLARE defect_field          VARCHAR;
+  DECLARE defect_field_id       BIGINT;
+  DECLARE defect_field_total    VARCHAR;
+  DECLARE defect_field_total_id BIGINT;
+  DECLARE cur_launch_id         BIGINT;
 
 BEGIN
   IF exists(SELECT 1
             FROM test_item AS s
-              JOIN test_item AS s2 ON s.item_id = s2.parent_id
+                   JOIN test_item AS s2 ON s.item_id = s2.parent_id
             WHERE s.item_id = new.issue_id)
   THEN RETURN new;
   END IF;
 
-  cur_launch_id := (SELECT launch_id
-                    FROM test_item
-                    WHERE
-                      test_item.item_id = new.issue_id);
+  cur_launch_id := (SELECT launch_id FROM test_item WHERE test_item.item_id = new.issue_id);
 
-  defect_field := (SELECT
-                     concat('statistics$defects$', lower(public.issue_group.issue_group :: VARCHAR), '$', lower(public.issue_type.locator))
+  defect_field := (SELECT concat('statistics$defects$', lower(public.issue_group.issue_group :: VARCHAR), '$',
+                                 lower(public.issue_type.locator))
                    FROM issue
-                     JOIN issue_type ON issue.issue_type = issue_type.id
-                     JOIN issue_group ON issue_type.issue_group_id = issue_group.issue_group_id
+                          JOIN issue_type ON issue.issue_type = issue_type.id
+                          JOIN issue_group ON issue_type.issue_group_id = issue_group.issue_group_id
                    WHERE issue.issue_id = new.issue_id);
 
   defect_field_total := (SELECT concat('statistics$defects$', lower(public.issue_group.issue_group :: VARCHAR), '$total')
                          FROM issue
-                           JOIN issue_type ON issue.issue_type = issue_type.id
-                           JOIN issue_group ON issue_type.issue_group_id = issue_group.issue_group_id
+                                JOIN issue_type ON issue.issue_type = issue_type.id
+                                JOIN issue_group ON issue_type.issue_group_id = issue_group.issue_group_id
                          WHERE issue.issue_id = new.issue_id);
+
+  INSERT INTO statistics_field (name) VALUES (defect_field) ON CONFLICT DO NOTHING;
+
+  INSERT INTO statistics_field (name) VALUES (defect_field_total) ON CONFLICT DO NOTHING;
+
+  defect_field_id = (SELECT DISTINCT ON (statistics_field.name) sf_id FROM statistics_field WHERE statistics_field.name = defect_field);
+
+  defect_field_total_id = (SELECT DISTINCT ON (statistics_field.name) sf_id
+                           FROM statistics_field
+                           WHERE statistics_field.name = defect_field_total);
+
   FOR cur_id IN
-  (SELECT item_id
-   FROM test_item
-   WHERE PATH @> (SELECT PATH
-                  FROM test_item
-                  WHERE item_id = NEW.issue_id))
+  (SELECT item_id FROM test_item WHERE PATH @> (SELECT PATH FROM test_item WHERE item_id = NEW.issue_id))
 
   LOOP
     /* increment item defects statistics for concrete field */
-    INSERT INTO statistics (s_counter, s_field, item_id) VALUES (1, defect_field, cur_id)
-    ON CONFLICT (s_field, item_id)
-      DO UPDATE SET s_counter = statistics.s_counter + 1;
+    INSERT INTO statistics (s_counter, statistics_field_id, item_id)
+    VALUES (1, defect_field_id, cur_id)
+    ON CONFLICT (statistics_field_id, item_id)
+                DO UPDATE SET s_counter = statistics.s_counter + 1;
     /* increment item defects statistics for total field */
-    INSERT INTO statistics (s_counter, s_field, item_id) VALUES (1, defect_field_total, cur_id)
-    ON CONFLICT (s_field, item_id)
-      DO UPDATE SET s_counter = statistics.s_counter + 1;
+    INSERT INTO statistics (s_counter, statistics_field_id, item_id)
+    VALUES (1, defect_field_total_id, cur_id)
+    ON CONFLICT (statistics_field_id, item_id)
+                DO UPDATE SET s_counter = statistics.s_counter + 1;
   END LOOP;
 
   /* increment launch defects statistics for concrete field */
-  INSERT INTO statistics (s_counter, s_field, launch_id) VALUES (1, defect_field, cur_launch_id)
-  ON CONFLICT (s_field, launch_id)
-    DO UPDATE SET s_counter = statistics.s_counter + 1;
+  INSERT INTO statistics (s_counter, statistics_field_id, launch_id)
+  VALUES (1, defect_field_id, cur_launch_id)
+  ON CONFLICT (statistics_field_id, launch_id)
+              DO UPDATE SET s_counter = statistics.s_counter + 1;
   /* increment launch defects statistics for total field */
-  INSERT INTO statistics (s_counter, s_field, launch_id) VALUES (1, defect_field_total, cur_launch_id)
-  ON CONFLICT (s_field, launch_id)
-    DO UPDATE SET s_counter = statistics.s_counter + 1;
+  INSERT INTO statistics (s_counter, statistics_field_id, launch_id)
+  VALUES (1, defect_field_total_id, cur_launch_id)
+  ON CONFLICT (statistics_field_id, launch_id)
+              DO UPDATE SET s_counter = statistics.s_counter + 1;
   RETURN new;
 END;
 $$
@@ -857,17 +951,19 @@ CREATE TRIGGER after_issue_insert
 
 CREATE OR REPLACE FUNCTION update_defect_statistics()
   RETURNS TRIGGER AS $$
-DECLARE   cur_id                 BIGINT;
-  DECLARE defect_field           VARCHAR;
-  DECLARE defect_field_total     VARCHAR;
-  DECLARE defect_field_old       VARCHAR;
-  DECLARE defect_field_old_total VARCHAR;
-  DECLARE cur_launch_id          BIGINT;
+DECLARE   cur_id                    BIGINT;
+  DECLARE defect_field              VARCHAR;
+  DECLARE defect_field_total        VARCHAR;
+  DECLARE defect_field_old_id       BIGINT;
+  DECLARE defect_field_old_total_id BIGINT;
+  DECLARE defect_field_id           BIGINT;
+  DECLARE defect_field_total_id     BIGINT;
+  DECLARE cur_launch_id             BIGINT;
 
 BEGIN
   IF exists(SELECT 1
             FROM test_item AS s
-              JOIN test_item AS s2 ON s.item_id = s2.parent_id
+                   JOIN test_item AS s2 ON s.item_id = s2.parent_id
             WHERE s.item_id = new.issue_id)
   THEN RETURN new;
   END IF;
@@ -876,82 +972,99 @@ BEGIN
   THEN RETURN new;
   END IF;
 
-  cur_launch_id := (SELECT launch_id
-                    FROM test_item
-                    WHERE
-                      test_item.item_id = new.issue_id);
+  cur_launch_id := (SELECT launch_id FROM test_item WHERE test_item.item_id = new.issue_id);
 
-  defect_field := (SELECT
-                     concat('statistics$defects$', lower(public.issue_group.issue_group :: VARCHAR), '$', lower(public.issue_type.locator))
+  defect_field := (SELECT concat('statistics$defects$', lower(public.issue_group.issue_group :: VARCHAR), '$',
+                                 lower(public.issue_type.locator))
                    FROM issue_type
-                     JOIN issue_group ON issue_type.issue_group_id = issue_group.issue_group_id
+                          JOIN issue_group ON issue_type.issue_group_id = issue_group.issue_group_id
                    WHERE issue_type.id = new.issue_type);
 
-  defect_field_old := (SELECT concat('statistics$defects$', lower(public.issue_group.issue_group :: VARCHAR), '$',
-                                     lower(public.issue_type.locator))
-                       FROM issue_type
-                         JOIN issue_group ON issue_type.issue_group_id = issue_group.issue_group_id
-                       WHERE issue_type.id = old.issue_type);
+  defect_field_old_id := (SELECT DISTINCT ON (statistics_field.name) sf_id
+                          FROM statistics_field
+                          WHERE statistics_field.name =
+                                (SELECT concat('statistics$defects$', lower(public.issue_group.issue_group :: VARCHAR), '$',
+                                               lower(public.issue_type.locator))
+                                 FROM issue_type
+                                        JOIN issue_group ON issue_type.issue_group_id = issue_group.issue_group_id
+                                 WHERE issue_type.id = old.issue_type));
 
   defect_field_total := (SELECT concat('statistics$defects$', lower(public.issue_group.issue_group :: VARCHAR), '$total')
                          FROM issue_type
-                           JOIN issue_group ON issue_type.issue_group_id = issue_group.issue_group_id
+                                JOIN issue_group ON issue_type.issue_group_id = issue_group.issue_group_id
                          WHERE issue_type.id = new.issue_type);
 
-  defect_field_old_total := (SELECT concat('statistics$defects$', lower(public.issue_group.issue_group :: VARCHAR), '$total')
-                             FROM issue_type
-                               JOIN issue_group ON issue_type.issue_group_id = issue_group.issue_group_id
-                             WHERE issue_type.id = old.issue_type);
+  defect_field_old_total_id := (SELECT DISTINCT ON (statistics_field.name) sf_id
+                                FROM statistics_field
+                                WHERE statistics_field.name =
+                                      (SELECT concat('statistics$defects$', lower(public.issue_group.issue_group :: VARCHAR), '$total')
+                                       FROM issue_type
+                                              JOIN issue_group ON issue_type.issue_group_id = issue_group.issue_group_id
+                                       WHERE issue_type.id = old.issue_type));
+
+  INSERT INTO statistics_field (name) VALUES (defect_field) ON CONFLICT DO NOTHING;
+
+  INSERT INTO statistics_field (name) VALUES (defect_field_total) ON CONFLICT DO NOTHING;
+
+  defect_field_id = (SELECT DISTINCT ON (statistics_field.name) sf_id FROM statistics_field WHERE statistics_field.name = defect_field);
+
+  defect_field_total_id = (SELECT DISTINCT ON (statistics_field.name) sf_id
+                           FROM statistics_field
+                           WHERE statistics_field.name = defect_field_total);
 
   FOR cur_id IN
-  (SELECT item_id
-   FROM test_item
-   WHERE PATH @> (SELECT PATH
-                  FROM test_item
-                  WHERE item_id = NEW.issue_id))
+  (SELECT item_id FROM test_item WHERE PATH @> (SELECT PATH FROM test_item WHERE item_id = NEW.issue_id))
 
   LOOP
     /* decrease item defects statistics for concrete field */
     UPDATE statistics
     SET s_counter = s_counter - 1
-    WHERE s_field = defect_field_old AND statistics.item_id = cur_id;
+    WHERE statistics_field_id = defect_field_old_id
+      AND statistics.item_id = cur_id;
 
     /* increment item defects statistics for concrete field */
-    INSERT INTO statistics (s_counter, s_field, item_id) VALUES (1, defect_field, cur_id)
-    ON CONFLICT (s_field, item_id)
-      DO UPDATE SET s_counter = statistics.s_counter + 1;
+    INSERT INTO statistics (s_counter, statistics_field_id, item_id)
+    VALUES (1, defect_field_id, cur_id)
+    ON CONFLICT (statistics_field_id, item_id)
+                DO UPDATE SET s_counter = statistics.s_counter + 1;
 
     /* decrease item defects statistics for total field */
     UPDATE statistics
     SET s_counter = s_counter - 1
-    WHERE s_field = defect_field_old_total AND item_id = cur_id;
+    WHERE statistics_field_id = defect_field_old_total_id
+      AND item_id = cur_id;
 
     /* increment item defects statistics for total field */
-    INSERT INTO statistics (s_counter, s_field, item_id) VALUES (1, defect_field_total, cur_id)
-    ON CONFLICT (s_field, item_id)
-      DO UPDATE SET s_counter = statistics.s_counter + 1;
+    INSERT INTO statistics (s_counter, statistics_field_id, item_id)
+    VALUES (1, defect_field_total_id, cur_id)
+    ON CONFLICT (statistics_field_id, item_id)
+                DO UPDATE SET s_counter = statistics.s_counter + 1;
 
   END LOOP;
 
   /* decrease launch defects statistics for concrete field */
   UPDATE statistics
   SET s_counter = s_counter - 1
-  WHERE s_field = defect_field_old AND launch_id = cur_launch_id;
+  WHERE statistics_field_id = defect_field_old_id
+    AND launch_id = cur_launch_id;
 
   /* increment launch defects statistics for concrete field */
-  INSERT INTO statistics (s_counter, s_field, launch_id) VALUES (1, defect_field, cur_launch_id)
-  ON CONFLICT (s_field, launch_id)
-    DO UPDATE SET s_counter = statistics.s_counter + 1;
+  INSERT INTO statistics (s_counter, statistics_field_id, launch_id)
+  VALUES (1, defect_field_id, cur_launch_id)
+  ON CONFLICT (statistics_field_id, launch_id)
+              DO UPDATE SET s_counter = statistics.s_counter + 1;
 
   /* decrease launch defects statistics for total field */
   UPDATE statistics
   SET s_counter = s_counter - 1
-  WHERE s_field = defect_field_old_total AND launch_id = cur_launch_id;
+  WHERE statistics_field_id = defect_field_old_total_id
+    AND launch_id = cur_launch_id;
 
   /* increment launch defects statistics for total field */
-  INSERT INTO statistics (s_counter, s_field, launch_id) VALUES (1, defect_field_total, cur_launch_id)
-  ON CONFLICT (s_field, launch_id)
-    DO UPDATE SET s_counter = statistics.s_counter + 1;
+  INSERT INTO statistics (s_counter, statistics_field_id, launch_id)
+  VALUES (1, defect_field_total_id, cur_launch_id)
+  ON CONFLICT (statistics_field_id, launch_id)
+              DO UPDATE SET s_counter = statistics.s_counter + 1;
   RETURN new;
 END;
 $$
@@ -984,26 +1097,26 @@ BEGIN
 
   LOOP
     FOR cur_statistics_fields IN (SELECT
-                                    s_field,
+                                    statistics_field_id,
                                     s_counter
                                   FROM statistics
                                   WHERE item_id = old.result_id)
     LOOP
       UPDATE STATISTICS
       SET s_counter = s_counter - cur_statistics_fields.s_counter
-      WHERE STATISTICS.s_field = cur_statistics_fields.s_field AND item_id = cur_id;
+      WHERE STATISTICS.statistics_field_id = cur_statistics_fields.statistics_field_id AND item_id = cur_id;
     END LOOP;
   END LOOP;
 
   FOR cur_statistics_fields IN (SELECT
-                                  s_field,
+                                  statistics_field_id,
                                   s_counter
                                 FROM statistics
                                 WHERE item_id = old.result_id)
   LOOP
     UPDATE statistics
     SET s_counter = s_counter - cur_statistics_fields.s_counter
-    WHERE statistics.s_field = cur_statistics_fields.s_field AND launch_id = cur_launch_id;
+    WHERE statistics.statistics_field_id = cur_statistics_fields.statistics_field_id AND launch_id = cur_launch_id;
   END LOOP;
 
   RETURN old;
@@ -1015,3 +1128,6 @@ CREATE TRIGGER before_item_delete
   BEFORE DELETE
   ON test_item_results
   FOR EACH ROW EXECUTE PROCEDURE decrease_statistics();
+
+
+
