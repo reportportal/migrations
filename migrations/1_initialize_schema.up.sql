@@ -674,6 +674,7 @@ BEGIN
 
   end loop;
 
+
   INSERT INTO statistics (statistics_field_id, launch_id, s_counter)
   select statistics_field_id, LaunchId, sum(s_counter)
   from statistics
