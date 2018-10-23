@@ -43,12 +43,6 @@ CREATE TABLE project (
   metadata        JSONB                   NULL
 );
 
-CREATE TABLE demo_data_postfix (
-  id         BIGSERIAL CONSTRAINT demo_data_postfix_pk PRIMARY KEY,
-  data       VARCHAR NOT NULL,
-  project_id BIGINT REFERENCES project (id) ON DELETE CASCADE
-);
-
 CREATE TABLE user_creation_bid (
   uuid               VARCHAR CONSTRAINT user_creation_bid_pk PRIMARY KEY,
   last_modified      TIMESTAMP DEFAULT now(),
