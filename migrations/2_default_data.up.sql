@@ -23,30 +23,30 @@ INSERT INTO attribute (name) VALUES ('emailFrom');
 
 --add project-attribute for created default projects
 
-INSERT INTO issue_type (id, issue_group_id, locator, issue_name, abbreviation, hex_color)
-VALUES (1, 1, 'ti001', 'To Investigate', 'TI', '#ffb743');
+INSERT INTO issue_type (issue_group_id, locator, issue_name, abbreviation, hex_color)
+VALUES (1, 'ti001', 'To Investigate', 'TI', '#ffb743');
 INSERT INTO issue_type_project (project_id, issue_type_id)
-VALUES ((SELECT currval(pg_get_serial_sequence('project', 'id'))), 1);
+VALUES ((SELECT currval(pg_get_serial_sequence('project', 'id'))), (SELECT currval(pg_get_serial_sequence('issue_type', 'id'))));
 
-INSERT INTO issue_type (id, issue_group_id, locator, issue_name, abbreviation, hex_color)
-VALUES (2, 2, 'ab001', 'Automation Bug', 'AB', '#f7d63e');
+INSERT INTO issue_type (issue_group_id, locator, issue_name, abbreviation, hex_color)
+VALUES (2, 'ab001', 'Automation Bug', 'AB', '#f7d63e');
 INSERT INTO issue_type_project (project_id, issue_type_id)
-VALUES ((SELECT currval(pg_get_serial_sequence('project', 'id'))), 2);
+VALUES ((SELECT currval(pg_get_serial_sequence('project', 'id'))), (SELECT currval(pg_get_serial_sequence('issue_type', 'id'))));
 
-INSERT INTO issue_type (id, issue_group_id, locator, issue_name, abbreviation, hex_color)
-VALUES (3, 3, 'pb001', 'Product Bug', 'PB', '#ec3900');
+INSERT INTO issue_type (issue_group_id, locator, issue_name, abbreviation, hex_color)
+VALUES (3, 'pb001', 'Product Bug', 'PB', '#ec3900');
 INSERT INTO issue_type_project (project_id, issue_type_id)
-VALUES ((SELECT currval(pg_get_serial_sequence('project', 'id'))), 3);
+VALUES ((SELECT currval(pg_get_serial_sequence('project', 'id'))), (SELECT currval(pg_get_serial_sequence('issue_type', 'id'))));
 
-INSERT INTO issue_type (id, issue_group_id, locator, issue_name, abbreviation, hex_color)
-VALUES (4, 4, 'nd001', 'No Defect', 'ND', '#777777');
+INSERT INTO issue_type (issue_group_id, locator, issue_name, abbreviation, hex_color)
+VALUES (4, 'nd001', 'No Defect', 'ND', '#777777');
 INSERT INTO issue_type_project (project_id, issue_type_id)
-VALUES ((SELECT currval(pg_get_serial_sequence('project', 'id'))), 4);
+VALUES ((SELECT currval(pg_get_serial_sequence('project', 'id'))), (SELECT currval(pg_get_serial_sequence('issue_type', 'id'))));
 
-INSERT INTO issue_type (id, issue_group_id, locator, issue_name, abbreviation, hex_color)
-VALUES (5, 5, 'si001', 'System Issue', 'SI', '#0274d1');
+INSERT INTO issue_type (issue_group_id, locator, issue_name, abbreviation, hex_color)
+VALUES (5, 'si001', 'System Issue', 'SI', '#0274d1');
 INSERT INTO issue_type_project (project_id, issue_type_id)
-VALUES ((SELECT currval(pg_get_serial_sequence('project', 'id'))), 5);
+VALUES ((SELECT currval(pg_get_serial_sequence('project', 'id'))), (SELECT currval(pg_get_serial_sequence('issue_type', 'id'))));
 
 
 INSERT INTO users (login, password, email, role, type, default_project_id, full_name, expired)
