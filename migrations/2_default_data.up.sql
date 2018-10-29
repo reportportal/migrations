@@ -1,4 +1,4 @@
-INSERT INTO project (name, additional_info, creation_date) VALUES ('default_personal', 'additional info', now());
+INSERT INTO project (name, project_type, additional_info, creation_date) VALUES ('default_personal', 'PERSONAL', 'additional info', now());
 -- INSERT INTO project_configuration (id, project_type, interrupt_timeout, keep_logs_interval, keep_screenshots_interval, created_on)
 -- VALUES ((SELECT currval(pg_get_serial_sequence('project', 'id'))), 'PERSONAL', '1 day', '1 month', '2 weeks', now());
 
@@ -56,7 +56,7 @@ VALUES ('default', '3fde6bb0541387e4ebdadf7c2ff31123', 'defaultemail@domain.com'
 INSERT INTO project_user (user_id, project_id, project_role)
 VALUES ((SELECT currval(pg_get_serial_sequence('users', 'id'))), (SELECT currval(pg_get_serial_sequence('project', 'id'))), 'MEMBER');
 
-INSERT INTO project (name, additional_info, creation_date) VALUES ('superadmin_personal', 'another additional info', now());
+INSERT INTO project (name, project_type, additional_info, creation_date) VALUES ('superadmin_personal', 'PERSONAL', 'another additional info', now());
 
 INSERT INTO issue_type_project (project_id, issue_type_id)
 VALUES ((SELECT currval(pg_get_serial_sequence('project', 'id'))), 1);
