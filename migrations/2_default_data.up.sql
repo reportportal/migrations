@@ -8,18 +8,18 @@ INSERT INTO issue_group (issue_group_id, issue_group) VALUES (3, 'PRODUCT_BUG');
 INSERT INTO issue_group (issue_group_id, issue_group) VALUES (4, 'NO_DEFECT');
 INSERT INTO issue_group (issue_group_id, issue_group) VALUES (5, 'SYSTEM_ISSUE');
 
-INSERT INTO attribute (name) VALUES ('entryType');
-INSERT INTO attribute (name) VALUES ('interruptJobTime');
-INSERT INTO attribute (name) VALUES ('keepLogs');
-INSERT INTO attribute (name) VALUES ('keepScreenshots');
-INSERT INTO attribute (name) VALUES ('minDocFreq');
-INSERT INTO attribute (name) VALUES ('minTermFreq');
-INSERT INTO attribute (name) VALUES ('minShouldMatch');
-INSERT INTO attribute (name) VALUES ('numberOfLogLines');
-INSERT INTO attribute (name) VALUES ('indexingRunning');
-INSERT INTO attribute (name) VALUES ('isAutoAnalyzerEnabled');
-INSERT INTO attribute (name) VALUES ('emailEnabled');
-INSERT INTO attribute (name) VALUES ('emailFrom');
+INSERT INTO attribute (name) VALUES ('job.interruptJobTime');
+INSERT INTO attribute (name) VALUES ('job.keepLogs');
+INSERT INTO attribute (name) VALUES ('job.keepScreenshots');
+INSERT INTO attribute (name) VALUES ('analyzer.minDocFreq');
+INSERT INTO attribute (name) VALUES ('analyzer.minTermFreq');
+INSERT INTO attribute (name) VALUES ('analyzer.minShouldMatch');
+INSERT INTO attribute (name) VALUES ('analyzer.numberOfLogLines');
+INSERT INTO attribute (name) VALUES ('analyzer.indexingRunning');
+INSERT INTO attribute (name) VALUES ('analyzer.isAutoAnalyzerEnabled');
+INSERT INTO attribute (name) VALUES ('analyzer.autoAnalyzerMode');
+INSERT INTO attribute (name) VALUES ('email.enabled');
+INSERT INTO attribute (name) VALUES ('"email.from');
 
 --add project-attribute for created default projects
 

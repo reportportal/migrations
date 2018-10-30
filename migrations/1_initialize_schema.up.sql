@@ -8,7 +8,7 @@ CREATE TYPE AUTH_TYPE_ENUM AS ENUM ('OAUTH', 'NTLM', 'APIKEY', 'BASIC');
 
 CREATE TYPE ACCESS_TOKEN_TYPE_ENUM AS ENUM ('OAUTH', 'NTLM', 'APIKEY', 'BASIC');
 
-CREATE TYPE ACTIVITY_ENTITY_ENUM AS ENUM ('LAUNCH', 'ITEM', 'DASHBOARD', 'DEFECT_TYPE', 'EMAIL_CONFIG', 'FILTER', 'IMPORT','INTEGRATION', 'ITEM_ISSUE', 'PROJECT', 'SHARING', 'TICKET', 'USER', 'WIDGET');
+CREATE TYPE ACTIVITY_ENTITY_ENUM AS ENUM ('LAUNCH', 'ITEM', 'DASHBOARD', 'DEFECT_TYPE', 'EMAIL_CONFIG', 'FILTER', 'IMPORT', 'INTEGRATION', 'ITEM_ISSUE', 'PROJECT', 'SHARING', 'TICKET', 'USER', 'WIDGET');
 
 CREATE TYPE TEST_ITEM_TYPE_ENUM AS ENUM ('SUITE', 'STORY', 'TEST', 'SCENARIO', 'STEP', 'BEFORE_CLASS', 'BEFORE_GROUPS', 'BEFORE_METHOD',
   'BEFORE_SUITE', 'BEFORE_TEST', 'AFTER_CLASS', 'AFTER_GROUPS', 'AFTER_METHOD', 'AFTER_SUITE', 'AFTER_TEST');
@@ -39,7 +39,7 @@ CREATE TABLE project (
   id              BIGSERIAL CONSTRAINT project_pk PRIMARY KEY,
   name            VARCHAR                 NOT NULL UNIQUE,
   additional_info VARCHAR,
-  project_type    VARCHAR NOT NULL,
+  project_type    VARCHAR                 NOT NULL,
   creation_date   TIMESTAMP DEFAULT now() NOT NULL,
   metadata        JSONB                   NULL
 );
@@ -247,14 +247,14 @@ CREATE TABLE auth_config (
 
 CREATE TABLE filter (
   id          BIGSERIAL CONSTRAINT filter_pk PRIMARY KEY,
-  name        VARCHAR                        NOT NULL,
+  name        VARCHAR                                          NOT NULL,
   project_id  BIGINT REFERENCES project (id) ON DELETE CASCADE NOT NULL,
-  target      VARCHAR                        NOT NULL,
+  target      VARCHAR                                          NOT NULL,
   description VARCHAR
 );
 
 CREATE TABLE user_filter (
-   id BIGINT NOT NULL CONSTRAINT user_filter_pk PRIMARY KEY CONSTRAINT user_filter_id_fk REFERENCES filter (id) ON DELETE CASCADE
+  id BIGINT NOT NULL CONSTRAINT user_filter_pk PRIMARY KEY CONSTRAINT user_filter_id_fk REFERENCES filter (id) ON DELETE CASCADE
 );
 
 CREATE TABLE filter_condition (
@@ -417,6 +417,12 @@ CREATE TABLE activity (
 
 ----------------------------------------------------------------------------------------
 
+CREATE TABLE user_preference (
+  project_id BIGINT REFERENCES project (id) ON DELETE CASCADE,
+  user_id    BIGINT REFERENCES users (id) ON DELETE CASCADE,
+  filter_id  BIGINT REFERENCES filter (id) ON DELETE CASCADE,
+  CONSTRAINT user_preference_pk PRIMARY KEY (project_id, user_id, filter_id)
+);
 
 ------------------------------ Issue ticket many to many ------------------------------
 
@@ -435,16 +441,16 @@ CREATE TABLE issue_type (
 );
 
 CREATE TABLE statistics_field (
-  sf_id   BIGSERIAL CONSTRAINT statistics_field_pk PRIMARY KEY,
-  name VARCHAR(256) NOT NULL UNIQUE
+  sf_id BIGSERIAL CONSTRAINT statistics_field_pk PRIMARY KEY,
+  name  VARCHAR(256) NOT NULL UNIQUE
 );
 
 CREATE TABLE statistics (
-  s_id BIGSERIAL CONSTRAINT statistics_pk PRIMARY KEY,
-  s_counter        INT DEFAULT 0,
-  launch_id    BIGINT REFERENCES launch (id) ON DELETE CASCADE ,
-  item_id      BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE,
-  statistics_field_id BIGINT REFERENCES statistics_field(sf_id) ON DELETE CASCADE,
+  s_id                BIGSERIAL CONSTRAINT statistics_pk PRIMARY KEY,
+  s_counter           INT DEFAULT 0,
+  launch_id           BIGINT REFERENCES launch (id) ON DELETE CASCADE,
+  item_id             BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE,
+  statistics_field_id BIGINT REFERENCES statistics_field (sf_id) ON DELETE CASCADE,
   CONSTRAINT unique_stats_item UNIQUE (statistics_field_id, item_id),
   CONSTRAINT unique_stats_launch UNIQUE (statistics_field_id, launch_id),
   CHECK (statistics.s_counter >= 0 AND ((item_id IS NOT NULL AND launch_id IS NULL) OR (launch_id IS NOT NULL AND item_id IS NULL))
@@ -470,7 +476,7 @@ CREATE TABLE issue (
 CREATE TABLE ticket (
   id           BIGSERIAL CONSTRAINT ticket_pk PRIMARY KEY,
   ticket_id    VARCHAR(64)                                                   NOT NULL UNIQUE,
-  submitter_id BIGINT REFERENCES users (id)                ON DELETE CASCADE NOT NULL,
+  submitter_id BIGINT REFERENCES users (id) ON DELETE CASCADE                NOT NULL,
   submit_date  TIMESTAMP DEFAULT now()                                       NOT NULL,
   bts_id       INTEGER REFERENCES bug_tracking_system (id) ON DELETE CASCADE NOT NULL,
   url          VARCHAR(256)                                                  NOT NULL
@@ -478,7 +484,7 @@ CREATE TABLE ticket (
 
 CREATE TABLE issue_ticket (
   issue_id  BIGINT REFERENCES issue (issue_id) ON DELETE CASCADE NOT NULL,
-  ticket_id BIGINT REFERENCES ticket (id) ON DELETE CASCADE NOT NULL,
+  ticket_id BIGINT REFERENCES ticket (id) ON DELETE CASCADE      NOT NULL,
   CONSTRAINT issue_ticket_pk PRIMARY KEY (issue_id, ticket_id)
 );
 
@@ -487,44 +493,44 @@ CREATE TABLE issue_ticket (
 
 ------------------------------ ACL Security --------------------------------------------
 
-CREATE TABLE acl_sid(
-    id BIGSERIAL NOT NULL PRIMARY KEY,
-    principal BOOLEAN NOT NULL,
-    sid VARCHAR(100) NOT NULL,
-    CONSTRAINT unique_uk_1 UNIQUE(sid,principal)
+CREATE TABLE acl_sid (
+  id        BIGSERIAL    NOT NULL PRIMARY KEY,
+  principal BOOLEAN      NOT NULL,
+  sid       VARCHAR(100) NOT NULL,
+  CONSTRAINT unique_uk_1 UNIQUE (sid, principal)
 );
 
-CREATE TABLE acl_class(
-    id BIGSERIAL NOT NULL PRIMARY KEY,
-    class VARCHAR(100) NOT NULL,
-    CONSTRAINT unique_uk_2 UNIQUE(class)
+CREATE TABLE acl_class (
+  id    BIGSERIAL    NOT NULL PRIMARY KEY,
+  class VARCHAR(100) NOT NULL,
+  CONSTRAINT unique_uk_2 UNIQUE (class)
 );
 
-CREATE TABLE acl_object_identity(
-    id BIGSERIAL PRIMARY KEY,
-    object_id_class BIGINT NOT NULL,
-    object_id_identity VARCHAR(36) NOT NULL,
-    parent_object BIGINT,
-    owner_sid BIGINT,
-    entries_inheriting BOOLEAN NOT NULL,
-    CONSTRAINT unique_uk_3 UNIQUE(object_id_class,object_id_identity),
-    CONSTRAINT foreign_fk_1 FOREIGN KEY(parent_object)REFERENCES acl_object_identity(id),
-    CONSTRAINT foreign_fk_2 FOREIGN KEY(object_id_class)REFERENCES acl_class(id),
-    CONSTRAINT foreign_fk_3 FOREIGN KEY(owner_sid)REFERENCES acl_sid(id)
+CREATE TABLE acl_object_identity (
+  id                 BIGSERIAL PRIMARY KEY,
+  object_id_class    BIGINT      NOT NULL,
+  object_id_identity VARCHAR(36) NOT NULL,
+  parent_object      BIGINT,
+  owner_sid          BIGINT,
+  entries_inheriting BOOLEAN     NOT NULL,
+  CONSTRAINT unique_uk_3 UNIQUE (object_id_class, object_id_identity),
+  CONSTRAINT foreign_fk_1 FOREIGN KEY (parent_object) REFERENCES acl_object_identity (id),
+  CONSTRAINT foreign_fk_2 FOREIGN KEY (object_id_class) REFERENCES acl_class (id),
+  CONSTRAINT foreign_fk_3 FOREIGN KEY (owner_sid) REFERENCES acl_sid (id)
 );
 
-CREATE TABLE acl_entry(
-    id BIGSERIAL PRIMARY KEY,
-    acl_object_identity BIGINT NOT NULL,
-    ace_order int NOT NULL,
-    sid BIGINT NOT NULL,
-    mask INTEGER NOT NULL,
-    granting BOOLEAN NOT NULL,
-    audit_success BOOLEAN NOT NULL,
-    audit_failure BOOLEAN NOT NULL,
-    CONSTRAINT unique_uk_4 UNIQUE(acl_object_identity,ace_order),
-    CONSTRAINT foreign_fk_4 FOREIGN KEY(acl_object_identity) REFERENCES acl_object_identity(id),
-    CONSTRAINT foreign_fk_5 FOREIGN KEY(sid) REFERENCES acl_sid(id)
+CREATE TABLE acl_entry (
+  id                  BIGSERIAL PRIMARY KEY,
+  acl_object_identity BIGINT  NOT NULL,
+  ace_order           int     NOT NULL,
+  sid                 BIGINT  NOT NULL,
+  mask                INTEGER NOT NULL,
+  granting            BOOLEAN NOT NULL,
+  audit_success       BOOLEAN NOT NULL,
+  audit_failure       BOOLEAN NOT NULL,
+  CONSTRAINT unique_uk_4 UNIQUE (acl_object_identity, ace_order),
+  CONSTRAINT foreign_fk_4 FOREIGN KEY (acl_object_identity) REFERENCES acl_object_identity (id),
+  CONSTRAINT foreign_fk_5 FOREIGN KEY (sid) REFERENCES acl_sid (id)
 );
 
 ----------------------------------------------------------------------------------------
@@ -652,10 +658,8 @@ BEGIN
           WHERE test_item.path <@ MergingTestItemField.path_value
             AND test_item.path != MergingTestItemField.path_value
             AND nlevel(test_item.path) = i + 1;
-          DELETE
-          from test_item
-          where test_item.path = MergingTestItemField.path_value
-            and test_item.item_id != parentItemId;
+          DELETE from test_item where test_item.path = MergingTestItemField.path_value
+                                  and test_item.item_id != parentItemId;
 
         end if;
 
@@ -691,11 +695,8 @@ CREATE OR REPLACE FUNCTION get_last_launch_number()
   RETURNS TRIGGER AS
 $BODY$
 BEGIN
-  NEW.number = (SELECT number
-                FROM launch
-                WHERE name = NEW.name AND project_id = NEW.project_id
-                ORDER BY number DESC
-                LIMIT 1) + 1;
+  NEW.number = (SELECT number FROM launch WHERE name = NEW.name
+                                            AND project_id = NEW.project_id ORDER BY number DESC LIMIT 1) + 1;
   NEW.number = CASE WHEN NEW.number IS NULL
     THEN 1
                ELSE NEW.number END;
@@ -708,10 +709,10 @@ CREATE FUNCTION check_wired_tickets()
   RETURNS TRIGGER AS
 $BODY$
 BEGIN
-  DELETE FROM ticket
-  WHERE (SELECT count(issue_ticket.ticket_id)
-         FROM issue_ticket
-         WHERE issue_ticket.ticket_id = old.ticket_id) = 0 AND ticket.id = old.ticket_id;
+  DELETE
+  FROM ticket
+  WHERE (SELECT count(issue_ticket.ticket_id) FROM issue_ticket WHERE issue_ticket.ticket_id = old.ticket_id) = 0
+    AND ticket.id = old.ticket_id;
   RETURN NULL;
 END;
 $BODY$
@@ -722,10 +723,10 @@ CREATE FUNCTION check_wired_widgets()
   RETURNS TRIGGER AS
 $BODY$
 BEGIN
-  DELETE FROM widget
-  WHERE (SELECT count(dashboard_widget.widget_id)
-         FROM dashboard_widget
-         WHERE dashboard_widget.widget_id = old.widget_id) = 0 AND widget.id = old.widget_id;
+  DELETE
+  FROM widget
+  WHERE (SELECT count(dashboard_widget.widget_id) FROM dashboard_widget WHERE dashboard_widget.widget_id = old.widget_id) = 0
+    AND widget.id = old.widget_id;
   RETURN NULL;
 END;
 $BODY$
@@ -763,10 +764,8 @@ DECLARE   cur_id                    BIGINT;
   DECLARE cur_launch_id             BIGINT;
 
 BEGIN
-  IF exists(SELECT 1
-            FROM test_item AS s
-                   JOIN test_item AS s2 ON s.item_id = s2.parent_id
-            WHERE s.item_id = new.result_id)
+  IF exists(SELECT 1 FROM test_item AS s
+                            JOIN test_item AS s2 ON s.item_id = s2.parent_id WHERE s.item_id = new.result_id)
   THEN RETURN new;
   END IF;
 
@@ -829,10 +828,8 @@ BEGIN
 
     LOOP
       /* decrease item executions statistics for old field */
-      UPDATE statistics
-      SET s_counter = s_counter - 1
-      WHERE statistics_field_id = executions_field_old_id
-        AND item_id = cur_id;
+      UPDATE statistics SET s_counter = s_counter - 1 WHERE statistics_field_id = executions_field_old_id
+                                                        AND item_id = cur_id;
 
       /* increment item executions statistics for concrete field */
       INSERT INTO STATISTICS (s_counter, statistics_field_id, item_id)
@@ -842,10 +839,8 @@ BEGIN
     END LOOP;
 
     /* decrease item executions statistics for old field */
-    UPDATE statistics
-    SET s_counter = s_counter - 1
-    WHERE statistics_field_id = executions_field_old_id
-      AND launch_id = cur_launch_id;
+    UPDATE statistics SET s_counter = s_counter - 1 WHERE statistics_field_id = executions_field_old_id
+                                                      AND launch_id = cur_launch_id;
     /* increment launch executions statistics for concrete field */
     INSERT INTO statistics (s_counter, statistics_field_id, launch_id)
     VALUES (1, executions_field_id, cur_launch_id)
@@ -874,10 +869,8 @@ DECLARE   cur_id                BIGINT;
   DECLARE cur_launch_id         BIGINT;
 
 BEGIN
-  IF exists(SELECT 1
-            FROM test_item AS s
-                   JOIN test_item AS s2 ON s.item_id = s2.parent_id
-            WHERE s.item_id = new.issue_id)
+  IF exists(SELECT 1 FROM test_item AS s
+                            JOIN test_item AS s2 ON s.item_id = s2.parent_id WHERE s.item_id = new.issue_id)
   THEN RETURN new;
   END IF;
 
@@ -956,10 +949,8 @@ DECLARE   cur_id                    BIGINT;
   DECLARE cur_launch_id             BIGINT;
 
 BEGIN
-  IF exists(SELECT 1
-            FROM test_item AS s
-                   JOIN test_item AS s2 ON s.item_id = s2.parent_id
-            WHERE s.item_id = new.issue_id)
+  IF exists(SELECT 1 FROM test_item AS s
+                            JOIN test_item AS s2 ON s.item_id = s2.parent_id WHERE s.item_id = new.issue_id)
   THEN RETURN new;
   END IF;
 
@@ -1012,10 +1003,8 @@ BEGIN
 
   LOOP
     /* decrease item defects statistics for concrete field */
-    UPDATE statistics
-    SET s_counter = s_counter - 1
-    WHERE statistics_field_id = defect_field_old_id
-      AND statistics.item_id = cur_id;
+    UPDATE statistics SET s_counter = s_counter - 1 WHERE statistics_field_id = defect_field_old_id
+                                                      AND statistics.item_id = cur_id;
 
     /* increment item defects statistics for concrete field */
     INSERT INTO statistics (s_counter, statistics_field_id, item_id)
@@ -1024,10 +1013,8 @@ BEGIN
                 DO UPDATE SET s_counter = statistics.s_counter + 1;
 
     /* decrease item defects statistics for total field */
-    UPDATE statistics
-    SET s_counter = s_counter - 1
-    WHERE statistics_field_id = defect_field_old_total_id
-      AND item_id = cur_id;
+    UPDATE statistics SET s_counter = s_counter - 1 WHERE statistics_field_id = defect_field_old_total_id
+                                                      AND item_id = cur_id;
 
     /* increment item defects statistics for total field */
     INSERT INTO statistics (s_counter, statistics_field_id, item_id)
@@ -1038,10 +1025,8 @@ BEGIN
   END LOOP;
 
   /* decrease launch defects statistics for concrete field */
-  UPDATE statistics
-  SET s_counter = s_counter - 1
-  WHERE statistics_field_id = defect_field_old_id
-    AND launch_id = cur_launch_id;
+  UPDATE statistics SET s_counter = s_counter - 1 WHERE statistics_field_id = defect_field_old_id
+                                                    AND launch_id = cur_launch_id;
 
   /* increment launch defects statistics for concrete field */
   INSERT INTO statistics (s_counter, statistics_field_id, launch_id)
@@ -1050,10 +1035,8 @@ BEGIN
               DO UPDATE SET s_counter = statistics.s_counter + 1;
 
   /* decrease launch defects statistics for total field */
-  UPDATE statistics
-  SET s_counter = s_counter - 1
-  WHERE statistics_field_id = defect_field_old_total_id
-    AND launch_id = cur_launch_id;
+  UPDATE statistics SET s_counter = s_counter - 1 WHERE statistics_field_id = defect_field_old_total_id
+                                                    AND launch_id = cur_launch_id;
 
   /* increment launch defects statistics for total field */
   INSERT INTO statistics (s_counter, statistics_field_id, launch_id)
@@ -1079,39 +1062,27 @@ DECLARE   cur_launch_id         BIGINT;
   DECLARE cur_statistics_fields RECORD;
 BEGIN
 
-  cur_launch_id := (SELECT launch_id
-                    FROM test_item
-                    WHERE item_id = old.result_id);
+  cur_launch_id := (SELECT launch_id FROM test_item WHERE item_id = old.result_id);
 
   FOR cur_id IN
-  (SELECT item_id
-   FROM test_item
-   WHERE PATH @> (SELECT PATH
-                  FROM test_item
-                  WHERE item_id = old.result_id))
+  (SELECT item_id FROM test_item WHERE PATH @> (SELECT PATH FROM test_item WHERE item_id = old.result_id))
 
   LOOP
-    FOR cur_statistics_fields IN (SELECT
-                                    statistics_field_id,
-                                    s_counter
-                                  FROM statistics
-                                  WHERE item_id = old.result_id)
+    FOR cur_statistics_fields IN (SELECT statistics_field_id, s_counter FROM statistics WHERE item_id = old.result_id)
     LOOP
       UPDATE STATISTICS
       SET s_counter = s_counter - cur_statistics_fields.s_counter
-      WHERE STATISTICS.statistics_field_id = cur_statistics_fields.statistics_field_id AND item_id = cur_id;
+      WHERE STATISTICS.statistics_field_id = cur_statistics_fields.statistics_field_id
+        AND item_id = cur_id;
     END LOOP;
   END LOOP;
 
-  FOR cur_statistics_fields IN (SELECT
-                                  statistics_field_id,
-                                  s_counter
-                                FROM statistics
-                                WHERE item_id = old.result_id)
+  FOR cur_statistics_fields IN (SELECT statistics_field_id, s_counter FROM statistics WHERE item_id = old.result_id)
   LOOP
     UPDATE statistics
     SET s_counter = s_counter - cur_statistics_fields.s_counter
-    WHERE statistics.statistics_field_id = cur_statistics_fields.statistics_field_id AND launch_id = cur_launch_id;
+    WHERE statistics.statistics_field_id = cur_statistics_fields.statistics_field_id
+      AND launch_id = cur_launch_id;
   END LOOP;
 
   RETURN old;
