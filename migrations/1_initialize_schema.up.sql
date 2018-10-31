@@ -418,10 +418,11 @@ CREATE TABLE activity (
 ----------------------------------------------------------------------------------------
 
 CREATE TABLE user_preference (
-  project_id BIGINT REFERENCES project (id) ON DELETE CASCADE,
-  user_id    BIGINT REFERENCES users (id) ON DELETE CASCADE,
-  filter_id  BIGINT REFERENCES filter (id) ON DELETE CASCADE,
-  CONSTRAINT user_preference_pk PRIMARY KEY (project_id, user_id, filter_id)
+  id         BIGSERIAL CONSTRAINT user_preference_pk PRIMARY KEY,
+  project_id BIGINT NOT NULL REFERENCES project (id) ON DELETE CASCADE,
+  user_id    BIGINT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  filter_id  BIGINT NOT NULL REFERENCES filter (id) ON DELETE CASCADE,
+  CONSTRAINT user_preference_uq UNIQUE (project_id, user_id, filter_id)
 );
 
 ------------------------------ Issue ticket many to many ------------------------------
