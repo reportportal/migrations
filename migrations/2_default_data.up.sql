@@ -92,3 +92,7 @@ VALUES ((SELECT currval(pg_get_serial_sequence('project', 'id'))), (SELECT currv
 INSERT INTO ldap_synchronization_attributes (
   email, full_name, photo)
 VALUES ('mail', 'displayName', 'thumbnailPhoto');
+
+INSERT INTO integration_type (
+  name, auth_flow, creation_date, group_type)
+VALUES ('jira-bts', 'BASIC', now(), 'BTS');
