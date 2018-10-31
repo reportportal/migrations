@@ -82,7 +82,8 @@ INSERT INTO project_user (user_id, project_id, project_role) VALUES
 
 INSERT INTO integration_type (
   name, auth_flow, creation_date, group_type)
-VALUES ('test integration type', 'LDAP', now(), 'NOTIFICATION');
+VALUES ('test integration type', 'LDAP', now(), 'NOTIFICATION'),
+       ('RALLY', 'OAUTH', now(), 'BTS');
 
 INSERT INTO integration (
   project_id, type, enabled, creation_date)
