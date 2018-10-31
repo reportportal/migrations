@@ -289,7 +289,8 @@ CREATE TABLE widget (
   description VARCHAR,
   widget_type VARCHAR NOT NULL,
   items_count SMALLINT,
-  project_id  BIGINT REFERENCES project (id) ON DELETE CASCADE
+  project_id  BIGINT REFERENCES project (id) ON DELETE CASCADE,
+  CONSTRAINT unq_widget_name_project UNIQUE (name, project_id)
 );
 
 CREATE TABLE content_field (
