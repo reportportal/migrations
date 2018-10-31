@@ -19,7 +19,7 @@ INSERT INTO attribute (name) VALUES ('analyzer.indexingRunning');
 INSERT INTO attribute (name) VALUES ('analyzer.isAutoAnalyzerEnabled');
 INSERT INTO attribute (name) VALUES ('analyzer.autoAnalyzerMode');
 INSERT INTO attribute (name) VALUES ('email.enabled');
-INSERT INTO attribute (name) VALUES ('"email.from');
+INSERT INTO attribute (name) VALUES ('email.from');
 
 --add project-attribute for created default projects
 
