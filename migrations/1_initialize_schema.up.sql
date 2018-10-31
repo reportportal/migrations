@@ -39,6 +39,7 @@ CREATE TABLE project (
   id              BIGSERIAL CONSTRAINT project_pk PRIMARY KEY,
   name            VARCHAR                 NOT NULL UNIQUE,
   additional_info VARCHAR,
+  project_type    VARCHAR NOT NULL,
   creation_date   TIMESTAMP DEFAULT now() NOT NULL,
   metadata        JSONB                   NULL
 );
