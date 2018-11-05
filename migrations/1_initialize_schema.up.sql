@@ -17,7 +17,7 @@ CREATE TYPE ISSUE_GROUP_ENUM AS ENUM ('PRODUCT_BUG', 'AUTOMATION_BUG', 'SYSTEM_I
 
 CREATE TYPE INTEGRATION_AUTH_FLOW_ENUM AS ENUM ('OAUTH', 'BASIC', 'TOKEN', 'FORM', 'LDAP');
 
-CREATE TYPE INTEGRATION_GROUP_ENUM AS ENUM ('BTS', 'NOTIFICATION');
+CREATE TYPE INTEGRATION_GROUP_ENUM AS ENUM ('BTS', 'NOTIFICATION', 'AUTH');
 
 CREATE TYPE FILTER_CONDITION_ENUM AS ENUM ('EQUALS', 'NOT_EQUALS', 'CONTAINS', 'EXISTS', 'IN', 'HAS', 'GREATER_THAN', 'GREATER_THAN_OR_EQUALS',
   'LOWER_THAN', 'LOWER_THAN_OR_EQUALS', 'BETWEEN');
@@ -134,6 +134,16 @@ CREATE TABLE sender_case (
   value VARCHAR[]
 );
 
+CREATE TABLE launch_names (
+  email_sender_case_id BIGINT REFERENCES email_sender_case (id) ON DELETE CASCADE,
+  launch_name            VARCHAR(256)
+);
+
+CREATE TABLE launch_tags (
+  email_sender_case_id BIGINT REFERENCES email_sender_case (id) ON DELETE CASCADE,
+  launch_tag            VARCHAR(256)
+);
+
 CREATE TABLE attribute (
   id   BIGSERIAL CONSTRAINT attribute_pk PRIMARY KEY,
   name VARCHAR(256)
@@ -186,7 +196,7 @@ CREATE TABLE defect_form_field_value (
 CREATE TABLE integration_type (
   id            SERIAL CONSTRAINT integration_type_pk PRIMARY KEY,
   name          VARCHAR(128)               NOT NULL,
-  auth_flow     INTEGRATION_AUTH_FLOW_ENUM NOT NULL,
+  auth_flow     INTEGRATION_AUTH_FLOW_ENUM,
   creation_date TIMESTAMP DEFAULT now()    NOT NULL,
   group_type    INTEGRATION_GROUP_ENUM     NOT NULL,
   details       JSONB                      NULL
@@ -340,14 +350,12 @@ CREATE TABLE launch (
   last_modified        TIMESTAMP DEFAULT now()                                             NOT NULL,
   mode                 LAUNCH_MODE_ENUM                                                    NOT NULL,
   status               STATUS_ENUM                                                         NOT NULL,
-  email_sender_case_id BIGINT REFERENCES email_sender_case (id) ON DELETE CASCADE,
   CONSTRAINT unq_name_number UNIQUE (NAME, number, project_id, uuid)
 );
 
 CREATE TABLE launch_tag (
   id                   BIGSERIAL CONSTRAINT launch_tag_pk PRIMARY KEY,
   value                TEXT NOT NULL,
-  email_sender_case_id BIGINT REFERENCES email_sender_case (id) ON DELETE CASCADE,
   launch_id            BIGINT REFERENCES launch (id) ON DELETE CASCADE
 );
 
