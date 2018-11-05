@@ -125,23 +125,13 @@ CREATE TABLE oauth_registration_restriction (
 ------------------------------ Project configurations ------------------------------
 CREATE TABLE email_sender_case (
   id         BIGSERIAL CONSTRAINT email_sender_case_pk PRIMARY KEY,
-  send_case  VARCHAR(64),
   project_id BIGSERIAL REFERENCES project (id) ON DELETE CASCADE
 );
 
-CREATE TABLE launch_names (
+CREATE TABLE sender_case (
   email_sender_case_id BIGINT REFERENCES email_sender_case (id) ON DELETE CASCADE,
-  launch_name            VARCHAR
-);
-
-CREATE TABLE launch_tags (
-  email_sender_case_id BIGINT REFERENCES email_sender_case (id) ON DELETE CASCADE,
-  launch_tag            VARCHAR
-);
-
-CREATE TABLE recipients (
-  email_sender_case_id BIGINT REFERENCES email_sender_case (id) ON DELETE CASCADE,
-  recipient            VARCHAR(256)
+  key VARCHAR,
+  value VARCHAR[]
 );
 
 CREATE TABLE attribute (
