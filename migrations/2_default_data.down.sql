@@ -1,3 +1,4 @@
+DELETE FROM project_attribute CASCADE;
 DELETE FROM issue_type_project CASCADE;
 DELETE FROM issue_type CASCADE;
 DELETE FROM project CASCADE;

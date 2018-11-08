@@ -38,7 +38,6 @@ CREATE TABLE server_settings (
 CREATE TABLE project (
   id              BIGSERIAL CONSTRAINT project_pk PRIMARY KEY,
   name            VARCHAR                 NOT NULL UNIQUE,
-  additional_info VARCHAR,
   project_type    VARCHAR                 NOT NULL,
   creation_date   TIMESTAMP DEFAULT now() NOT NULL,
   metadata        JSONB                   NULL
@@ -123,26 +122,6 @@ CREATE TABLE oauth_registration_restriction (
 
 
 ------------------------------ Project configurations ------------------------------
-CREATE TABLE email_sender_case (
-  id         BIGSERIAL CONSTRAINT email_sender_case_pk PRIMARY KEY,
-  send_case  VARCHAR(64),
-  project_id BIGSERIAL REFERENCES project (id) ON DELETE CASCADE
-);
-
-CREATE TABLE recipients (
-  email_sender_case_id BIGINT REFERENCES email_sender_case (id) ON DELETE CASCADE,
-  recipient            VARCHAR(256)
-);
-
-CREATE TABLE launch_names (
-  email_sender_case_id BIGINT REFERENCES email_sender_case (id) ON DELETE CASCADE,
-  launch_name            VARCHAR(256)
-);
-
-CREATE TABLE launch_tags (
-  email_sender_case_id BIGINT REFERENCES email_sender_case (id) ON DELETE CASCADE,
-  launch_tag            VARCHAR(256)
-);
 
 CREATE TABLE attribute (
   id   BIGSERIAL CONSTRAINT attribute_pk PRIMARY KEY,
@@ -338,25 +317,25 @@ CREATE TABLE widget_filter (
 --------------------------- Launches, items, logs --------------------------------------
 
 CREATE TABLE launch (
-  id                   BIGSERIAL CONSTRAINT launch_pk PRIMARY KEY,
-  uuid                 VARCHAR                                                             NOT NULL,
-  project_id           BIGINT REFERENCES project (id) ON DELETE CASCADE                    NOT NULL,
-  user_id              BIGINT REFERENCES users (id) ON DELETE SET NULL,
-  name                 VARCHAR(256)                                                        NOT NULL,
-  description          TEXT,
-  start_time           TIMESTAMP                                                           NOT NULL,
-  end_time             TIMESTAMP,
-  number               INTEGER                                                             NOT NULL,
-  last_modified        TIMESTAMP DEFAULT now()                                             NOT NULL,
-  mode                 LAUNCH_MODE_ENUM                                                    NOT NULL,
-  status               STATUS_ENUM                                                         NOT NULL,
+  id            BIGSERIAL CONSTRAINT launch_pk PRIMARY KEY,
+  uuid          VARCHAR                                                             NOT NULL,
+  project_id    BIGINT REFERENCES project (id) ON DELETE CASCADE                    NOT NULL,
+  user_id       BIGINT REFERENCES users (id) ON DELETE SET NULL,
+  name          VARCHAR(256)                                                        NOT NULL,
+  description   TEXT,
+  start_time    TIMESTAMP                                                           NOT NULL,
+  end_time      TIMESTAMP,
+  number        INTEGER                                                             NOT NULL,
+  last_modified TIMESTAMP DEFAULT now()                                             NOT NULL,
+  mode          LAUNCH_MODE_ENUM                                                    NOT NULL,
+  status        STATUS_ENUM                                                         NOT NULL,
   CONSTRAINT unq_name_number UNIQUE (NAME, number, project_id, uuid)
 );
 
 CREATE TABLE launch_tag (
-  id                   BIGSERIAL CONSTRAINT launch_tag_pk PRIMARY KEY,
-  value                TEXT NOT NULL,
-  launch_id            BIGINT REFERENCES launch (id) ON DELETE CASCADE
+  id        BIGSERIAL CONSTRAINT launch_tag_pk PRIMARY KEY,
+  value     TEXT NOT NULL,
+  launch_id BIGINT REFERENCES launch (id) ON DELETE CASCADE
 );
 
 CREATE TABLE test_item (
@@ -781,7 +760,13 @@ BEGIN
 
   cur_launch_id := (SELECT launch_id FROM test_item WHERE test_item.item_id = new.result_id);
 
-  executions_field := concat('statistics$executions$', lower(new.status :: VARCHAR));
+  IF new.status = 'INTERRUPTED' :: STATUS_ENUM
+  THEN
+    executions_field := 'statistics$executions$failed';
+  ELSE
+    executions_field := concat('statistics$executions$', lower(new.status :: VARCHAR));
+  end if;
+
   executions_field_total := 'statistics$executions$total';
 
   INSERT INTO statistics_field (name) VALUES (executions_field) ON CONFLICT DO NOTHING;
