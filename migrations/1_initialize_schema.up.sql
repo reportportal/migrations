@@ -38,7 +38,6 @@ CREATE TABLE server_settings (
 CREATE TABLE project (
   id              BIGSERIAL CONSTRAINT project_pk PRIMARY KEY,
   name            VARCHAR                 NOT NULL UNIQUE,
-  additional_info VARCHAR,
   project_type    VARCHAR                 NOT NULL,
   creation_date   TIMESTAMP DEFAULT now() NOT NULL,
   metadata        JSONB                   NULL
@@ -123,26 +122,6 @@ CREATE TABLE oauth_registration_restriction (
 
 
 ------------------------------ Project configurations ------------------------------
-CREATE TABLE email_sender_case (
-  id         BIGSERIAL CONSTRAINT email_sender_case_pk PRIMARY KEY,
-  send_case  VARCHAR(64),
-  project_id BIGSERIAL REFERENCES project (id) ON DELETE CASCADE
-);
-
-CREATE TABLE recipients (
-  email_sender_case_id BIGINT REFERENCES email_sender_case (id) ON DELETE CASCADE,
-  recipient            VARCHAR(256)
-);
-
-CREATE TABLE launch_names (
-  email_sender_case_id BIGINT REFERENCES email_sender_case (id) ON DELETE CASCADE,
-  launch_name          VARCHAR(256)
-);
-
-CREATE TABLE launch_tags (
-  email_sender_case_id BIGINT REFERENCES email_sender_case (id) ON DELETE CASCADE,
-  launch_tag           VARCHAR(256)
-);
 
 CREATE TABLE attribute (
   id   BIGSERIAL CONSTRAINT attribute_pk PRIMARY KEY,
@@ -1080,6 +1059,14 @@ BEGIN
 
   cur_launch_id := (SELECT launch_id FROM test_item WHERE item_id = old.result_id);
 
+  FOR cur_statistics_fields IN (SELECT statistics_field_id, s_counter FROM statistics WHERE item_id = old.result_id)
+  LOOP
+    UPDATE statistics
+    SET s_counter = s_counter - cur_statistics_fields.s_counter
+    WHERE statistics.statistics_field_id = cur_statistics_fields.statistics_field_id
+      AND launch_id = cur_launch_id;
+  END LOOP;
+
   FOR cur_id IN
   (SELECT item_id FROM test_item WHERE PATH @> (SELECT PATH FROM test_item WHERE item_id = old.result_id))
 
@@ -1091,14 +1078,6 @@ BEGIN
       WHERE STATISTICS.statistics_field_id = cur_statistics_fields.statistics_field_id
         AND item_id = cur_id;
     END LOOP;
-  END LOOP;
-
-  FOR cur_statistics_fields IN (SELECT statistics_field_id, s_counter FROM statistics WHERE item_id = old.result_id)
-  LOOP
-    UPDATE statistics
-    SET s_counter = s_counter - cur_statistics_fields.s_counter
-    WHERE statistics.statistics_field_id = cur_statistics_fields.statistics_field_id
-      AND launch_id = cur_launch_id;
   END LOOP;
 
   RETURN old;

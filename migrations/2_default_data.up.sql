@@ -7,14 +7,20 @@ $$DECLARE
   ldap BIGINT;
   rally BIGINT;
   jira BIGINT;
+  email BIGINT;
 BEGIN
 
     INSERT INTO integration_type (name, auth_flow, creation_date, group_type) VALUES ('test integration type', 'LDAP', now(), 'AUTH');
     ldap := (SELECT currval(pg_get_serial_sequence('integration_type', 'id')));
+
     INSERT INTO integration_type (name, auth_flow, creation_date, group_type) VALUES ('RALLY', 'OAUTH', now(), 'BTS') ;
     rally := (SELECT currval(pg_get_serial_sequence('integration_type', 'id')));
+
     INSERT INTO integration_type (name, auth_flow, creation_date, group_type) VALUES ('jira-bts', 'BASIC', now(), 'BTS');
     jira := (SELECT currval(pg_get_serial_sequence('integration_type', 'id')));
+
+    INSERT INTO integration_type (name, creation_date, group_type) VALUES ('email', now(), 'NOTIFICATION');
+    email := (SELECT currval(pg_get_serial_sequence('integration_type', 'id')));
 
     INSERT INTO ldap_synchronization_attributes (email, full_name, photo) VALUES ('mail', 'displayName', 'thumbnailPhoto');
 
@@ -40,25 +46,23 @@ BEGIN
     INSERT INTO attribute (name) VALUES ('analyzer.indexingRunning');
     INSERT INTO attribute (name) VALUES ('analyzer.isAutoAnalyzerEnabled');
     INSERT INTO attribute (name) VALUES ('analyzer.autoAnalyzerMode');
-    INSERT INTO attribute (name) VALUES ('email.enabled');
-    INSERT INTO attribute (name) VALUES ('email.from');
 
     -- Superadmin project and user
-    INSERT INTO project (name, project_type, additional_info, creation_date) VALUES ('superadmin_personal', 'PERSONAL', 'another additional info', now());
+    INSERT INTO project (name, project_type, creation_date, metadata) VALUES ('superadmin_personal', 'PERSONAL', now(), '{"metadata": {"additional_info": ""}}');
     superadminProject := (SELECT currval(pg_get_serial_sequence('project', 'id')));
 
-    INSERT INTO users (login, password, email, role, type, default_project_id, full_name, expired)
-    VALUES ('superadmin', '5d39d85bddde885f6579f8121e11eba2', 'superadminemail@domain.com', 'ADMINISTRATOR', 'INTERNAL', superadminProject, 'tester', FALSE);
+    INSERT INTO users (login, password, email, role, type, default_project_id, full_name, expired, metadata)
+    VALUES ('superadmin', '5d39d85bddde885f6579f8121e11eba2', 'superadminemail@domain.com', 'ADMINISTRATOR', 'INTERNAL', superadminProject, 'tester', FALSE, '{"metadata": {"last_login": "now"}}');
     superadmin := (SELECT currval(pg_get_serial_sequence('users', 'id')));
 
     INSERT INTO project_user (user_id, project_id, project_role) VALUES (superadmin, superadminProject, 'PROJECT_MANAGER');
 
     -- Default project and user
-    INSERT INTO project (name, project_type, additional_info, creation_date) VALUES ('default_personal', 'PERSONAL', 'additional info', now());
+    INSERT INTO project (name, project_type, creation_date, metadata) VALUES ('default_personal', 'PERSONAL', now(), '{"metadata": {"additional_info": ""}}');
     defaultProject := (SELECT currval(pg_get_serial_sequence('project', 'id')));
 
-    INSERT INTO users (login, password, email, role, type, default_project_id, full_name, expired)
-    VALUES ('default', '3fde6bb0541387e4ebdadf7c2ff31123', 'defaultemail@domain.com', 'USER', 'INTERNAL', defaultProject, 'tester', FALSE);
+    INSERT INTO users (login, password, email, role, type, default_project_id, full_name, expired, metadata)
+    VALUES ('default', '3fde6bb0541387e4ebdadf7c2ff31123', 'defaultemail@domain.com', 'USER', 'INTERNAL', defaultProject, 'tester', FALSE, '{"metadata": {"last_login": "now"}}');
     defaultId := (SELECT currval(pg_get_serial_sequence('users', 'id')));
 
     INSERT INTO project_user (user_id, project_id, project_role) VALUES (defaultId, defaultProject, 'PROJECT_MANAGER');
@@ -72,5 +76,23 @@ BEGIN
     INSERT INTO integration (project_id, type, enabled, creation_date) VALUES (superadminProject, ldap, FALSE, now()), (defaultProject, ldap, FALSE, now());
     INSERT INTO integration (project_id, type, enabled, creation_date) VALUES (superadminProject, rally, FALSE, now()), (defaultProject, rally, FALSE, now());
     INSERT INTO integration (project_id, type, enabled, creation_date) VALUES (superadminProject, jira, FALSE, now()), (defaultProject, jira, FALSE, now());
+
+    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (1, '1 day', defaultProject), (1, '1 day', superadminProject);
+    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (2, '3 months', defaultProject), (2, '3 months', superadminProject);
+    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (3, '2 weeks', defaultProject), (3, '2 weeks', superadminProject);
+    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (4, 7, defaultProject), (4, 7, superadminProject);
+    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (5, 1, defaultProject), (5, 1, superadminProject);
+    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (6, 80, defaultProject), (6, 80, superadminProject);
+    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (7, 2, defaultProject), (7, 2, superadminProject);
+    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (8, false, defaultProject), (8, false, superadminProject);
+    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (9, false, defaultProject), (9, false, superadminProject);
+    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (10, 'LAUNCH_NAME', defaultProject), (10, 'LAUNCH_NAME', superadminProject);
+
+    INSERT INTO integration (project_id, type, enabled, params)
+      VALUES (defaultProject, email, false, '{"params": {"rules": [{"recipients": ["owner"], "fromAddress": "Auto_EPM-RPP_Notifications@epam.com", "launch_stats_rule": ["always"]}]}}');
+
+    INSERT INTO integration (project_id, type, enabled, params)
+      VALUES (superadminProject, email, false, '{"params": {"rules": [{"recipients": ["owner"], "fromAddress": "Auto_EPM-RPP_Notifications@epam.com", "launch_stats_rule": ["always"]}]}}');
+
 END
 $$;
