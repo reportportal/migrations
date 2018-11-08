@@ -1074,6 +1074,14 @@ BEGIN
 
   cur_launch_id := (SELECT launch_id FROM test_item WHERE item_id = old.result_id);
 
+  FOR cur_statistics_fields IN (SELECT statistics_field_id, s_counter FROM statistics WHERE item_id = old.result_id)
+  LOOP
+    UPDATE statistics
+    SET s_counter = s_counter - cur_statistics_fields.s_counter
+    WHERE statistics.statistics_field_id = cur_statistics_fields.statistics_field_id
+      AND launch_id = cur_launch_id;
+  END LOOP;
+
   FOR cur_id IN
   (SELECT item_id FROM test_item WHERE PATH @> (SELECT PATH FROM test_item WHERE item_id = old.result_id))
 
@@ -1085,14 +1093,6 @@ BEGIN
       WHERE STATISTICS.statistics_field_id = cur_statistics_fields.statistics_field_id
         AND item_id = cur_id;
     END LOOP;
-  END LOOP;
-
-  FOR cur_statistics_fields IN (SELECT statistics_field_id, s_counter FROM statistics WHERE item_id = old.result_id)
-  LOOP
-    UPDATE statistics
-    SET s_counter = s_counter - cur_statistics_fields.s_counter
-    WHERE statistics.statistics_field_id = cur_statistics_fields.statistics_field_id
-      AND launch_id = cur_launch_id;
   END LOOP;
 
   RETURN old;
