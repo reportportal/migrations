@@ -129,9 +129,9 @@ CREATE TABLE attribute (
 );
 
 CREATE TABLE project_attribute (
-  attribute_id BIGSERIAL REFERENCES attribute (id),
+  attribute_id BIGSERIAL REFERENCES attribute (id) ON DELETE CASCADE,
   value        VARCHAR(256) NOT NULL,
-  project_id   BIGSERIAL REFERENCES project (id),
+  project_id   BIGSERIAL REFERENCES project (id) ON DELETE CASCADE,
   PRIMARY KEY (attribute_id, project_id),
   CONSTRAINT unique_attribute_per_project UNIQUE (attribute_id, project_id)
 );
