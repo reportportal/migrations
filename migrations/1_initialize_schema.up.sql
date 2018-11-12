@@ -332,12 +332,6 @@ CREATE TABLE launch (
   CONSTRAINT unq_name_number UNIQUE (NAME, number, project_id, uuid)
 );
 
-CREATE TABLE launch_tag (
-  id        BIGSERIAL CONSTRAINT launch_tag_pk PRIMARY KEY,
-  value     TEXT NOT NULL,
-  launch_id BIGINT REFERENCES launch (id) ON DELETE CASCADE
-);
-
 CREATE TABLE test_item (
   item_id       BIGSERIAL CONSTRAINT test_item_pk PRIMARY KEY,
   name          VARCHAR(256),
@@ -373,10 +367,13 @@ CREATE TABLE parameter (
   value   VARCHAR NOT NULL
 );
 
-CREATE TABLE item_tag (
-  id      SERIAL CONSTRAINT item_tag_pk PRIMARY KEY,
-  value   TEXT,
-  item_id BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE
+CREATE TABLE item_attribute (
+  id        SERIAL CONSTRAINT item_attribute_pk PRIMARY KEY,
+  key       TEXT,
+  value     TEXT,
+  item_id   BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE,
+  launch_id BIGINT REFERENCES launch (id) ON DELETE CASCADE,
+  CHECK ((item_id IS NOT NULL AND launch_id IS NULL) OR (item_id IS NULL AND launch_id IS NOT NULL))
 );
 
 
