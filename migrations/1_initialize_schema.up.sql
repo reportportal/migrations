@@ -61,7 +61,7 @@ CREATE TABLE users (
   id                   BIGSERIAL CONSTRAINT users_pk PRIMARY KEY,
   login                VARCHAR NOT NULL UNIQUE,
   password             VARCHAR NULL,
-  email                VARCHAR NOT NULL,
+  email                VARCHAR NOT NULL UNIQUE,
   attachment           VARCHAR NULL,
   attachment_thumbnail VARCHAR NULL,
   role                 VARCHAR NOT NULL,
