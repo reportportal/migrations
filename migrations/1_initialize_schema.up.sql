@@ -699,23 +699,29 @@ BEGIN
   FROM test_item
   WHERE item_id = itemId INTO newItemId, newItemStartTime, newItemLaunchId, newItemUniqueId;
 
-  SELECT item_id, max(start_time)
+  SELECT item_id, start_time
   FROM test_item
   WHERE launch_id = newItemLaunchId
     AND unique_id = newItemUniqueId
     AND item_id != newItemId
-  GROUP BY item_id INTO itemIdWithMaxStartTime, maxStartTime;
+  ORDER BY start_time DESC
+  LIMIT 1 INTO itemIdWithMaxStartTime, maxStartTime;
 
   IF
   maxStartTime < newItemStartTime
   THEN
+    RAISE NOTICE 'TRUE old - %, new - %', maxStartTime, newItemStartTime;
     UPDATE test_item
     SET retry_of = newItemId
     WHERE unique_id = newItemUniqueId
       AND launch_id = newItemLaunchId
       AND item_id != newItemId;
   ELSE
-    UPDATE test_item SET retry_of = itemIdWithMaxStartTime WHERE item_id = newItemId;
+    RAISE NOTICE 'FALSE old - %, new - %', maxStartTime, newItemStartTime;
+    UPDATE test_item
+    SET retry_of = itemIdWithMaxStartTime
+    WHERE unique_id = newItemUniqueId
+      AND launch_id = newItemLaunchId;
   END IF;
   RETURN 0;
 END;
