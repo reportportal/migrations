@@ -680,6 +680,49 @@ $$
 LANGUAGE plpgsql;
 
 
+CREATE OR REPLACE FUNCTION handle_retries(itemId BIGINT)
+  RETURNS INTEGER
+AS $$
+DECLARE maxStartTime           TIMESTAMP;
+        itemIdWithMaxStartTime BIGINT;
+        newItemStartTime       TIMESTAMP;
+        newItemLaunchId        BIGINT;
+        newItemUniqueId        VARCHAR;
+        newItemId              BIGINT;
+BEGIN
+
+  IF itemId ISNULL
+  THEN RETURN 1;
+  END IF;
+
+  SELECT item_id, start_time, launch_id, unique_id
+  FROM test_item
+  WHERE item_id = itemId INTO newItemId, newItemStartTime, newItemLaunchId, newItemUniqueId;
+
+  SELECT item_id, max(start_time)
+  FROM test_item
+  WHERE launch_id = newItemLaunchId
+    AND unique_id = newItemUniqueId
+    AND item_id != newItemId
+  GROUP BY item_id INTO itemIdWithMaxStartTime, maxStartTime;
+
+  IF
+  maxStartTime < newItemStartTime
+  THEN
+    UPDATE test_item
+    SET retry_of = newItemId
+    WHERE unique_id = newItemUniqueId
+      AND launch_id = newItemLaunchId
+      AND item_id != newItemId;
+  ELSE
+    UPDATE test_item SET retry_of = itemIdWithMaxStartTime WHERE item_id = newItemId;
+  END IF;
+  RETURN 0;
+END;
+$$
+LANGUAGE plpgsql;
+
+
 CREATE OR REPLACE FUNCTION get_last_launch_number()
   RETURNS TRIGGER AS
 $BODY$
