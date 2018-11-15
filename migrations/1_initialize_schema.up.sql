@@ -716,12 +716,16 @@ BEGIN
     WHERE unique_id = newItemUniqueId
       AND launch_id = newItemLaunchId
       AND item_id != newItemId;
+
+    UPDATE test_item SET retry_of = NULL WHERE item_id = newItemId;
   ELSE
     RAISE NOTICE 'FALSE old - %, new - %', maxStartTime, newItemStartTime;
     UPDATE test_item
     SET retry_of = itemIdWithMaxStartTime
     WHERE unique_id = newItemUniqueId
       AND launch_id = newItemLaunchId;
+
+    UPDATE test_item SET retry_of = NULL WHERE item_id = itemIdWithMaxStartTime;
   END IF;
   RETURN 0;
 END;
