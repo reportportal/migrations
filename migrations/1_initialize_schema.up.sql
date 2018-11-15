@@ -273,13 +273,13 @@ CREATE TABLE dashboard (
 );
 
 CREATE TABLE widget (
-  id            BIGSERIAL CONSTRAINT widget_id PRIMARY KEY,
-  name          VARCHAR NOT NULL,
-  description   VARCHAR,
-  widget_type   VARCHAR NOT NULL,
-  items_count   SMALLINT,
-  project_id    BIGINT REFERENCES project (id) ON DELETE CASCADE,
-  widgetOptions JSONB                   NULL,
+  id             BIGSERIAL CONSTRAINT widget_id PRIMARY KEY,
+  name           VARCHAR NOT NULL,
+  description    VARCHAR,
+  widget_type    VARCHAR NOT NULL,
+  items_count    SMALLINT,
+  project_id     BIGINT REFERENCES project (id) ON DELETE CASCADE,
+  widget_options JSONB                   NULL,
   CONSTRAINT unq_widget_name_project UNIQUE (name, project_id)
 );
 
