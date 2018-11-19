@@ -273,19 +273,25 @@ CREATE TABLE dashboard (
 );
 
 CREATE TABLE widget (
-  id             BIGSERIAL CONSTRAINT widget_id PRIMARY KEY,
-  name           VARCHAR NOT NULL,
-  description    VARCHAR,
-  widget_type    VARCHAR NOT NULL,
-  items_count    SMALLINT,
-  project_id     BIGINT REFERENCES project (id) ON DELETE CASCADE,
-  widget_options JSONB                   NULL,
+  id          BIGSERIAL CONSTRAINT widget_id PRIMARY KEY,
+  name        VARCHAR NOT NULL,
+  description VARCHAR,
+  widget_type VARCHAR NOT NULL,
+  items_count SMALLINT,
+  project_id  BIGINT REFERENCES project (id) ON DELETE CASCADE,
   CONSTRAINT unq_widget_name_project UNIQUE (name, project_id)
 );
 
 CREATE TABLE content_field (
   id    BIGINT REFERENCES widget (id) ON DELETE CASCADE,
   field VARCHAR NOT NULL
+);
+
+CREATE TABLE widget_option (
+  id        BIGSERIAL CONSTRAINT widget_option_pk PRIMARY KEY,
+  widget_id BIGINT REFERENCES widget (id) ON DELETE CASCADE,
+  option    VARCHAR NOT NULL,
+  value     VARCHAR NOT NULL
 );
 
 CREATE TABLE dashboard_widget (
