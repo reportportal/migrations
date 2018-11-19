@@ -732,6 +732,75 @@ END;
 $$
 LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION retries_statistics(cur_launch_id BIGINT)
+  RETURNS INTEGER AS
+$$
+DECLARE   cur_id                BIGINT;
+  DECLARE cur_statistics_fields RECORD;
+  DECLARE retry_parents         RECORD;
+BEGIN
+
+  IF
+  cur_launch_id IS NULL
+  THEN
+    RETURN 1;
+  END IF;
+
+  FOR retry_parents IN (SELECT DISTINCT retry_of as retry_id FROM test_item WHERE launch_id = cur_launch_id
+                                                                              AND retry_of IS NOT NULL)
+  LOOP
+    FOR cur_statistics_fields IN (SELECT statistics_field_id, sum(s_counter) as counter_sum
+                                  from statistics
+                                         JOIN test_item ti on statistics.item_id = ti.item_id
+                                  WHERE ti.retry_of = retry_parents.retry_id
+                                    AND ti.launch_id = cur_launch_id
+                                  GROUP BY statistics_field_id)
+    LOOP
+      UPDATE statistics
+      SET s_counter = s_counter - cur_statistics_fields.counter_sum
+      WHERE statistics.statistics_field_id = cur_statistics_fields.statistics_field_id
+        AND launch_id = cur_launch_id;
+    END LOOP;
+
+    FOR cur_id IN
+    (SELECT item_id
+     FROM test_item
+     WHERE PATH @> (SELECT PATH FROM test_item WHERE item_id = retry_parents.retry_id)
+       AND item_id != retry_parents.retry_id)
+
+    LOOP
+      FOR cur_statistics_fields IN (SELECT statistics_field_id, sum(s_counter) as counter_sum
+                                    from statistics
+                                           JOIN test_item ti on statistics.item_id = ti.item_id
+                                    WHERE ti.retry_of = retry_parents.retry_id
+                                      AND ti.launch_id = cur_launch_id
+                                    GROUP BY statistics_field_id)
+      LOOP
+        UPDATE statistics
+        SET s_counter = s_counter - cur_statistics_fields.counter_sum
+        WHERE statistics.statistics_field_id = cur_statistics_fields.statistics_field_id
+          AND item_id = cur_id;
+      END LOOP;
+    END LOOP;
+
+    DELETE
+    FROM statistics
+    WHERE item_id IN (SELECT item_id
+                      FROM test_item
+                      WHERE retry_of = retry_parents.retry_id
+                        AND test_item.launch_id = cur_launch_id);
+    DELETE
+    FROM issue
+    WHERE issue_id IN (SELECT item_id
+                       FROM test_item
+                       WHERE retry_of = retry_parents.retry_id
+                         AND test_item.launch_id = cur_launch_id);
+  END LOOP;
+  RETURN 0;
+END;
+$$
+LANGUAGE plpgsql;
+
 
 CREATE OR REPLACE FUNCTION get_last_launch_number()
   RETURNS TRIGGER AS
