@@ -708,22 +708,25 @@ BEGIN
   LIMIT 1 INTO itemIdWithMaxStartTime, maxStartTime;
 
   IF
+  maxStartTime IS NULL
+  THEN RETURN 0;
+  END IF;
+
+  IF
   maxStartTime < newItemStartTime
   THEN
     RAISE NOTICE 'TRUE old - %, new - %', maxStartTime, newItemStartTime;
     UPDATE test_item
-    SET retry_of = newItemId
+    SET retry_of = newItemId, launch_id = NULL
     WHERE unique_id = newItemUniqueId
-      AND launch_id = newItemLaunchId
       AND item_id != newItemId;
 
     UPDATE test_item SET retry_of = NULL WHERE item_id = newItemId;
   ELSE
     RAISE NOTICE 'FALSE old - %, new - %', maxStartTime, newItemStartTime;
     UPDATE test_item
-    SET retry_of = itemIdWithMaxStartTime
-    WHERE unique_id = newItemUniqueId
-      AND launch_id = newItemLaunchId;
+    SET retry_of = itemIdWithMaxStartTime, launch_id = NULL
+    WHERE item_id = newItemId;
 
     UPDATE test_item SET retry_of = NULL WHERE item_id = itemIdWithMaxStartTime;
   END IF;
@@ -746,14 +749,16 @@ BEGIN
     RETURN 1;
   END IF;
 
-  FOR retry_parents IN (SELECT DISTINCT retry_of as retry_id FROM test_item WHERE launch_id = cur_launch_id
-                                                                              AND retry_of IS NOT NULL)
+  FOR retry_parents IN (SELECT DISTINCT retries.retry_of as retry_id
+                        FROM test_item retries
+                               JOIN test_item item on retries.retry_of = item.item_id
+                        WHERE item.launch_id = cur_launch_id
+                          AND retries.retry_of IS NOT NULL)
   LOOP
     FOR cur_statistics_fields IN (SELECT statistics_field_id, sum(s_counter) as counter_sum
                                   from statistics
                                          JOIN test_item ti on statistics.item_id = ti.item_id
                                   WHERE ti.retry_of = retry_parents.retry_id
-                                    AND ti.launch_id = cur_launch_id
                                   GROUP BY statistics_field_id)
     LOOP
       UPDATE statistics
@@ -773,7 +778,6 @@ BEGIN
                                     from statistics
                                            JOIN test_item ti on statistics.item_id = ti.item_id
                                     WHERE ti.retry_of = retry_parents.retry_id
-                                      AND ti.launch_id = cur_launch_id
                                     GROUP BY statistics_field_id)
       LOOP
         UPDATE statistics
@@ -785,21 +789,11 @@ BEGIN
 
     DELETE
     FROM statistics
-    WHERE item_id IN (SELECT item_id
-                      FROM test_item
-                      WHERE retry_of = retry_parents.retry_id
-                        AND test_item.launch_id = cur_launch_id);
-    DELETE
-    FROM issue
-    WHERE issue_id IN (SELECT item_id
-                       FROM test_item
-                       WHERE retry_of = retry_parents.retry_id
-                         AND test_item.launch_id = cur_launch_id);
+    WHERE item_id IN (SELECT item_id FROM test_item WHERE retry_of = retry_parents.retry_id);
 
-    UPDATE test_item
-    SET launch_id = NULL
-    WHERE retry_of = retry_parents.retry_id
-                        AND launch_id = cur_launch_id;
+    DELETE FROM issue WHERE issue_id IN (SELECT item_id FROM test_item WHERE retry_of = retry_parents.retry_id);
+
+    UPDATE test_item SET launch_id = NULL WHERE retry_of = retry_parents.retry_id;
 
   END LOOP;
   RETURN 0;
