@@ -880,6 +880,10 @@ BEGIN
   THEN RETURN new;
   END IF;
 
+  IF exists(SELECT 1 FROM test_item WHERE item_id = new.result_id AND retry_of IS NOT NULL)
+  THEN RETURN new;
+  END IF;
+
   cur_launch_id := (SELECT launch_id FROM test_item WHERE test_item.item_id = new.result_id);
 
   IF new.status = 'INTERRUPTED' :: STATUS_ENUM
@@ -991,6 +995,10 @@ BEGIN
   THEN RETURN new;
   END IF;
 
+  IF exists(SELECT 1 FROM test_item WHERE item_id = new.issue_id AND retry_of IS NOT NULL)
+  THEN RETURN new;
+  END IF;
+
   cur_launch_id := (SELECT launch_id FROM test_item WHERE test_item.item_id = new.issue_id);
 
   defect_field := (SELECT concat('statistics$defects$', lower(public.issue_group.issue_group :: VARCHAR), '$',
@@ -1068,6 +1076,10 @@ DECLARE   cur_id                    BIGINT;
 BEGIN
   IF exists(SELECT 1 FROM test_item AS s
                             JOIN test_item AS s2 ON s.item_id = s2.parent_id WHERE s.item_id = new.issue_id)
+  THEN RETURN new;
+  END IF;
+
+  IF exists(SELECT 1 FROM test_item WHERE item_id = new.issue_id AND retry_of IS NOT NULL)
   THEN RETURN new;
   END IF;
 
@@ -1180,6 +1192,10 @@ DECLARE   cur_launch_id         BIGINT;
 BEGIN
 
   cur_launch_id := (SELECT launch_id FROM test_item WHERE item_id = old.result_id);
+
+  IF exists(SELECT 1 FROM test_item WHERE item_id = old.result_id AND retry_of IS NOT NULL)
+  THEN RETURN old;
+  END IF;
 
   FOR cur_statistics_fields IN (SELECT statistics_field_id, s_counter FROM statistics WHERE item_id = old.result_id)
   LOOP
