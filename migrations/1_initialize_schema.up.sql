@@ -783,11 +783,6 @@ BEGIN
       END LOOP;
     END LOOP;
 
-    UPDATE test_item
-    SET launch_id = NULL
-    WHERE retry_of = retry_parents.retry_id
-                        AND launch_id = cur_launch_id;
-
     DELETE
     FROM statistics
     WHERE item_id IN (SELECT item_id
@@ -800,6 +795,12 @@ BEGIN
                        FROM test_item
                        WHERE retry_of = retry_parents.retry_id
                          AND test_item.launch_id = cur_launch_id);
+
+    UPDATE test_item
+    SET launch_id = NULL
+    WHERE retry_of = retry_parents.retry_id
+                        AND launch_id = cur_launch_id;
+
   END LOOP;
   RETURN 0;
 END;
