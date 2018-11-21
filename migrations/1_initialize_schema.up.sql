@@ -784,9 +784,9 @@ BEGIN
     END LOOP;
 
     UPDATE test_item
-    SET test_item.launch_id = NULL
+    SET launch_id = NULL
     WHERE retry_of = retry_parents.retry_id
-                        AND test_item.launch_id = cur_launch_id;
+                        AND launch_id = cur_launch_id;
 
     DELETE
     FROM statistics
