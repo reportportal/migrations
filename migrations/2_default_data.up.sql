@@ -87,7 +87,8 @@ BEGIN
     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (7, 2, defaultProject), (7, 2, superadminProject);
     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (8, false, defaultProject), (8, false, superadminProject);
     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (9, false, defaultProject), (9, false, superadminProject);
-    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (10, 'LAUNCH_NAME', defaultProject), (10, 'LAUNCH_NAME', superadminProject);
+    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (10, 'false', defaultProject), (10, 'false', superadminProject);
+    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (11, 'LAUNCH_NAME', defaultProject), (11, 'LAUNCH_NAME', superadminProject);
 
     INSERT INTO integration (project_id, type, enabled, params)
       VALUES (defaultProject, email, false, '{"params": {"rules": [{"recipients": ["owner"], "fromAddress": "Auto_EPM-RPP_Notifications@epam.com", "launch_stats_rule": ["always"]}]}}');
