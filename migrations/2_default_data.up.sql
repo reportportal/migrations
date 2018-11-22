@@ -81,13 +81,13 @@ BEGIN
     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (1, '1 day', defaultProject), (1, '1 day', superadminProject);
     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (2, '3 months', defaultProject), (2, '3 months', superadminProject);
     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (3, '2 weeks', defaultProject), (3, '2 weeks', superadminProject);
-    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (4, 7, defaultProject), (4, 7, superadminProject);
-    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (5, 1, defaultProject), (5, 1, superadminProject);
-    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (6, 80, defaultProject), (6, 80, superadminProject);
-    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (7, 2, defaultProject), (7, 2, superadminProject);
-    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (8, false, defaultProject), (8, false, superadminProject);
+    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (4, '2 weeks', defaultProject), (4, '2 weeks', superadminProject);
+    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (5, 7, defaultProject), (5, 7, superadminProject);
+    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (6, 1, defaultProject), (6, 1, superadminProject);
+    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (7, 80, defaultProject), (7, 80, superadminProject);
+    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (8, 2, defaultProject), (8, 2, superadminProject);
     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (9, false, defaultProject), (9, false, superadminProject);
-    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (10, 'false', defaultProject), (10, 'false', superadminProject);
+    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (10, false, defaultProject), (10, false, superadminProject);
     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (11, 'LAUNCH_NAME', defaultProject), (11, 'LAUNCH_NAME', superadminProject);
 
     INSERT INTO integration (project_id, type, enabled, params)
