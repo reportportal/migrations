@@ -363,8 +363,8 @@ CREATE TABLE parameter (
 
 CREATE TABLE item_attribute (
   id        SERIAL CONSTRAINT item_attribute_pk PRIMARY KEY,
-  key       TEXT,
-  value     TEXT,
+  key       VARCHAR,
+  value     VARCHAR,
   item_id   BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE,
   launch_id BIGINT REFERENCES launch (id) ON DELETE CASCADE,
   CHECK ((item_id IS NOT NULL AND launch_id IS NULL) OR (item_id IS NULL AND launch_id IS NOT NULL))
