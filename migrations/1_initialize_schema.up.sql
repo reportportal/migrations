@@ -716,7 +716,7 @@ BEGIN
     WHERE unique_id = newItemUniqueId
       AND item_id != newItemId;
 
-    UPDATE test_item SET retry_of = NULL WHERE item_id = newItemId;
+    UPDATE test_item SET retry_of = NULL, has_retries = true WHERE item_id = newItemId;
   ELSE
     RAISE NOTICE 'FALSE old - %, new - %', maxStartTime, newItemStartTime;
     UPDATE test_item
