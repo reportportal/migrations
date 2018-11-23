@@ -1081,7 +1081,6 @@ CREATE TRIGGER before_item_delete
   ON test_item_results
   FOR EACH ROW EXECUTE PROCEDURE decrease_statistics();
 
-
 ----------------------------------- QUARTZ SCHEMA ----------------------------------------------------------
 
 CREATE SCHEMA IF NOT EXISTS quartz
