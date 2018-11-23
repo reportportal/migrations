@@ -342,6 +342,7 @@ CREATE TABLE test_item (
   path          LTREE,
   unique_id     VARCHAR(256),
   has_children  BOOLEAN DEFAULT FALSE,
+  has_retries   BOOLEAN DEFAULT FALSE,
   parent_id     BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE,
   retry_of      BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE,
   launch_id     BIGINT REFERENCES launch (id) ON DELETE CASCADE
@@ -711,7 +712,7 @@ BEGIN
   THEN
     RAISE NOTICE 'TRUE old - %, new - %', maxStartTime, newItemStartTime;
     UPDATE test_item
-    SET retry_of = newItemId, launch_id = NULL
+    SET retry_of = newItemId, launch_id = NULL, has_retries = false
     WHERE unique_id = newItemUniqueId
       AND item_id != newItemId;
 
@@ -719,10 +720,10 @@ BEGIN
   ELSE
     RAISE NOTICE 'FALSE old - %, new - %', maxStartTime, newItemStartTime;
     UPDATE test_item
-    SET retry_of = itemIdWithMaxStartTime, launch_id = NULL
+    SET retry_of = itemIdWithMaxStartTime, launch_id = NULL, has_retries = false
     WHERE item_id = newItemId;
 
-    UPDATE test_item SET retry_of = NULL WHERE item_id = itemIdWithMaxStartTime;
+    UPDATE test_item SET retry_of = NULL, has_retries = true WHERE item_id = itemIdWithMaxStartTime;
   END IF;
   RETURN 0;
 END;
