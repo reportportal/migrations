@@ -39,7 +39,6 @@ DROP TABLE IF EXISTS filter_condition CASCADE;
 DROP TABLE IF EXISTS filter_sort CASCADE;
 DROP TABLE IF EXISTS widget_filter CASCADE;
 DROP TABLE IF EXISTS content_field CASCADE;
-DROP TABLE IF EXISTS widget_option CASCADE;
 
 DROP TABLE IF EXISTS user_creation_bid CASCADE;
 DROP TABLE IF EXISTS restore_password_bid CASCADE;
@@ -101,3 +100,17 @@ DROP TABLE IF EXISTS acl_entry CASCADE;
 DROP TABLE IF EXISTS acl_object_identity CASCADE;
 DROP TABLE IF EXISTS acl_class CASCADE;
 DROP TABLE IF EXISTS acl_sid CASCADE;
+
+-------------------------------------- QUARTZ SCHEMA ----------------------------------------
+
+DROP TABLE IF EXISTS quartz.scheduler_fired_triggers;
+DROP TABLE IF EXISTS quartz.scheduler_paused_trigger_grps;
+DROP TABLE IF EXISTS quartz.scheduler_scheduler_state;
+DROP TABLE IF EXISTS quartz.scheduler_locks;
+DROP TABLE IF EXISTS quartz.scheduler_simple_triggers;
+DROP TABLE IF EXISTS quartz.scheduler_cron_triggers;
+DROP TABLE IF EXISTS quartz.scheduler_simprop_triggers;
+DROP TABLE IF EXISTS quartz.scheduler_blob_triggers;
+DROP TABLE IF EXISTS quartz.scheduler_triggers;
+DROP TABLE IF EXISTS quartz.scheduler_job_details;
+DROP TABLE IF EXISTS quartz.scheduler_calendars;

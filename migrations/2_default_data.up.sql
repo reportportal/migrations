@@ -37,6 +37,7 @@ BEGIN
     INSERT INTO issue_type (issue_group_id, locator, issue_name, abbreviation, hex_color) VALUES (5, 'si001', 'System Issue', 'SI', '#0274d1');
 
     INSERT INTO attribute (name) VALUES ('job.interruptJobTime');
+    INSERT INTO attribute (name) VALUES ('job.keepLaunches');
     INSERT INTO attribute (name) VALUES ('job.keepLogs');
     INSERT INTO attribute (name) VALUES ('job.keepScreenshots');
     INSERT INTO attribute (name) VALUES ('analyzer.minDocFreq');
