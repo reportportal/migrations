@@ -708,7 +708,6 @@ BEGIN
   IF
   maxStartTime < newItemStartTime
   THEN
-    RAISE NOTICE 'TRUE old - %, new - %', maxStartTime, newItemStartTime;
     UPDATE test_item
     SET retry_of = newItemId, launch_id = NULL, has_retries = false, path = ((SELECT path FROM test_item WHERE item_id = newItemId)::text || '.' || item_id)::ltree
     WHERE unique_id = newItemUniqueId
@@ -716,7 +715,6 @@ BEGIN
 
     UPDATE test_item SET retry_of = NULL, has_retries = true WHERE item_id = newItemId;
   ELSE
-    RAISE NOTICE 'FALSE old - %, new - %', maxStartTime, newItemStartTime;
     UPDATE test_item
     SET retry_of = itemIdWithMaxStartTime, launch_id = NULL, has_retries = false, path = ((SELECT path FROM test_item WHERE item_id = itemIdWithMaxStartTime)::text || '.' || item_id)::ltree
     WHERE item_id = newItemId;
