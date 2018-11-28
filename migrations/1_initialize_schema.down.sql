@@ -14,6 +14,8 @@ DROP FUNCTION IF EXISTS increment_defect_statistics();
 DROP FUNCTION IF EXISTS update_defect_statistics();
 DROP FUNCTION IF EXISTS decrease_statistics();
 DROP FUNCTION IF EXISTS merge_launch(LaunchId BIGINT);
+DROP FUNCTION IF EXISTS handle_retries(itemId BIGINT);
+DROP FUNCTION IF EXISTS retries_statistics(cur_launch_id BIGINT);
 
 DROP EXTENSION IF EXISTS tablefunc;
 

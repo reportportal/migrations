@@ -336,6 +336,7 @@ CREATE TABLE test_item (
   path          LTREE,
   unique_id     VARCHAR(256),
   has_children  BOOLEAN DEFAULT FALSE,
+  has_retries   BOOLEAN DEFAULT FALSE,
   parent_id     BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE,
   retry_of      BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE,
   launch_id     BIGINT REFERENCES launch (id) ON DELETE CASCADE
@@ -672,6 +673,127 @@ $$
 LANGUAGE plpgsql;
 
 
+CREATE OR REPLACE FUNCTION handle_retries(itemId BIGINT)
+  RETURNS INTEGER
+AS $$
+DECLARE maxStartTime           TIMESTAMP;
+        itemIdWithMaxStartTime BIGINT;
+        newItemStartTime       TIMESTAMP;
+        newItemLaunchId        BIGINT;
+        newItemUniqueId        VARCHAR;
+        newItemId              BIGINT;
+BEGIN
+
+  IF itemId ISNULL
+  THEN RETURN 1;
+  END IF;
+
+  SELECT item_id, start_time, launch_id, unique_id
+  FROM test_item
+  WHERE item_id = itemId INTO newItemId, newItemStartTime, newItemLaunchId, newItemUniqueId;
+
+  SELECT item_id, start_time
+  FROM test_item
+  WHERE launch_id = newItemLaunchId
+    AND unique_id = newItemUniqueId
+    AND item_id != newItemId
+  ORDER BY start_time DESC
+  LIMIT 1 INTO itemIdWithMaxStartTime, maxStartTime;
+
+  IF
+  maxStartTime IS NULL
+  THEN RETURN 0;
+  END IF;
+
+  IF
+  maxStartTime < newItemStartTime
+  THEN
+    UPDATE test_item
+    SET retry_of = newItemId, launch_id = NULL, has_retries = false, path = ((SELECT path FROM test_item WHERE item_id = newItemId)::text || '.' || item_id)::ltree
+    WHERE unique_id = newItemUniqueId
+      AND item_id != newItemId;
+
+    UPDATE test_item SET retry_of = NULL, has_retries = true WHERE item_id = newItemId;
+  ELSE
+    UPDATE test_item
+    SET retry_of = itemIdWithMaxStartTime, launch_id = NULL, has_retries = false, path = ((SELECT path FROM test_item WHERE item_id = itemIdWithMaxStartTime)::text || '.' || item_id)::ltree
+    WHERE item_id = newItemId;
+
+    UPDATE test_item ti SET ti.retry_of = NULL, ti.has_retries = true, path = ((SELECT path FROM test_item WHERE item_id = ti.parent_id)::text || '.' || ti.item_id)::ltree
+    WHERE ti.item_id = itemIdWithMaxStartTime;
+  END IF;
+  RETURN 0;
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION retries_statistics(cur_launch_id BIGINT)
+  RETURNS INTEGER AS
+$$
+DECLARE   cur_id                BIGINT;
+  DECLARE cur_statistics_fields RECORD;
+  DECLARE retry_parents         RECORD;
+BEGIN
+
+  IF
+  cur_launch_id IS NULL
+  THEN
+    RETURN 1;
+  END IF;
+
+  FOR retry_parents IN (SELECT DISTINCT retries.retry_of as retry_id
+                        FROM test_item retries
+                               JOIN test_item item on retries.retry_of = item.item_id
+                        WHERE item.launch_id = cur_launch_id
+                          AND retries.retry_of IS NOT NULL)
+  LOOP
+    FOR cur_statistics_fields IN (SELECT statistics_field_id, sum(s_counter) as counter_sum
+                                  from statistics
+                                         JOIN test_item ti on statistics.item_id = ti.item_id
+                                  WHERE ti.retry_of = retry_parents.retry_id
+                                  GROUP BY statistics_field_id)
+    LOOP
+      UPDATE statistics
+      SET s_counter = s_counter - cur_statistics_fields.counter_sum
+      WHERE statistics.statistics_field_id = cur_statistics_fields.statistics_field_id
+        AND launch_id = cur_launch_id;
+    END LOOP;
+
+    FOR cur_id IN
+    (SELECT item_id
+     FROM test_item
+     WHERE PATH @> (SELECT PATH FROM test_item WHERE item_id = retry_parents.retry_id)
+       AND item_id != retry_parents.retry_id)
+
+    LOOP
+      FOR cur_statistics_fields IN (SELECT statistics_field_id, sum(s_counter) as counter_sum
+                                    from statistics
+                                           JOIN test_item ti on statistics.item_id = ti.item_id
+                                    WHERE ti.retry_of = retry_parents.retry_id
+                                    GROUP BY statistics_field_id)
+      LOOP
+        UPDATE statistics
+        SET s_counter = s_counter - cur_statistics_fields.counter_sum
+        WHERE statistics.statistics_field_id = cur_statistics_fields.statistics_field_id
+          AND item_id = cur_id;
+      END LOOP;
+    END LOOP;
+
+    DELETE
+    FROM statistics
+    WHERE item_id IN (SELECT item_id FROM test_item WHERE retry_of = retry_parents.retry_id);
+
+    DELETE FROM issue WHERE issue_id IN (SELECT item_id FROM test_item WHERE retry_of = retry_parents.retry_id);
+
+    UPDATE test_item SET launch_id = NULL WHERE retry_of = retry_parents.retry_id;
+
+  END LOOP;
+  RETURN 0;
+END;
+$$
+LANGUAGE plpgsql;
+
+
 CREATE OR REPLACE FUNCTION get_last_launch_number()
   RETURNS TRIGGER AS
 $BODY$
@@ -747,6 +869,10 @@ DECLARE   cur_id                    BIGINT;
 BEGIN
   IF exists(SELECT 1 FROM test_item AS s
                             JOIN test_item AS s2 ON s.item_id = s2.parent_id WHERE s.item_id = new.result_id)
+  THEN RETURN new;
+  END IF;
+
+  IF exists(SELECT 1 FROM test_item WHERE item_id = new.result_id AND retry_of IS NOT NULL)
   THEN RETURN new;
   END IF;
 
@@ -861,6 +987,10 @@ BEGIN
   THEN RETURN new;
   END IF;
 
+  IF exists(SELECT 1 FROM test_item WHERE item_id = new.issue_id AND retry_of IS NOT NULL)
+  THEN RETURN new;
+  END IF;
+
   cur_launch_id := (SELECT launch_id FROM test_item WHERE test_item.item_id = new.issue_id);
 
   defect_field := (SELECT concat('statistics$defects$', lower(public.issue_group.issue_group :: VARCHAR), '$',
@@ -938,6 +1068,10 @@ DECLARE   cur_id                    BIGINT;
 BEGIN
   IF exists(SELECT 1 FROM test_item AS s
                             JOIN test_item AS s2 ON s.item_id = s2.parent_id WHERE s.item_id = new.issue_id)
+  THEN RETURN new;
+  END IF;
+
+  IF exists(SELECT 1 FROM test_item WHERE item_id = new.issue_id AND retry_of IS NOT NULL)
   THEN RETURN new;
   END IF;
 
@@ -1050,6 +1184,10 @@ DECLARE   cur_launch_id         BIGINT;
 BEGIN
 
   cur_launch_id := (SELECT launch_id FROM test_item WHERE item_id = old.result_id);
+
+  IF exists(SELECT 1 FROM test_item WHERE item_id = old.result_id AND retry_of IS NOT NULL)
+  THEN RETURN old;
+  END IF;
 
   FOR cur_statistics_fields IN (SELECT statistics_field_id, s_counter FROM statistics WHERE item_id = old.result_id)
   LOOP
