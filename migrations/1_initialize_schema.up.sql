@@ -36,11 +36,11 @@ CREATE TABLE server_settings (
 
 ---------------------------- Project and users ------------------------------------
 CREATE TABLE project (
-  id              BIGSERIAL CONSTRAINT project_pk PRIMARY KEY,
-  name            VARCHAR                 NOT NULL UNIQUE,
-  project_type    VARCHAR                 NOT NULL,
-  creation_date   TIMESTAMP DEFAULT now() NOT NULL,
-  metadata        JSONB                   NULL
+  id            BIGSERIAL CONSTRAINT project_pk PRIMARY KEY,
+  name          VARCHAR                 NOT NULL UNIQUE,
+  project_type  VARCHAR                 NOT NULL,
+  creation_date TIMESTAMP DEFAULT now() NOT NULL,
+  metadata      JSONB                   NULL
 );
 
 CREATE TABLE user_creation_bid (
@@ -243,7 +243,8 @@ CREATE TABLE filter (
 );
 
 CREATE TABLE user_filter (
-  id BIGINT NOT NULL CONSTRAINT user_filter_pk PRIMARY KEY CONSTRAINT user_filter_id_fk REFERENCES filter (id) ON DELETE CASCADE
+  id     BIGINT                  NOT NULL CONSTRAINT user_filter_pk PRIMARY KEY CONSTRAINT user_filter_id_fk REFERENCES filter (id) ON DELETE CASCADE,
+  shared BOOLEAN DEFAULT false   NOT NULL
 );
 
 CREATE TABLE filter_condition (
@@ -268,18 +269,20 @@ CREATE TABLE dashboard (
   description   VARCHAR,
   project_id    INTEGER REFERENCES project (id) ON DELETE CASCADE,
   creation_date TIMESTAMP DEFAULT now() NOT NULL,
+  shared        BOOLEAN DEFAULT false   NOT NULL,
   CONSTRAINT unq_name_project UNIQUE (name, project_id)
   -- acl
 );
 
 CREATE TABLE widget (
   id             BIGSERIAL CONSTRAINT widget_id PRIMARY KEY,
-  name           VARCHAR NOT NULL,
+  name           VARCHAR                 NOT NULL,
   description    VARCHAR,
-  widget_type    VARCHAR NOT NULL,
+  widget_type    VARCHAR                 NOT NULL,
   items_count    SMALLINT,
   project_id     BIGINT REFERENCES project (id) ON DELETE CASCADE,
-  widget_options JSONB   NULL,
+  shared         BOOLEAN DEFAULT false   NOT NULL,
+  widget_options JSONB                   NULL,
   CONSTRAINT unq_widget_name_project UNIQUE (name, project_id)
 );
 
