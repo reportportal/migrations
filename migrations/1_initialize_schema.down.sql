@@ -17,6 +17,8 @@ DROP FUNCTION IF EXISTS update_defect_statistics();
 DROP FUNCTION IF EXISTS delete_defect_statistics();
 DROP FUNCTION IF EXISTS decrease_statistics();
 DROP FUNCTION IF EXISTS merge_launch(LaunchId BIGINT);
+DROP FUNCTION IF EXISTS handle_retries(itemId BIGINT);
+DROP FUNCTION IF EXISTS retries_statistics(cur_launch_id BIGINT);
 
 DROP EXTENSION IF EXISTS tablefunc;
 
@@ -42,7 +44,6 @@ DROP TABLE IF EXISTS filter_condition CASCADE;
 DROP TABLE IF EXISTS filter_sort CASCADE;
 DROP TABLE IF EXISTS widget_filter CASCADE;
 DROP TABLE IF EXISTS content_field CASCADE;
-DROP TABLE IF EXISTS widget_option CASCADE;
 
 DROP TABLE IF EXISTS user_creation_bid CASCADE;
 DROP TABLE IF EXISTS restore_password_bid CASCADE;
@@ -67,6 +68,7 @@ DROP TABLE IF EXISTS issue_ticket CASCADE;
 DROP TABLE IF EXISTS ticket CASCADE;
 DROP TABLE IF EXISTS defect_form_field_value CASCADE;
 DROP TABLE IF EXISTS parameter CASCADE;
+DROP TABLE IF EXISTS item_attribute CASCADE;
 DROP TABLE IF exists user_preference CASCADE;
 
 DROP TABLE IF EXISTS launch CASCADE;
@@ -104,3 +106,17 @@ DROP TABLE IF EXISTS acl_entry CASCADE;
 DROP TABLE IF EXISTS acl_object_identity CASCADE;
 DROP TABLE IF EXISTS acl_class CASCADE;
 DROP TABLE IF EXISTS acl_sid CASCADE;
+
+-------------------------------------- QUARTZ SCHEMA ----------------------------------------
+
+DROP TABLE IF EXISTS quartz.scheduler_fired_triggers;
+DROP TABLE IF EXISTS quartz.scheduler_paused_trigger_grps;
+DROP TABLE IF EXISTS quartz.scheduler_scheduler_state;
+DROP TABLE IF EXISTS quartz.scheduler_locks;
+DROP TABLE IF EXISTS quartz.scheduler_simple_triggers;
+DROP TABLE IF EXISTS quartz.scheduler_cron_triggers;
+DROP TABLE IF EXISTS quartz.scheduler_simprop_triggers;
+DROP TABLE IF EXISTS quartz.scheduler_blob_triggers;
+DROP TABLE IF EXISTS quartz.scheduler_triggers;
+DROP TABLE IF EXISTS quartz.scheduler_job_details;
+DROP TABLE IF EXISTS quartz.scheduler_calendars;

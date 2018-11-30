@@ -61,7 +61,7 @@ CREATE TABLE users (
   id                   BIGSERIAL CONSTRAINT users_pk PRIMARY KEY,
   login                VARCHAR NOT NULL UNIQUE,
   password             VARCHAR NULL,
-  email                VARCHAR NOT NULL,
+  email                VARCHAR NOT NULL UNIQUE,
   attachment           VARCHAR NULL,
   attachment_thumbnail VARCHAR NULL,
   role                 VARCHAR NOT NULL,
@@ -273,25 +273,19 @@ CREATE TABLE dashboard (
 );
 
 CREATE TABLE widget (
-  id          BIGSERIAL CONSTRAINT widget_id PRIMARY KEY,
-  name        VARCHAR NOT NULL,
-  description VARCHAR,
-  widget_type VARCHAR NOT NULL,
-  items_count SMALLINT,
-  project_id  BIGINT REFERENCES project (id) ON DELETE CASCADE,
+  id             BIGSERIAL CONSTRAINT widget_id PRIMARY KEY,
+  name           VARCHAR NOT NULL,
+  description    VARCHAR,
+  widget_type    VARCHAR NOT NULL,
+  items_count    SMALLINT,
+  project_id     BIGINT REFERENCES project (id) ON DELETE CASCADE,
+  widget_options JSONB   NULL,
   CONSTRAINT unq_widget_name_project UNIQUE (name, project_id)
 );
 
 CREATE TABLE content_field (
   id    BIGINT REFERENCES widget (id) ON DELETE CASCADE,
   field VARCHAR NOT NULL
-);
-
-CREATE TABLE widget_option (
-  id        BIGSERIAL CONSTRAINT widget_option_pk PRIMARY KEY,
-  widget_id BIGINT REFERENCES widget (id) ON DELETE CASCADE,
-  option    VARCHAR NOT NULL,
-  value     VARCHAR NOT NULL
 );
 
 CREATE TABLE dashboard_widget (
@@ -332,12 +326,6 @@ CREATE TABLE launch (
   CONSTRAINT unq_name_number UNIQUE (NAME, number, project_id, uuid)
 );
 
-CREATE TABLE launch_tag (
-  id        BIGSERIAL CONSTRAINT launch_tag_pk PRIMARY KEY,
-  value     TEXT NOT NULL,
-  launch_id BIGINT REFERENCES launch (id) ON DELETE CASCADE
-);
-
 CREATE TABLE test_item (
   item_id       BIGSERIAL CONSTRAINT test_item_pk PRIMARY KEY,
   name          VARCHAR(256),
@@ -348,6 +336,7 @@ CREATE TABLE test_item (
   path          LTREE,
   unique_id     VARCHAR(256),
   has_children  BOOLEAN DEFAULT FALSE,
+  has_retries   BOOLEAN DEFAULT FALSE,
   parent_id     BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE,
   retry_of      BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE,
   launch_id     BIGINT REFERENCES launch (id) ON DELETE CASCADE
@@ -373,10 +362,14 @@ CREATE TABLE parameter (
   value   VARCHAR NOT NULL
 );
 
-CREATE TABLE item_tag (
-  id      SERIAL CONSTRAINT item_tag_pk PRIMARY KEY,
-  value   TEXT,
-  item_id BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE
+CREATE TABLE item_attribute (
+  id        SERIAL CONSTRAINT item_attribute_pk PRIMARY KEY,
+  key       VARCHAR,
+  value     VARCHAR,
+  item_id   BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE,
+  launch_id BIGINT REFERENCES launch (id) ON DELETE CASCADE,
+  system    BOOLEAN DEFAULT FALSE,
+  CHECK ((item_id IS NOT NULL AND launch_id IS NULL) OR (item_id IS NULL AND launch_id IS NOT NULL))
 );
 
 
@@ -680,6 +673,127 @@ $$
 LANGUAGE plpgsql;
 
 
+CREATE OR REPLACE FUNCTION handle_retries(itemId BIGINT)
+  RETURNS INTEGER
+AS $$
+DECLARE maxStartTime           TIMESTAMP;
+        itemIdWithMaxStartTime BIGINT;
+        newItemStartTime       TIMESTAMP;
+        newItemLaunchId        BIGINT;
+        newItemUniqueId        VARCHAR;
+        newItemId              BIGINT;
+BEGIN
+
+  IF itemId ISNULL
+  THEN RETURN 1;
+  END IF;
+
+  SELECT item_id, start_time, launch_id, unique_id
+  FROM test_item
+  WHERE item_id = itemId INTO newItemId, newItemStartTime, newItemLaunchId, newItemUniqueId;
+
+  SELECT item_id, start_time
+  FROM test_item
+  WHERE launch_id = newItemLaunchId
+    AND unique_id = newItemUniqueId
+    AND item_id != newItemId
+  ORDER BY start_time DESC
+  LIMIT 1 INTO itemIdWithMaxStartTime, maxStartTime;
+
+  IF
+  maxStartTime IS NULL
+  THEN RETURN 0;
+  END IF;
+
+  IF
+  maxStartTime < newItemStartTime
+  THEN
+    UPDATE test_item
+    SET retry_of = newItemId, launch_id = NULL, has_retries = false, path = ((SELECT path FROM test_item WHERE item_id = newItemId)::text || '.' || item_id)::ltree
+    WHERE unique_id = newItemUniqueId
+      AND item_id != newItemId;
+
+    UPDATE test_item SET retry_of = NULL, has_retries = true WHERE item_id = newItemId;
+  ELSE
+    UPDATE test_item
+    SET retry_of = itemIdWithMaxStartTime, launch_id = NULL, has_retries = false, path = ((SELECT path FROM test_item WHERE item_id = itemIdWithMaxStartTime)::text || '.' || item_id)::ltree
+    WHERE item_id = newItemId;
+
+    UPDATE test_item ti SET ti.retry_of = NULL, ti.has_retries = true, path = ((SELECT path FROM test_item WHERE item_id = ti.parent_id)::text || '.' || ti.item_id)::ltree
+    WHERE ti.item_id = itemIdWithMaxStartTime;
+  END IF;
+  RETURN 0;
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION retries_statistics(cur_launch_id BIGINT)
+  RETURNS INTEGER AS
+$$
+DECLARE   cur_id                BIGINT;
+  DECLARE cur_statistics_fields RECORD;
+  DECLARE retry_parents         RECORD;
+BEGIN
+
+  IF
+  cur_launch_id IS NULL
+  THEN
+    RETURN 1;
+  END IF;
+
+  FOR retry_parents IN (SELECT DISTINCT retries.retry_of as retry_id
+                        FROM test_item retries
+                               JOIN test_item item on retries.retry_of = item.item_id
+                        WHERE item.launch_id = cur_launch_id
+                          AND retries.retry_of IS NOT NULL)
+  LOOP
+    FOR cur_statistics_fields IN (SELECT statistics_field_id, sum(s_counter) as counter_sum
+                                  from statistics
+                                         JOIN test_item ti on statistics.item_id = ti.item_id
+                                  WHERE ti.retry_of = retry_parents.retry_id
+                                  GROUP BY statistics_field_id)
+    LOOP
+      UPDATE statistics
+      SET s_counter = s_counter - cur_statistics_fields.counter_sum
+      WHERE statistics.statistics_field_id = cur_statistics_fields.statistics_field_id
+        AND launch_id = cur_launch_id;
+    END LOOP;
+
+    FOR cur_id IN
+    (SELECT item_id
+     FROM test_item
+     WHERE PATH @> (SELECT PATH FROM test_item WHERE item_id = retry_parents.retry_id)
+       AND item_id != retry_parents.retry_id)
+
+    LOOP
+      FOR cur_statistics_fields IN (SELECT statistics_field_id, sum(s_counter) as counter_sum
+                                    from statistics
+                                           JOIN test_item ti on statistics.item_id = ti.item_id
+                                    WHERE ti.retry_of = retry_parents.retry_id
+                                    GROUP BY statistics_field_id)
+      LOOP
+        UPDATE statistics
+        SET s_counter = s_counter - cur_statistics_fields.counter_sum
+        WHERE statistics.statistics_field_id = cur_statistics_fields.statistics_field_id
+          AND item_id = cur_id;
+      END LOOP;
+    END LOOP;
+
+    DELETE
+    FROM statistics
+    WHERE item_id IN (SELECT item_id FROM test_item WHERE retry_of = retry_parents.retry_id);
+
+    DELETE FROM issue WHERE issue_id IN (SELECT item_id FROM test_item WHERE retry_of = retry_parents.retry_id);
+
+    UPDATE test_item SET launch_id = NULL WHERE retry_of = retry_parents.retry_id;
+
+  END LOOP;
+  RETURN 0;
+END;
+$$
+LANGUAGE plpgsql;
+
+
 CREATE OR REPLACE FUNCTION get_last_launch_number()
   RETURNS TRIGGER AS
 $BODY$
@@ -755,6 +869,10 @@ DECLARE   cur_id                    BIGINT;
 BEGIN
   IF exists(SELECT 1 FROM test_item AS s
                             JOIN test_item AS s2 ON s.item_id = s2.parent_id WHERE s.item_id = new.result_id)
+  THEN RETURN new;
+  END IF;
+
+  IF exists(SELECT 1 FROM test_item WHERE item_id = new.result_id AND retry_of IS NOT NULL)
   THEN RETURN new;
   END IF;
 
@@ -869,6 +987,10 @@ BEGIN
   THEN RETURN new;
   END IF;
 
+  IF exists(SELECT 1 FROM test_item WHERE item_id = new.issue_id AND retry_of IS NOT NULL)
+  THEN RETURN new;
+  END IF;
+
   cur_launch_id := (SELECT launch_id FROM test_item WHERE test_item.item_id = new.issue_id);
 
   defect_field := (SELECT concat('statistics$defects$', lower(public.issue_group.issue_group :: VARCHAR), '$',
@@ -946,6 +1068,10 @@ DECLARE   cur_id                    BIGINT;
 BEGIN
   IF exists(SELECT 1 FROM test_item AS s
                             JOIN test_item AS s2 ON s.item_id = s2.parent_id WHERE s.item_id = new.issue_id)
+  THEN RETURN new;
+  END IF;
+
+  IF exists(SELECT 1 FROM test_item WHERE item_id = new.issue_id AND retry_of IS NOT NULL)
   THEN RETURN new;
   END IF;
 
@@ -1113,6 +1239,10 @@ BEGIN
 
   cur_launch_id := (SELECT launch_id FROM test_item WHERE item_id = old.result_id);
 
+  IF exists(SELECT 1 FROM test_item WHERE item_id = old.result_id AND retry_of IS NOT NULL)
+  THEN RETURN old;
+  END IF;
+
   FOR cur_statistics_fields IN (SELECT statistics_field_id, s_counter FROM statistics WHERE item_id = old.result_id)
   LOOP
     UPDATE statistics
@@ -1144,5 +1274,197 @@ CREATE TRIGGER before_item_delete
   ON test_item_results
   FOR EACH ROW EXECUTE PROCEDURE decrease_statistics();
 
+----------------------------------- QUARTZ SCHEMA ----------------------------------------------------------
+
+CREATE SCHEMA IF NOT EXISTS quartz
+  AUTHORIZATION rpuser;
+
+CREATE TABLE quartz.scheduler_job_details
+(
+  SCHED_NAME        VARCHAR(120) NOT NULL,
+  JOB_NAME          VARCHAR(200) NOT NULL,
+  JOB_GROUP         VARCHAR(200) NOT NULL,
+  DESCRIPTION       VARCHAR(250) NULL,
+  JOB_CLASS_NAME    VARCHAR(250) NOT NULL,
+  IS_DURABLE        BOOL         NOT NULL,
+  IS_NONCONCURRENT  BOOL         NOT NULL,
+  IS_UPDATE_DATA    BOOL         NOT NULL,
+  REQUESTS_RECOVERY BOOL         NOT NULL,
+  JOB_DATA          BYTEA        NULL,
+  PRIMARY KEY (SCHED_NAME, JOB_NAME, JOB_GROUP)
+);
+
+CREATE TABLE quartz.scheduler_triggers
+(
+  SCHED_NAME     VARCHAR(120) NOT NULL,
+  TRIGGER_NAME   VARCHAR(200) NOT NULL,
+  TRIGGER_GROUP  VARCHAR(200) NOT NULL,
+  JOB_NAME       VARCHAR(200) NOT NULL,
+  JOB_GROUP      VARCHAR(200) NOT NULL,
+  DESCRIPTION    VARCHAR(250) NULL,
+  NEXT_FIRE_TIME BIGINT       NULL,
+  PREV_FIRE_TIME BIGINT       NULL,
+  PRIORITY       INTEGER      NULL,
+  TRIGGER_STATE  VARCHAR(16)  NOT NULL,
+  TRIGGER_TYPE   VARCHAR(8)   NOT NULL,
+  START_TIME     BIGINT       NOT NULL,
+  END_TIME       BIGINT       NULL,
+  CALENDAR_NAME  VARCHAR(200) NULL,
+  MISFIRE_INSTR  SMALLINT     NULL,
+  JOB_DATA       BYTEA        NULL,
+  PRIMARY KEY (SCHED_NAME, TRIGGER_NAME, TRIGGER_GROUP),
+  FOREIGN KEY (SCHED_NAME, JOB_NAME, JOB_GROUP)
+  REFERENCES quartz.scheduler_job_details (SCHED_NAME, JOB_NAME, JOB_GROUP)
+);
+
+CREATE TABLE quartz.scheduler_simple_triggers
+(
+  SCHED_NAME      VARCHAR(120) NOT NULL,
+  TRIGGER_NAME    VARCHAR(200) NOT NULL,
+  TRIGGER_GROUP   VARCHAR(200) NOT NULL,
+  REPEAT_COUNT    BIGINT       NOT NULL,
+  REPEAT_INTERVAL BIGINT       NOT NULL,
+  TIMES_TRIGGERED BIGINT       NOT NULL,
+  PRIMARY KEY (SCHED_NAME, TRIGGER_NAME, TRIGGER_GROUP),
+  FOREIGN KEY (SCHED_NAME, TRIGGER_NAME, TRIGGER_GROUP)
+  REFERENCES quartz.scheduler_triggers (SCHED_NAME, TRIGGER_NAME, TRIGGER_GROUP)
+);
+
+CREATE TABLE quartz.scheduler_cron_triggers
+(
+  SCHED_NAME      VARCHAR(120) NOT NULL,
+  TRIGGER_NAME    VARCHAR(200) NOT NULL,
+  TRIGGER_GROUP   VARCHAR(200) NOT NULL,
+  CRON_EXPRESSION VARCHAR(120) NOT NULL,
+  TIME_ZONE_ID    VARCHAR(80),
+  PRIMARY KEY (SCHED_NAME, TRIGGER_NAME, TRIGGER_GROUP),
+  FOREIGN KEY (SCHED_NAME, TRIGGER_NAME, TRIGGER_GROUP)
+  REFERENCES quartz.scheduler_triggers (SCHED_NAME, TRIGGER_NAME, TRIGGER_GROUP)
+);
+
+CREATE TABLE quartz.scheduler_simprop_triggers
+(
+  SCHED_NAME    VARCHAR(120)   NOT NULL,
+  TRIGGER_NAME  VARCHAR(200)   NOT NULL,
+  TRIGGER_GROUP VARCHAR(200)   NOT NULL,
+  STR_PROP_1    VARCHAR(512)   NULL,
+  STR_PROP_2    VARCHAR(512)   NULL,
+  STR_PROP_3    VARCHAR(512)   NULL,
+  INT_PROP_1    INT            NULL,
+  INT_PROP_2    INT            NULL,
+  LONG_PROP_1   BIGINT         NULL,
+  LONG_PROP_2   BIGINT         NULL,
+  DEC_PROP_1    NUMERIC(13, 4) NULL,
+  DEC_PROP_2    NUMERIC(13, 4) NULL,
+  BOOL_PROP_1   BOOL           NULL,
+  BOOL_PROP_2   BOOL           NULL,
+  PRIMARY KEY (SCHED_NAME, TRIGGER_NAME, TRIGGER_GROUP),
+  FOREIGN KEY (SCHED_NAME, TRIGGER_NAME, TRIGGER_GROUP)
+  REFERENCES quartz.scheduler_triggers (SCHED_NAME, TRIGGER_NAME, TRIGGER_GROUP)
+);
+
+CREATE TABLE quartz.scheduler_blob_triggers
+(
+  SCHED_NAME    VARCHAR(120) NOT NULL,
+  TRIGGER_NAME  VARCHAR(200) NOT NULL,
+  TRIGGER_GROUP VARCHAR(200) NOT NULL,
+  BLOB_DATA     BYTEA        NULL,
+  PRIMARY KEY (SCHED_NAME, TRIGGER_NAME, TRIGGER_GROUP),
+  FOREIGN KEY (SCHED_NAME, TRIGGER_NAME, TRIGGER_GROUP)
+  REFERENCES quartz.scheduler_triggers (SCHED_NAME, TRIGGER_NAME, TRIGGER_GROUP)
+);
+
+CREATE TABLE quartz.scheduler_calendars
+(
+  SCHED_NAME    VARCHAR(120) NOT NULL,
+  CALENDAR_NAME VARCHAR(200) NOT NULL,
+  CALENDAR      BYTEA        NOT NULL,
+  PRIMARY KEY (SCHED_NAME, CALENDAR_NAME)
+);
 
 
+CREATE TABLE quartz.scheduler_paused_trigger_grps
+(
+  SCHED_NAME    VARCHAR(120) NOT NULL,
+  TRIGGER_GROUP VARCHAR(200) NOT NULL,
+  PRIMARY KEY (SCHED_NAME, TRIGGER_GROUP)
+);
+
+CREATE TABLE quartz.scheduler_fired_triggers
+(
+  SCHED_NAME        VARCHAR(120) NOT NULL,
+  ENTRY_ID          VARCHAR(95)  NOT NULL,
+  TRIGGER_NAME      VARCHAR(200) NOT NULL,
+  TRIGGER_GROUP     VARCHAR(200) NOT NULL,
+  INSTANCE_NAME     VARCHAR(200) NOT NULL,
+  FIRED_TIME        BIGINT       NOT NULL,
+  SCHED_TIME        BIGINT       NOT NULL,
+  PRIORITY          INTEGER      NOT NULL,
+  STATE             VARCHAR(16)  NOT NULL,
+  JOB_NAME          VARCHAR(200) NULL,
+  JOB_GROUP         VARCHAR(200) NULL,
+  IS_NONCONCURRENT  BOOL         NULL,
+  REQUESTS_RECOVERY BOOL         NULL,
+  PRIMARY KEY (SCHED_NAME, ENTRY_ID)
+);
+
+CREATE TABLE quartz.scheduler_scheduler_state
+(
+  SCHED_NAME        VARCHAR(120) NOT NULL,
+  INSTANCE_NAME     VARCHAR(200) NOT NULL,
+  LAST_CHECKIN_TIME BIGINT       NOT NULL,
+  CHECKIN_INTERVAL  BIGINT       NOT NULL,
+  PRIMARY KEY (SCHED_NAME, INSTANCE_NAME)
+);
+
+CREATE TABLE quartz.scheduler_locks
+(
+  SCHED_NAME VARCHAR(120) NOT NULL,
+  LOCK_NAME  VARCHAR(40)  NOT NULL,
+  PRIMARY KEY (SCHED_NAME, LOCK_NAME)
+);
+
+create index idx_scheduler_j_req_recovery
+  on quartz.scheduler_job_details (SCHED_NAME, REQUESTS_RECOVERY);
+create index idx_scheduler_j_grp
+  on quartz.scheduler_job_details (SCHED_NAME, JOB_GROUP);
+
+create index idx_scheduler_t_j
+  on quartz.scheduler_triggers (SCHED_NAME, JOB_NAME, JOB_GROUP);
+create index idx_scheduler_t_jg
+  on quartz.scheduler_triggers (SCHED_NAME, JOB_GROUP);
+create index idx_scheduler_t_c
+  on quartz.scheduler_triggers (SCHED_NAME, CALENDAR_NAME);
+create index idx_scheduler_t_g
+  on quartz.scheduler_triggers (SCHED_NAME, TRIGGER_GROUP);
+create index idx_scheduler_t_state
+  on quartz.scheduler_triggers (SCHED_NAME, TRIGGER_STATE);
+create index idx_scheduler_t_n_state
+  on quartz.scheduler_triggers (SCHED_NAME, TRIGGER_NAME, TRIGGER_GROUP, TRIGGER_STATE);
+create index idx_scheduler_t_n_g_state
+  on quartz.scheduler_triggers (SCHED_NAME, TRIGGER_GROUP, TRIGGER_STATE);
+create index idx_scheduler_t_next_fire_time
+  on quartz.scheduler_triggers (SCHED_NAME, NEXT_FIRE_TIME);
+create index idx_scheduler_t_nft_st
+  on quartz.scheduler_triggers (SCHED_NAME, TRIGGER_STATE, NEXT_FIRE_TIME);
+create index idx_scheduler_t_nft_misfire
+  on quartz.scheduler_triggers (SCHED_NAME, MISFIRE_INSTR, NEXT_FIRE_TIME);
+create index idx_scheduler_t_nft_st_misfire
+  on quartz.scheduler_triggers (SCHED_NAME, MISFIRE_INSTR, NEXT_FIRE_TIME, TRIGGER_STATE);
+create index idx_scheduler_t_nft_st_misfire_grp
+  on quartz.scheduler_triggers (SCHED_NAME, MISFIRE_INSTR, NEXT_FIRE_TIME, TRIGGER_GROUP, TRIGGER_STATE);
+
+create index idx_scheduler_ft_trig_inst_name
+  on quartz.scheduler_fired_triggers (SCHED_NAME, INSTANCE_NAME);
+create index idx_scheduler_ft_inst_job_req_rcvry
+  on quartz.scheduler_fired_triggers (SCHED_NAME, INSTANCE_NAME, REQUESTS_RECOVERY);
+create index idx_scheduler_ft_j_g
+  on quartz.scheduler_fired_triggers (SCHED_NAME, JOB_NAME, JOB_GROUP);
+create index idx_scheduler_ft_jg
+  on quartz.scheduler_fired_triggers (SCHED_NAME, JOB_GROUP);
+create index idx_scheduler_ft_t_g
+  on quartz.scheduler_fired_triggers (SCHED_NAME, TRIGGER_NAME, TRIGGER_GROUP);
+create index idx_scheduler_ft_tg
+  on quartz.scheduler_fired_triggers (SCHED_NAME, TRIGGER_GROUP);
+
+commit;

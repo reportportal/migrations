@@ -37,6 +37,7 @@ BEGIN
     INSERT INTO issue_type (issue_group_id, locator, issue_name, abbreviation, hex_color) VALUES (5, 'si001', 'System Issue', 'SI', '#0274d1');
 
     INSERT INTO attribute (name) VALUES ('job.interruptJobTime');
+    INSERT INTO attribute (name) VALUES ('job.keepLaunches');
     INSERT INTO attribute (name) VALUES ('job.keepLogs');
     INSERT INTO attribute (name) VALUES ('job.keepScreenshots');
     INSERT INTO attribute (name) VALUES ('analyzer.minDocFreq');
@@ -80,19 +81,20 @@ BEGIN
     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (1, '1 day', defaultProject), (1, '1 day', superadminProject);
     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (2, '3 months', defaultProject), (2, '3 months', superadminProject);
     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (3, '2 weeks', defaultProject), (3, '2 weeks', superadminProject);
-    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (4, 7, defaultProject), (4, 7, superadminProject);
-    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (5, 1, defaultProject), (5, 1, superadminProject);
-    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (6, 80, defaultProject), (6, 80, superadminProject);
-    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (7, 2, defaultProject), (7, 2, superadminProject);
-    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (8, false, defaultProject), (8, false, superadminProject);
+    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (4, '2 weeks', defaultProject), (4, '2 weeks', superadminProject);
+    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (5, 7, defaultProject), (5, 7, superadminProject);
+    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (6, 1, defaultProject), (6, 1, superadminProject);
+    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (7, 80, defaultProject), (7, 80, superadminProject);
+    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (8, 2, defaultProject), (8, 2, superadminProject);
     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (9, false, defaultProject), (9, false, superadminProject);
-    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (10, 'LAUNCH_NAME', defaultProject), (10, 'LAUNCH_NAME', superadminProject);
+    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (10, false, defaultProject), (10, false, superadminProject);
+    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (11, 'LAUNCH_NAME', defaultProject), (11, 'LAUNCH_NAME', superadminProject);
 
     INSERT INTO integration (project_id, type, enabled, params)
-      VALUES (defaultProject, email, false, '{"params": {"rules": [{"recipients": ["owner"], "fromAddress": "Auto_EPM-RPP_Notifications@epam.com", "launch_stats_rule": ["always"]}]}}');
+      VALUES (defaultProject, email, false, '{"params": {"rules": [{"recipients": ["owner"], "fromAddress": "Auto_EPM-RPP_Notifications@epam.com", "launchStatsRule": "always"}]}}');
 
     INSERT INTO integration (project_id, type, enabled, params)
-      VALUES (superadminProject, email, false, '{"params": {"rules": [{"recipients": ["owner"], "fromAddress": "Auto_EPM-RPP_Notifications@epam.com", "launch_stats_rule": ["always"]}]}}');
+      VALUES (superadminProject, email, false, '{"params": {"rules": [{"recipients": ["owner"], "fromAddress": "Auto_EPM-RPP_Notifications@epam.com", "launchStatsRule": "always"}]}}');
 
 END
 $$;
