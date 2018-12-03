@@ -363,7 +363,7 @@ CREATE TABLE parameter (
 );
 
 CREATE TABLE item_attribute (
-  id        SERIAL CONSTRAINT item_attribute_pk PRIMARY KEY,
+  id        BIGSERIAL CONSTRAINT item_attribute_pk PRIMARY KEY,
   key       VARCHAR,
   value     VARCHAR,
   item_id   BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE,
