@@ -10,10 +10,22 @@ $$DECLARE
   email BIGINT;
 BEGIN
 
+    INSERT INTO server_settings (key, value) VALUES ('server.analytics.all', 'true');
+    INSERT INTO server_settings (key, value) VALUES ('server.email.star_tls_enabled', 'false');
+    INSERT INTO server_settings (key, value) VALUES ('server.email.password', null);
+    INSERT INTO server_settings (key, value) VALUES ('server.email.port', '587');
+    INSERT INTO server_settings (key, value) VALUES ('server.email.protocol', 'smtp');
+    INSERT INTO server_settings (key, value) VALUES ('server.email.ssl_enabled', 'false');
+    INSERT INTO server_settings (key, value) VALUES ('server.email.auth_enabled', 'false');
+    INSERT INTO server_settings (key, value) VALUES ('server.email.enabled', 'true');
+    INSERT INTO server_settings (key, value) VALUES ('server.email.username', null);
+    INSERT INTO server_settings (key, value) VALUES ('server.email.host', null);
+    INSERT INTO server_settings (key, value) VALUES ('server.analytics.asd', 'true');
+
     INSERT INTO integration_type (name, auth_flow, creation_date, group_type) VALUES ('test integration type', 'LDAP', now(), 'AUTH');
     ldap := (SELECT currval(pg_get_serial_sequence('integration_type', 'id')));
 
-    INSERT INTO integration_type (name, auth_flow, creation_date, group_type) VALUES ('RALLY', 'OAUTH', now(), 'BTS') ;
+    INSERT INTO integration_type (name, auth_flow, creation_date, group_type) VALUES ('rally-bts', 'OAUTH', now(), 'BTS') ;
     rally := (SELECT currval(pg_get_serial_sequence('integration_type', 'id')));
 
     INSERT INTO integration_type (name, auth_flow, creation_date, group_type) VALUES ('jira-bts', 'BASIC', now(), 'BTS');
