@@ -20,7 +20,6 @@ BEGIN
     INSERT INTO server_settings (key, value) VALUES ('server.email.enabled', 'true');
     INSERT INTO server_settings (key, value) VALUES ('server.email.username', null);
     INSERT INTO server_settings (key, value) VALUES ('server.email.host', null);
-    INSERT INTO server_settings (key, value) VALUES ('all', 'false');
     INSERT INTO server_settings (key, value) VALUES ('server.analytics.asd', 'true');
 
     INSERT INTO integration_type (name, auth_flow, creation_date, group_type) VALUES ('test integration type', 'LDAP', now(), 'AUTH');
