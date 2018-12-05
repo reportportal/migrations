@@ -1,10 +1,17 @@
-DROP TRIGGER IF EXISTS last_launch_number_trigger ON launch;
-DROP TRIGGER IF EXISTS after_ticket_delete ON issue_ticket;
-DROP TRIGGER IF EXISTS after_widget_delete ON dashboard_widget;
-DROP TRIGGER IF EXISTS after_test_results_update ON test_item_results;
-DROP TRIGGER IF EXISTS after_issue_insert ON issue;
-DROP TRIGGER IF EXISTS after_issue_update ON issue;
-DROP TRIGGER IF EXISTS before_item_delete ON test_item_results;
+DROP TRIGGER IF EXISTS last_launch_number_trigger
+ON launch;
+DROP TRIGGER IF EXISTS after_ticket_delete
+ON issue_ticket;
+DROP TRIGGER IF EXISTS after_widget_delete
+ON dashboard_widget;
+DROP TRIGGER IF EXISTS after_test_results_update
+ON test_item_results;
+DROP TRIGGER IF EXISTS after_issue_insert
+ON issue;
+DROP TRIGGER IF EXISTS after_issue_update
+ON issue;
+DROP TRIGGER IF EXISTS before_item_delete
+ON test_item_results;
 
 DROP FUNCTION IF EXISTS get_last_launch_number();
 DROP FUNCTION IF EXISTS check_wired_tickets();
@@ -16,8 +23,6 @@ DROP FUNCTION IF EXISTS decrease_statistics();
 DROP FUNCTION IF EXISTS merge_launch(LaunchId BIGINT);
 DROP FUNCTION IF EXISTS handle_retries(itemId BIGINT);
 DROP FUNCTION IF EXISTS retries_statistics(cur_launch_id BIGINT);
-
-DROP EXTENSION IF EXISTS tablefunc;
 
 DROP EXTENSION IF EXISTS ltree CASCADE;
 
@@ -36,7 +41,6 @@ DROP TABLE IF EXISTS dashboard CASCADE;
 DROP TABLE IF EXISTS widget CASCADE;
 DROP TABLE IF EXISTS dashboard_widget CASCADE;
 DROP TABLE IF EXISTS filter CASCADE;
-DROP TABLE IF EXISTS user_filter CASCADE;
 DROP TABLE IF EXISTS filter_condition CASCADE;
 DROP TABLE IF EXISTS filter_sort CASCADE;
 DROP TABLE IF EXISTS widget_filter CASCADE;
@@ -81,6 +85,7 @@ DROP TABLE IF EXISTS ldap_synchronization_attributes CASCADE;
 DROP TABLE IF EXISTS integration CASCADE;
 DROP TABLE IF EXISTS integration_type CASCADE;
 DROP TABLE IF EXISTS activity CASCADE;
+drop table if exists shareable_entity CASCADE;
 
 DROP TYPE IF EXISTS PROJECT_TYPE_ENUM CASCADE;
 DROP TYPE IF EXISTS USER_ROLE_ENUM CASCADE;
