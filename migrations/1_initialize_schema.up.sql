@@ -233,22 +233,23 @@ CREATE TABLE auth_config (
 -----------------------------------------------------------------------------------
 
 -------------------------- Dashboards, widgets, user filters -----------------------------
-
-CREATE TABLE filter (
-  id          BIGSERIAL CONSTRAINT filter_pk PRIMARY KEY,
-  name        VARCHAR                                          NOT NULL,
-  project_id  BIGINT REFERENCES project (id) ON DELETE CASCADE NOT NULL,
-  target      VARCHAR                                          NOT NULL,
-  description VARCHAR
+CREATE TABLE shareable_entity (
+  id         BIGSERIAL CONSTRAINT shareable_pk PRIMARY KEY,
+  shared     BOOLEAN NOT NULL DEFAULT false,
+  owner      VARCHAR NOT NULL,
+  project_id BIGINT  NOT NULL REFERENCES project (id) ON DELETE CASCADE
 );
 
-CREATE TABLE user_filter (
-  id BIGINT NOT NULL CONSTRAINT user_filter_pk PRIMARY KEY CONSTRAINT user_filter_id_fk REFERENCES filter (id) ON DELETE CASCADE
+CREATE TABLE filter (
+  id          BIGINT  NOT NULL CONSTRAINT filter_pk PRIMARY KEY CONSTRAINT filter_id_fk REFERENCES shareable_entity (id) ON DELETE CASCADE,
+  name        VARCHAR NOT NULL,
+  target      VARCHAR NOT NULL,
+  description VARCHAR
 );
 
 CREATE TABLE filter_condition (
   id              BIGSERIAL CONSTRAINT filter_condition_pk PRIMARY KEY,
-  filter_id       BIGINT REFERENCES user_filter (id) ON DELETE CASCADE,
+  filter_id       BIGINT REFERENCES filter (id) ON DELETE CASCADE,
   condition       FILTER_CONDITION_ENUM NOT NULL,
   value           VARCHAR               NOT NULL,
   search_criteria VARCHAR               NOT NULL,
@@ -257,30 +258,27 @@ CREATE TABLE filter_condition (
 
 CREATE TABLE filter_sort (
   id        BIGSERIAL CONSTRAINT filter_sort_pk PRIMARY KEY,
-  filter_id BIGINT REFERENCES user_filter (id) ON DELETE CASCADE,
+  filter_id BIGINT REFERENCES filter (id) ON DELETE CASCADE,
   field     VARCHAR             NOT NULL,
   direction SORT_DIRECTION_ENUM NOT NULL DEFAULT 'ASC'
 );
 
 CREATE TABLE dashboard (
-  id            SERIAL CONSTRAINT dashboard_pk PRIMARY KEY,
-  name          VARCHAR                 NOT NULL,
+  id            BIGINT    NOT NULL CONSTRAINT dashboard_pk PRIMARY KEY CONSTRAINT dashboard_id_fk REFERENCES shareable_entity (id) ON DELETE CASCADE,
+  name          VARCHAR   NOT NULL,
   description   VARCHAR,
-  project_id    INTEGER REFERENCES project (id) ON DELETE CASCADE,
-  creation_date TIMESTAMP DEFAULT now() NOT NULL,
-  CONSTRAINT unq_name_project UNIQUE (name, project_id)
-  -- acl
+  creation_date TIMESTAMP NOT NULL DEFAULT now()
+  --   CONSTRAINT unq_name_project UNIQUE (name, project_id)
 );
 
 CREATE TABLE widget (
-  id             BIGSERIAL CONSTRAINT widget_id PRIMARY KEY,
+  id             BIGINT  NOT NULL CONSTRAINT widget_pk PRIMARY KEY CONSTRAINT widget_id_fk REFERENCES shareable_entity (id) ON DELETE CASCADE,
   name           VARCHAR NOT NULL,
   description    VARCHAR,
   widget_type    VARCHAR NOT NULL,
   items_count    SMALLINT,
-  project_id     BIGINT REFERENCES project (id) ON DELETE CASCADE,
-  widget_options JSONB   NULL,
-  CONSTRAINT unq_widget_name_project UNIQUE (name, project_id)
+  widget_options JSONB   NULL
+  --   CONSTRAINT unq_widget_name_project UNIQUE (name, project_id)
 );
 
 CREATE TABLE content_field (
@@ -291,7 +289,7 @@ CREATE TABLE content_field (
 CREATE TABLE dashboard_widget (
   dashboard_id      INTEGER REFERENCES dashboard (id) ON DELETE CASCADE,
   widget_id         INTEGER REFERENCES widget (id) ON DELETE CASCADE,
-  widget_name       VARCHAR NOT NULL, -- make it as reference ??
+  widget_name       VARCHAR NOT NULL,
   widget_width      INT     NOT NULL,
   widget_height     INT     NOT NULL,
   widget_position_x INT     NOT NULL,
@@ -302,7 +300,7 @@ CREATE TABLE dashboard_widget (
 
 CREATE TABLE widget_filter (
   widget_id BIGINT REFERENCES widget (id) ON DELETE CASCADE         NOT NULL,
-  filter_id BIGINT REFERENCES user_filter (id) ON DELETE CASCADE    NOT NULL,
+  filter_id BIGINT REFERENCES filter (id) ON DELETE CASCADE         NOT NULL,
   CONSTRAINT widget_filter_pk PRIMARY KEY (widget_id, filter_id)
 );
 -----------------------------------------------------------------------------------
@@ -517,8 +515,6 @@ CREATE TABLE acl_entry (
 
 ----------------------------------------------------------------------------------------
 
-CREATE EXTENSION IF NOT EXISTS tablefunc;
-
 ------- Functions and triggers -----------------------
 
 CREATE OR REPLACE FUNCTION has_child(path_value ltree)
@@ -709,17 +705,29 @@ BEGIN
   maxStartTime < newItemStartTime
   THEN
     UPDATE test_item
-    SET retry_of = newItemId, launch_id = NULL, has_retries = false, path = ((SELECT path FROM test_item WHERE item_id = newItemId)::text || '.' || item_id)::ltree
+    SET retry_of    = newItemId,
+        launch_id   = NULL,
+        has_retries = false,
+        path        = ((SELECT path FROM test_item WHERE item_id = newItemId) :: text || '.' || item_id) :: ltree
     WHERE unique_id = newItemUniqueId
       AND item_id != newItemId;
 
-    UPDATE test_item SET retry_of = NULL, has_retries = true WHERE item_id = newItemId;
+    UPDATE test_item
+    SET retry_of    = NULL,
+        has_retries = true
+    WHERE item_id = newItemId;
   ELSE
     UPDATE test_item
-    SET retry_of = itemIdWithMaxStartTime, launch_id = NULL, has_retries = false, path = ((SELECT path FROM test_item WHERE item_id = itemIdWithMaxStartTime)::text || '.' || item_id)::ltree
+    SET retry_of    = itemIdWithMaxStartTime,
+        launch_id   = NULL,
+        has_retries = false,
+        path        = ((SELECT path FROM test_item WHERE item_id = itemIdWithMaxStartTime) :: text || '.' || item_id) :: ltree
     WHERE item_id = newItemId;
 
-    UPDATE test_item ti SET ti.retry_of = NULL, ti.has_retries = true, path = ((SELECT path FROM test_item WHERE item_id = ti.parent_id)::text || '.' || ti.item_id)::ltree
+    UPDATE test_item ti
+    SET ti.retry_of    = NULL,
+        ti.has_retries = true,
+        path           = ((SELECT path FROM test_item WHERE item_id = ti.parent_id) :: text || '.' || ti.item_id) :: ltree
     WHERE ti.item_id = itemIdWithMaxStartTime;
   END IF;
   RETURN 0;
@@ -779,9 +787,7 @@ BEGIN
       END LOOP;
     END LOOP;
 
-    DELETE
-    FROM statistics
-    WHERE item_id IN (SELECT item_id FROM test_item WHERE retry_of = retry_parents.retry_id);
+    DELETE FROM statistics WHERE item_id IN (SELECT item_id FROM test_item WHERE retry_of = retry_parents.retry_id);
 
     DELETE FROM issue WHERE issue_id IN (SELECT item_id FROM test_item WHERE retry_of = retry_parents.retry_id);
 
@@ -872,7 +878,8 @@ BEGIN
   THEN RETURN new;
   END IF;
 
-  IF exists(SELECT 1 FROM test_item WHERE item_id = new.result_id AND retry_of IS NOT NULL)
+  IF exists(SELECT 1 FROM test_item WHERE item_id = new.result_id
+                                      AND retry_of IS NOT NULL)
   THEN RETURN new;
   END IF;
 
@@ -987,7 +994,8 @@ BEGIN
   THEN RETURN new;
   END IF;
 
-  IF exists(SELECT 1 FROM test_item WHERE item_id = new.issue_id AND retry_of IS NOT NULL)
+  IF exists(SELECT 1 FROM test_item WHERE item_id = new.issue_id
+                                      AND retry_of IS NOT NULL)
   THEN RETURN new;
   END IF;
 
@@ -1071,7 +1079,8 @@ BEGIN
   THEN RETURN new;
   END IF;
 
-  IF exists(SELECT 1 FROM test_item WHERE item_id = new.issue_id AND retry_of IS NOT NULL)
+  IF exists(SELECT 1 FROM test_item WHERE item_id = new.issue_id
+                                      AND retry_of IS NOT NULL)
   THEN RETURN new;
   END IF;
 
@@ -1239,7 +1248,8 @@ BEGIN
 
   cur_launch_id := (SELECT launch_id FROM test_item WHERE item_id = old.result_id);
 
-  IF exists(SELECT 1 FROM test_item WHERE item_id = old.result_id AND retry_of IS NOT NULL)
+  IF exists(SELECT 1 FROM test_item WHERE item_id = old.result_id
+                                      AND retry_of IS NOT NULL)
   THEN RETURN old;
   END IF;
 
