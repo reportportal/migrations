@@ -36,11 +36,11 @@ CREATE TABLE server_settings (
 
 ---------------------------- Project and users ------------------------------------
 CREATE TABLE project (
-  id              BIGSERIAL CONSTRAINT project_pk PRIMARY KEY,
-  name            VARCHAR                 NOT NULL UNIQUE,
-  project_type    VARCHAR                 NOT NULL,
-  creation_date   TIMESTAMP DEFAULT now() NOT NULL,
-  metadata        JSONB                   NULL
+  id            BIGSERIAL CONSTRAINT project_pk PRIMARY KEY,
+  name          VARCHAR                 NOT NULL UNIQUE,
+  project_type  VARCHAR                 NOT NULL,
+  creation_date TIMESTAMP DEFAULT now() NOT NULL,
+  metadata      JSONB                   NULL
 );
 
 CREATE TABLE user_creation_bid (
@@ -363,7 +363,7 @@ CREATE TABLE parameter (
 );
 
 CREATE TABLE item_attribute (
-  id        SERIAL CONSTRAINT item_attribute_pk PRIMARY KEY,
+  id        BIGSERIAL CONSTRAINT item_attribute_pk PRIMARY KEY,
   key       VARCHAR,
   value     VARCHAR,
   item_id   BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE,
@@ -1169,11 +1169,65 @@ END;
 $$
 LANGUAGE plpgsql;
 
-
 CREATE TRIGGER after_issue_update
   AFTER UPDATE
   ON issue
   FOR EACH ROW EXECUTE PROCEDURE update_defect_statistics();
+
+CREATE OR REPLACE FUNCTION delete_defect_statistics()
+  RETURNS TRIGGER AS $$
+DECLARE   cur_id                    BIGINT;
+  DECLARE cur_launch_id             BIGINT;
+  DECLARE defect_field_old_id       BIGINT;
+  DECLARE defect_field_old_total_id BIGINT;
+BEGIN
+  cur_launch_id := (SELECT launch_id FROM test_item WHERE test_item.item_id = old.issue_id);
+
+  defect_field_old_id := (SELECT DISTINCT ON (statistics_field.name) sf_id
+                          FROM statistics_field
+                          WHERE statistics_field.name =
+                                (SELECT concat('statistics$defects$', lower(public.issue_group.issue_group :: VARCHAR), '$',
+                                               lower(public.issue_type.locator))
+                                 FROM issue_type
+                                        JOIN issue_group ON issue_type.issue_group_id = issue_group.issue_group_id
+                                 WHERE issue_type.id = old.issue_type));
+
+  defect_field_old_total_id := (SELECT DISTINCT ON (statistics_field.name) sf_id
+                                FROM statistics_field
+                                WHERE statistics_field.name =
+                                      (SELECT concat('statistics$defects$', lower(public.issue_group.issue_group :: VARCHAR), '$total')
+                                       FROM issue_type
+                                              JOIN issue_group ON issue_type.issue_group_id = issue_group.issue_group_id
+                                       WHERE issue_type.id = old.issue_type));
+
+  FOR cur_id IN
+  (SELECT item_id FROM test_item WHERE PATH @> (SELECT PATH FROM test_item WHERE item_id = old.issue_id))
+
+  LOOP
+    /* decrease item defects statistics for concrete field */
+    UPDATE statistics SET s_counter = s_counter - 1 WHERE statistics_field_id = defect_field_old_id
+                                                      AND statistics.item_id = cur_id;
+
+    /* decrease item defects statistics for total field */
+    UPDATE statistics SET s_counter = s_counter - 1 WHERE statistics_field_id = defect_field_old_total_id
+                                                      AND item_id = cur_id;
+  END LOOP;
+
+  /* decrease launch defects statistics for concrete field */
+  UPDATE statistics SET s_counter = s_counter - 1 WHERE statistics_field_id = defect_field_old_id
+                                                    AND launch_id = cur_launch_id;
+  /* decrease launch defects statistics for total field */
+  UPDATE statistics SET s_counter = s_counter - 1 WHERE statistics_field_id = defect_field_old_total_id
+                                                    AND launch_id = cur_launch_id;
+  RETURN old;
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE TRIGGER before_issue_delete
+  BEFORE DELETE
+  ON issue
+  FOR EACH ROW EXECUTE PROCEDURE delete_defect_statistics();
 
 
 CREATE OR REPLACE FUNCTION decrease_statistics()

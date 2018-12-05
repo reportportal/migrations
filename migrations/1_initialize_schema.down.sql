@@ -5,6 +5,8 @@ DROP TRIGGER IF EXISTS after_test_results_update ON test_item_results;
 DROP TRIGGER IF EXISTS after_issue_insert ON issue;
 DROP TRIGGER IF EXISTS after_issue_update ON issue;
 DROP TRIGGER IF EXISTS before_item_delete ON test_item_results;
+DROP TRIGGER IF EXISTS before_issue_delete
+ON issue;
 
 DROP FUNCTION IF EXISTS get_last_launch_number();
 DROP FUNCTION IF EXISTS check_wired_tickets();
@@ -12,6 +14,7 @@ DROP FUNCTION IF EXISTS check_wired_widgets();
 DROP FUNCTION IF EXISTS update_executions_statistics();
 DROP FUNCTION IF EXISTS increment_defect_statistics();
 DROP FUNCTION IF EXISTS update_defect_statistics();
+DROP FUNCTION IF EXISTS delete_defect_statistics();
 DROP FUNCTION IF EXISTS decrease_statistics();
 DROP FUNCTION IF EXISTS merge_launch(LaunchId BIGINT);
 DROP FUNCTION IF EXISTS handle_retries(itemId BIGINT);
