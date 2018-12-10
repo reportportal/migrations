@@ -194,7 +194,7 @@ CREATE TABLE integration (
 CREATE TABLE ldap_synchronization_attributes
 (
   id        BIGSERIAL CONSTRAINT ldap_synchronization_attributes_pk PRIMARY KEY,
-  email     VARCHAR(256) UNIQUE,
+  email     VARCHAR(256),
   full_name VARCHAR(256),
   photo     VARCHAR(128)
 );
