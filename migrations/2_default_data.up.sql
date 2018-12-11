@@ -34,8 +34,6 @@ BEGIN
     INSERT INTO integration_type (name, creation_date, group_type) VALUES ('email', now(), 'NOTIFICATION');
     email := (SELECT currval(pg_get_serial_sequence('integration_type', 'id')));
 
-    INSERT INTO ldap_synchronization_attributes (email, full_name, photo) VALUES ('mail', 'displayName', 'thumbnailPhoto');
-
     INSERT INTO issue_group (issue_group_id, issue_group) VALUES (1, 'TO_INVESTIGATE');
     INSERT INTO issue_group (issue_group_id, issue_group) VALUES (2, 'AUTOMATION_BUG');
     INSERT INTO issue_group (issue_group_id, issue_group) VALUES (3, 'PRODUCT_BUG');
@@ -86,7 +84,6 @@ BEGIN
     (superadminProject, 1), (superadminProject, 2), (superadminProject, 3), (superadminProject, 4), (superadminProject, 5),
     (defaultProject, 1),(defaultProject, 2),(defaultProject, 3),(defaultProject, 4),(defaultProject, 5);
 
-    INSERT INTO integration (project_id, type, enabled, creation_date) VALUES (superadminProject, ldap, FALSE, now()), (defaultProject, ldap, FALSE, now());
     INSERT INTO integration (project_id, type, enabled, creation_date) VALUES (superadminProject, rally, FALSE, now()), (defaultProject, rally, FALSE, now());
     INSERT INTO integration (project_id, type, enabled, creation_date) VALUES (superadminProject, jira, FALSE, now()), (defaultProject, jira, FALSE, now());
 
