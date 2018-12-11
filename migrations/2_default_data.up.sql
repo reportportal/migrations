@@ -100,10 +100,10 @@ BEGIN
     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (11, 'LAUNCH_NAME', defaultProject), (11, 'LAUNCH_NAME', superadminProject);
 
     INSERT INTO integration (project_id, type, enabled, params)
-      VALUES (defaultProject, email, false, '{"params": {"rules": [{"recipients": ["owner"], "fromAddress": "Auto_EPM-RPP_Notifications@epam.com", "launchStatsRule": "always"}]}}');
+      VALUES (defaultProject, email, false, '{"params": {"rules": [{"recipients": ["OWNER"], "fromAddress": "Auto_EPM-RPP_Notifications@epam.com", "launchStatsRule": "always"}]}}');
 
     INSERT INTO integration (project_id, type, enabled, params)
-      VALUES (superadminProject, email, false, '{"params": {"rules": [{"recipients": ["owner"], "fromAddress": "Auto_EPM-RPP_Notifications@epam.com", "launchStatsRule": "always"}]}}');
+      VALUES (superadminProject, email, false, '{"params": {"rules": [{"recipients": ["OWNER"], "fromAddress": "Auto_EPM-RPP_Notifications@epam.com", "launchStatsRule": "always"}]}}');
 
 END
 $$;
