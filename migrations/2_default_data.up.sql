@@ -25,10 +25,10 @@ BEGIN
     INSERT INTO integration_type (name, auth_flow, creation_date, group_type) VALUES ('test integration type', 'LDAP', now(), 'AUTH');
     ldap := (SELECT currval(pg_get_serial_sequence('integration_type', 'id')));
 
-    INSERT INTO integration_type (name, auth_flow, creation_date, group_type) VALUES ('rally-bts', 'OAUTH', now(), 'BTS') ;
+    INSERT INTO integration_type (name, auth_flow, creation_date, group_type) VALUES ('RALLY', 'OAUTH', now(), 'BTS') ;
     rally := (SELECT currval(pg_get_serial_sequence('integration_type', 'id')));
 
-    INSERT INTO integration_type (name, auth_flow, creation_date, group_type) VALUES ('jira-bts', 'BASIC', now(), 'BTS');
+    INSERT INTO integration_type (name, auth_flow, creation_date, group_type) VALUES ('JIRA', 'BASIC', now(), 'BTS');
     jira := (SELECT currval(pg_get_serial_sequence('integration_type', 'id')));
 
     INSERT INTO integration_type (name, creation_date, group_type) VALUES ('email', now(), 'NOTIFICATION');
