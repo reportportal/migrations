@@ -882,6 +882,11 @@ BEGIN
   THEN RETURN new;
   END IF;
 
+  IF exists(SELECT 1 FROM test_item ti WHERE ti.item_id = new.result_id
+                                         and ti.type != 'STEP' :: TEST_ITEM_TYPE_ENUM)
+  THEN RETURN new;
+  END IF;
+
   IF exists(SELECT 1 FROM test_item WHERE item_id = new.result_id
                                       AND retry_of IS NOT NULL)
   THEN RETURN new;
