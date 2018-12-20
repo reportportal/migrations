@@ -364,12 +364,15 @@ CREATE TABLE parameter (
 CREATE TABLE item_attribute (
   id        BIGSERIAL CONSTRAINT item_attribute_pk PRIMARY KEY,
   key       VARCHAR,
-  value     VARCHAR,
+  value     VARCHAR NOT NULL,
   item_id   BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE,
   launch_id BIGINT REFERENCES launch (id) ON DELETE CASCADE,
   system    BOOLEAN DEFAULT FALSE,
   CHECK ((item_id IS NOT NULL AND launch_id IS NULL) OR (item_id IS NULL AND launch_id IS NOT NULL))
 );
+
+CREATE UNIQUE INDEX item_attribute_unique
+  ON item_attribute (coalesce(key, '-1'), value, system, coalesce(launch_id, -1), coalesce(item_id, -1));
 
 
 CREATE TABLE log (
