@@ -39,6 +39,7 @@ CREATE TABLE project (
   id            BIGSERIAL CONSTRAINT project_pk PRIMARY KEY,
   name          VARCHAR                 NOT NULL UNIQUE,
   project_type  VARCHAR                 NOT NULL,
+  organization  VARCHAR                 NOT NULL,
   creation_date TIMESTAMP DEFAULT now() NOT NULL,
   metadata      JSONB                   NULL
 );
@@ -236,7 +237,7 @@ CREATE TABLE auth_config (
 CREATE TABLE shareable_entity (
   id         BIGSERIAL CONSTRAINT shareable_pk PRIMARY KEY,
   shared     BOOLEAN NOT NULL DEFAULT false,
-  owner      VARCHAR NOT NULL REFERENCES users(login) ON DELETE CASCADE,
+  owner      VARCHAR NOT NULL REFERENCES users (login) ON DELETE CASCADE,
   project_id BIGINT  NOT NULL REFERENCES project (id) ON DELETE CASCADE
 );
 
@@ -597,18 +598,18 @@ BEGIN
                         AND test_item.launch_id = LaunchId)
       WHERE test_item_results.result_id = parentItemId;
 
-            INSERT INTO statistics (statistics_field_id, item_id, launch_id, s_counter)
-            select statistics_field_id, parentItemId, null, sum(s_counter)
-            from statistics
-                   join test_item ti on statistics.item_id = ti.item_id
-            where ti.unique_id = firstItemId
-                  and ti.launch_id = LaunchId
-                  and nlevel(ti.path) = i
-            group by statistics_field_id
-            ON CONFLICT ON CONSTRAINT unique_stats_item
-                                      DO UPDATE
-                                        SET
-                                          s_counter = EXCLUDED.s_counter;
+      INSERT INTO statistics (statistics_field_id, item_id, launch_id, s_counter)
+      select statistics_field_id, parentItemId, null, sum(s_counter)
+      from statistics
+             join test_item ti on statistics.item_id = ti.item_id
+      where ti.unique_id = firstItemId
+        and ti.launch_id = LaunchId
+        and nlevel(ti.path) = i
+      group by statistics_field_id
+      ON CONFLICT ON CONSTRAINT unique_stats_item
+                                DO UPDATE
+                                  SET
+                                    s_counter = EXCLUDED.s_counter;
 
       IF exists(select 1
                 from test_item_results
@@ -637,10 +638,8 @@ BEGIN
           WHERE test_item.path <@ MergingTestItemField.path_value
             AND test_item.path != MergingTestItemField.path_value
             AND nlevel(test_item.path) = i + 1;
-          DELETE
-          from test_item
-          where test_item.path = MergingTestItemField.path_value
-            and test_item.item_id != parentItemId;
+          DELETE from test_item where test_item.path = MergingTestItemField.path_value
+                                  and test_item.item_id != parentItemId;
 
         end if;
 
@@ -660,7 +659,7 @@ BEGIN
   from statistics
          join test_item ti on statistics.item_id = ti.item_id
   where ti.launch_id = LaunchId
-        and ti.parent_id is null
+    and ti.parent_id is null
   group by statistics_field_id
   ON CONFLICT ON CONSTRAINT unique_stats_launch
                             DO UPDATE
