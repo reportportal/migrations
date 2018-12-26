@@ -288,8 +288,8 @@ CREATE TABLE content_field (
 );
 
 CREATE TABLE dashboard_widget (
-  dashboard_id      INTEGER REFERENCES dashboard (id) ON DELETE CASCADE,
-  widget_id         INTEGER REFERENCES widget (id) ON DELETE CASCADE,
+  dashboard_id      BIGINT REFERENCES dashboard (id) ON DELETE CASCADE,
+  widget_id         BIGINT REFERENCES widget (id) ON DELETE CASCADE,
   widget_name       VARCHAR NOT NULL,
   widget_width      INT     NOT NULL,
   widget_height     INT     NOT NULL,
