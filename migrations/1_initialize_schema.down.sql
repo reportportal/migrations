@@ -28,6 +28,11 @@ DROP TABLE IF EXISTS defect_form_field CASCADE;
 DROP TABLE IF EXISTS defect_field_allowed_value CASCADE;
 DROP TABLE IF EXISTS bug_tracking_system_auth CASCADE;
 
+DROP TABLE IF EXISTS sender_case CASCADE;
+DROP TABLE IF EXISTS email_sender_case CASCADE;
+DROP TABLE IF EXISTS launch_names CASCADE;
+DROP TABLE IF EXISTS launch_attributes CASCADE;
+
 DROP TABLE IF EXISTS attribute CASCADE;
 DROP TABLE IF EXISTS project_attribute CASCADE;
 DROP TABLE IF EXISTS issue_type_project CASCADE;
