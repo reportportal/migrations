@@ -125,6 +125,7 @@ CREATE TABLE oauth_registration_restriction (
 ------------------------------ Project configurations ------------------------------
 CREATE TABLE email_sender_case (
   id         BIGSERIAL CONSTRAINT email_sender_case_pk PRIMARY KEY,
+  send_case  VARCHAR(256) NOT NULL,
   project_id BIGSERIAL REFERENCES project (id) ON DELETE CASCADE
 );
 
