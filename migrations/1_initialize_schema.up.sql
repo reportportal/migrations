@@ -833,30 +833,10 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-
-CREATE FUNCTION check_wired_widgets()
-  RETURNS TRIGGER AS
-$BODY$
-BEGIN
-  DELETE
-  FROM widget
-  WHERE (SELECT count(dashboard_widget.widget_id) FROM dashboard_widget WHERE dashboard_widget.widget_id = old.widget_id) = 0
-    AND widget.id = old.widget_id;
-  RETURN NULL;
-END;
-$BODY$
-LANGUAGE plpgsql;
-
 CREATE TRIGGER after_ticket_delete
   AFTER DELETE
   ON issue_ticket
   FOR EACH ROW EXECUTE PROCEDURE check_wired_tickets();
-
-
-CREATE TRIGGER after_widget_delete
-  AFTER DELETE
-  ON dashboard_widget
-  FOR EACH ROW EXECUTE PROCEDURE check_wired_widgets();
 
 
 CREATE TRIGGER last_launch_number_trigger
