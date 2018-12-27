@@ -145,6 +145,11 @@ CREATE TABLE launch_attributes (
   launch_attribute            VARCHAR(256)
 );
 
+CREATE TABLE recipients (
+  email_sender_case_id BIGINT REFERENCES email_sender_case (id) ON DELETE CASCADE,
+  recipient            VARCHAR(256)
+);
+
 CREATE TABLE attribute (
   id   BIGSERIAL CONSTRAINT attribute_pk PRIMARY KEY,
   name VARCHAR(256)
