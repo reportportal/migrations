@@ -1,10 +1,15 @@
-DROP TRIGGER IF EXISTS last_launch_number_trigger ON launch;
-DROP TRIGGER IF EXISTS after_ticket_delete ON issue_ticket;
-DROP TRIGGER IF EXISTS after_widget_delete ON dashboard_widget;
-DROP TRIGGER IF EXISTS after_test_results_update ON test_item_results;
-DROP TRIGGER IF EXISTS after_issue_insert ON issue;
-DROP TRIGGER IF EXISTS after_issue_update ON issue;
-DROP TRIGGER IF EXISTS before_item_delete ON test_item_results;
+DROP TRIGGER IF EXISTS last_launch_number_trigger
+ON launch;
+DROP TRIGGER IF EXISTS after_ticket_delete
+ON issue_ticket;
+DROP TRIGGER IF EXISTS after_test_results_update
+ON test_item_results;
+DROP TRIGGER IF EXISTS after_issue_insert
+ON issue;
+DROP TRIGGER IF EXISTS after_issue_update
+ON issue;
+DROP TRIGGER IF EXISTS before_item_delete
+ON test_item_results;
 DROP TRIGGER IF EXISTS before_issue_delete
 ON issue;
 
@@ -66,7 +71,7 @@ DROP TABLE IF EXISTS ticket CASCADE;
 DROP TABLE IF EXISTS defect_form_field_value CASCADE;
 DROP TABLE IF EXISTS parameter CASCADE;
 DROP TABLE IF EXISTS item_attribute CASCADE;
-DROP TABLE IF exists user_preference CASCADE;
+DROP TABLE IF EXISTS user_preference CASCADE;
 
 DROP TABLE IF EXISTS launch CASCADE;
 DROP TABLE IF EXISTS launch_tag CASCADE;
@@ -81,7 +86,7 @@ DROP TABLE IF EXISTS ldap_synchronization_attributes CASCADE;
 DROP TABLE IF EXISTS integration CASCADE;
 DROP TABLE IF EXISTS integration_type CASCADE;
 DROP TABLE IF EXISTS activity CASCADE;
-drop table if exists shareable_entity CASCADE;
+DROP TABLE IF EXISTS shareable_entity CASCADE;
 
 DROP TYPE IF EXISTS PROJECT_TYPE_ENUM CASCADE;
 DROP TYPE IF EXISTS USER_ROLE_ENUM CASCADE;
