@@ -12,6 +12,8 @@ DROP TRIGGER IF EXISTS before_item_delete
 ON test_item_results;
 DROP TRIGGER IF EXISTS before_issue_delete
 ON issue;
+DROP TRIGGER IF EXISTS after_widget_delete
+ON dashboard_widget;
 
 DROP FUNCTION IF EXISTS get_last_launch_number();
 DROP FUNCTION IF EXISTS check_wired_tickets();
