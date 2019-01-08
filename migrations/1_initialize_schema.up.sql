@@ -175,7 +175,7 @@ CREATE TABLE defect_form_field_value (
 -------------------------- Integrations -----------------------------
 CREATE TABLE integration_type (
   id            SERIAL CONSTRAINT integration_type_pk PRIMARY KEY,
-  name          VARCHAR(128)               NOT NULL,
+  name          VARCHAR(128)               NOT NULL UNIQUE,
   auth_flow     INTEGRATION_AUTH_FLOW_ENUM,
   creation_date TIMESTAMP DEFAULT now()    NOT NULL,
   group_type    INTEGRATION_GROUP_ENUM     NOT NULL,
