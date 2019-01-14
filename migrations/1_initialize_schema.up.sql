@@ -68,7 +68,7 @@ CREATE TABLE users (
   role                 VARCHAR NOT NULL,
   type                 VARCHAR NOT NULL,
   expired              BOOLEAN NOT NULL,
-  default_project_id   BIGINT REFERENCES project (id) ON DELETE CASCADE,
+  default_project_id   BIGINT REFERENCES project (id),
   full_name            VARCHAR NOT NULL,
   metadata             JSONB   NULL
 );
