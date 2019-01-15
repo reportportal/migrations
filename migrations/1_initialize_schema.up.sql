@@ -698,7 +698,7 @@ BEGIN
   WHERE launch_id = newitemlaunchid
     AND unique_id = newitemuniqueid
     AND item_id != newitemid
-  ORDER BY start_time DESC
+  ORDER BY start_time DESC, item_id DESC
   LIMIT 1 INTO itemidwithmaxstarttime, maxstarttime;
 
   IF
