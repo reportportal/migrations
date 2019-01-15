@@ -68,7 +68,7 @@ CREATE TABLE users (
   role                 VARCHAR NOT NULL,
   type                 VARCHAR NOT NULL,
   expired              BOOLEAN NOT NULL,
-  default_project_id   BIGINT REFERENCES project (id) ON DELETE CASCADE,
+  default_project_id   BIGINT REFERENCES project (id) ON DELETE SET NULL,
   full_name            VARCHAR NOT NULL,
   metadata             JSONB   NULL
 );
@@ -440,7 +440,7 @@ CREATE TABLE statistics (
 );
 
 CREATE TABLE issue_type_project (
-  project_id    BIGINT REFERENCES project,
+  project_id    BIGINT REFERENCES project ON DELETE CASCADE,
   issue_type_id BIGINT REFERENCES issue_type,
   CONSTRAINT issue_type_project_pk PRIMARY KEY (project_id, issue_type_id)
 );
