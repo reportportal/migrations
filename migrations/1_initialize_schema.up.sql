@@ -730,8 +730,8 @@ BEGIN
     WHERE item_id = newitemid;
 
     UPDATE test_item ti
-    SET ti.retry_of    = NULL,
-        ti.has_retries = TRUE,
+    SET retry_of    = NULL,
+        has_retries = TRUE,
         path           = ((SELECT path FROM test_item WHERE item_id = ti.parent_id) :: TEXT || '.' || ti.item_id) :: LTREE
     WHERE ti.item_id = itemidwithmaxstarttime;
   END IF;
