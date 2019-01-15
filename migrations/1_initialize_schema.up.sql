@@ -792,11 +792,8 @@ BEGIN
       END LOOP;
     END LOOP;
 
-    DELETE FROM statistics WHERE item_id IN (SELECT item_id FROM test_item WHERE retry_of = retry_parents.retry_id);
-
     DELETE FROM issue WHERE issue_id IN (SELECT item_id FROM test_item WHERE retry_of = retry_parents.retry_id);
-
-    UPDATE test_item SET launch_id = NULL WHERE retry_of = retry_parents.retry_id;
+    DELETE FROM statistics WHERE item_id IN (SELECT item_id FROM test_item WHERE retry_of = retry_parents.retry_id);
 
   END LOOP;
   RETURN 0;
@@ -1182,6 +1179,10 @@ DECLARE   cur_id                    BIGINT;
 BEGIN
   cur_launch_id := (SELECT launch_id FROM test_item WHERE test_item.item_id = old.issue_id);
 
+  IF cur_launch_id IS NULL
+  THEN return old;
+  END IF;
+
   defect_field_old_id := (SELECT DISTINCT ON (statistics_field.name) sf_id
                           FROM statistics_field
                           WHERE statistics_field.name =
@@ -1237,6 +1238,10 @@ DECLARE   cur_launch_id         BIGINT;
 BEGIN
 
   cur_launch_id := (SELECT launch_id FROM test_item WHERE item_id = old.result_id);
+
+  IF cur_launch_id IS NULL
+  THEN return old;
+  END IF;
 
   IF exists(SELECT 1 FROM test_item WHERE item_id = old.result_id
                                       AND retry_of IS NOT NULL)
