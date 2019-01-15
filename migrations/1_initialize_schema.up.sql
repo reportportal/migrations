@@ -698,7 +698,7 @@ BEGIN
   WHERE launch_id = newitemlaunchid
     AND unique_id = newitemuniqueid
     AND item_id != newitemid
-  ORDER BY start_time DESC
+  ORDER BY start_time DESC, item_id DESC
   LIMIT 1 INTO itemidwithmaxstarttime, maxstarttime;
 
   IF
@@ -730,8 +730,8 @@ BEGIN
     WHERE item_id = newitemid;
 
     UPDATE test_item ti
-    SET ti.retry_of    = NULL,
-        ti.has_retries = TRUE,
+    SET retry_of    = NULL,
+        has_retries = TRUE,
         path           = ((SELECT path FROM test_item WHERE item_id = ti.parent_id) :: TEXT || '.' || ti.item_id) :: LTREE
     WHERE ti.item_id = itemidwithmaxstarttime;
   END IF;
