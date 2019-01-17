@@ -1,6 +1,6 @@
 FROM alpine:latest
 
-RUN apk --no-cache add curl
+RUN apk --no-cache add curl bash
 RUN curl -L https://github.com/golang-migrate/migrate/releases/download/v4.2.2/migrate.linux-amd64.tar.gz | tar xvz &&  \
     mv migrate.linux-amd64 /usr/local/bin/migrate && \
     chmod +x /usr/local/bin/migrate
