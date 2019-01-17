@@ -1,4 +1,4 @@
-FROM golang:1.11
+FROM golang:1.11.4
 
 RUN go get -u -d github.com/golang-migrate/migrate/cli github.com/lib/pq && \
       go build -tags 'postgres' -o /usr/local/bin/migrate github.com/golang-migrate/migrate/cli
