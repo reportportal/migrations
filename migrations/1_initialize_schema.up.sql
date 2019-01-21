@@ -1281,8 +1281,7 @@ CREATE TRIGGER before_item_delete
 
 ----------------------------------- QUARTZ SCHEMA ----------------------------------------------------------
 
-CREATE SCHEMA IF NOT EXISTS quartz
-  AUTHORIZATION rpuser;
+CREATE SCHEMA IF NOT EXISTS quartz;
 
 CREATE TABLE quartz.scheduler_job_details
 (
