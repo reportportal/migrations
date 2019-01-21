@@ -104,10 +104,10 @@ BEGIN
     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (13, 'true', defaultProject), (13, 'reportportal@example.com', superadminProject);
 
     INSERT INTO integration (project_id, type, enabled, params)
-      VALUES (defaultProject, email, false, '{"params": {"rules": [{"recipients": ["OWNER"], "fromAddress": "Auto_EPM-RPP_Notifications@epam.com", "launchStatsRule": "always"}]}}');
+      VALUES (defaultProject, email, false, '{"params": {"rules": [{"recipients": ["owner"]}, {"launchStatsRule": "always"}]}}');
 
     INSERT INTO integration (project_id, type, enabled, params)
-      VALUES (superadminProject, email, false, '{"params": {"rules": [{"recipients": ["OWNER"], "fromAddress": "Auto_EPM-RPP_Notifications@epam.com", "launchStatsRule": "always"}]}}');
+      VALUES (superadminProject, email, false, '{"params": {"rules": [{"recipients": ["owner"]}, {"launchStatsRule": "always"}]}}');
 
 END
 $$;

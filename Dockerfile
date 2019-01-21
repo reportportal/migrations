@@ -1,7 +1,9 @@
-FROM golang:1.11
+FROM alpine:latest
 
-RUN go get -u -d github.com/golang-migrate/migrate/cli github.com/lib/pq && \
-      go build -tags 'postgres' -o /usr/local/bin/migrate github.com/golang-migrate/migrate/cli
+RUN apk --no-cache add curl bash
+RUN curl -L https://github.com/golang-migrate/migrate/releases/download/v4.2.2/migrate.linux-amd64.tar.gz | tar xvz &&  \
+    mv migrate.linux-amd64 /usr/local/bin/migrate && \
+    chmod +x /usr/local/bin/migrate
 
 ADD "https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh" /wait-for-it.sh
 COPY entrypoint.sh /entrypoint.sh
