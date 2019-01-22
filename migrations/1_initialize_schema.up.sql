@@ -387,7 +387,8 @@ CREATE TABLE log (
 
 CREATE TABLE activity (
   id            BIGSERIAL CONSTRAINT activity_pk PRIMARY KEY,
-  user_id       BIGINT REFERENCES users (id) ON DELETE CASCADE           NOT NULL,
+  user_id       BIGINT REFERENCES users (id) ON DELETE CASCADE,
+  username      VARCHAR,
   project_id    BIGINT REFERENCES project (id) ON DELETE CASCADE         NOT NULL,
   entity        ACTIVITY_ENTITY_ENUM                                     NOT NULL,
   action        VARCHAR(128)                                             NOT NULL,
@@ -732,7 +733,7 @@ BEGIN
     UPDATE test_item ti
     SET retry_of    = NULL,
         has_retries = TRUE,
-        path           = ((SELECT path FROM test_item WHERE item_id = ti.parent_id) :: TEXT || '.' || ti.item_id) :: LTREE
+        path        = ((SELECT path FROM test_item WHERE item_id = ti.parent_id) :: TEXT || '.' || ti.item_id) :: LTREE
     WHERE ti.item_id = itemidwithmaxstarttime;
   END IF;
   RETURN 0;
@@ -1180,7 +1181,7 @@ BEGIN
   cur_launch_id := (SELECT launch_id FROM test_item WHERE test_item.item_id = old.issue_id);
 
   IF cur_launch_id IS NULL
-  THEN return old;
+  THEN RETURN old;
   END IF;
 
   defect_field_old_id := (SELECT DISTINCT ON (statistics_field.name) sf_id
@@ -1240,7 +1241,7 @@ BEGIN
   cur_launch_id := (SELECT launch_id FROM test_item WHERE item_id = old.result_id);
 
   IF cur_launch_id IS NULL
-  THEN return old;
+  THEN RETURN old;
   END IF;
 
   IF exists(SELECT 1 FROM test_item WHERE item_id = old.result_id
