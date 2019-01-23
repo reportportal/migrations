@@ -538,14 +538,14 @@ CREATE OR REPLACE FUNCTION merge_launch(launchid BIGINT)
   RETURNS INTEGER
 AS $$
 DECLARE targettestitemcursor CURSOR (id BIGINT, lvl INT) FOR
-  SELECT DISTINCT ON (unique_id) unique_id, item_id
+  SELECT DISTINCT ON (unique_id) unique_id, item_id, path AS path_value
   FROM test_item
   WHERE test_item.launch_id = id
     AND nlevel(test_item.path) = lvl
     AND has_child(test_item.path);
 
   DECLARE mergingtestitemcursor CURSOR (uniqueid VARCHAR, lvl INT, launchid BIGINT) FOR
-  SELECT item_id, path AS path_value
+  SELECT item_id, path AS path_value, has_retries
   FROM test_item
   WHERE test_item.unique_id = uniqueid
     AND nlevel(test_item.path) = lvl
@@ -556,6 +556,7 @@ DECLARE targettestitemcursor CURSOR (id BIGINT, lvl INT) FOR
   DECLARE maxlevel             BIGINT;
   DECLARE firstitemid          VARCHAR;
   DECLARE parentitemid         BIGINT;
+  DECLARE parentitempath       LTREE;
   DECLARE concatenated_descr   TEXT;
 BEGIN
   maxlevel := (SELECT MAX(nlevel(path)) FROM test_item WHERE launch_id = launchid);
@@ -572,6 +573,7 @@ BEGIN
 
       firstitemid := targettestitemfield.unique_id;
       parentitemid := targettestitemfield.item_id;
+      parentitempath := targettestitemfield.path_value;
 
       EXIT WHEN firstitemid ISNULL;
 
@@ -636,13 +638,24 @@ BEGIN
         IF has_child(mergingtestitemfield.path_value)
         THEN
           UPDATE test_item
-          SET parent_id = parentitemid
+          SET parent_id = parentitemid,
+              path      = text2ltree(concat(parentitempath :: text, '.', test_item.item_id :: text))
           WHERE test_item.path <@ mergingtestitemfield.path_value
             AND test_item.path != mergingtestitemfield.path_value
-            AND nlevel(test_item.path) = i + 1;
-          DELETE FROM test_item WHERE test_item.path = mergingtestitemfield.path_value
-                                  AND test_item.item_id != parentitemid;
+            AND nlevel(test_item.path) = i + 1
+            AND test_item.retry_of IS NULL;
+          DELETE
+          FROM test_item
+          WHERE test_item.path = mergingtestitemfield.path_value
+            AND test_item.item_id != parentitemid;
 
+        END IF;
+
+        IF mergingtestitemfield.has_retries
+        THEN
+          UPDATE test_item
+          SET path = text2ltree(concat(mergingtestitemfield.path_value :: text, '.', test_item.item_id :: text))
+          WHERE test_item.retry_of = mergingtestitemfield.item_id;
         END IF;
 
       END LOOP;
