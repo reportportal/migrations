@@ -369,10 +369,6 @@ CREATE TABLE item_attribute (
   CHECK ((item_id IS NOT NULL AND launch_id IS NULL) OR (item_id IS NULL AND launch_id IS NOT NULL))
 );
 
-CREATE UNIQUE INDEX item_attribute_unique
-  ON item_attribute (coalesce(key, '-1'), value, system, coalesce(launch_id, -1), coalesce(item_id, -1));
-
-
 CREATE TABLE log (
   id                   BIGSERIAL CONSTRAINT log_pk PRIMARY KEY,
   log_time             TIMESTAMP                                                NOT NULL,
