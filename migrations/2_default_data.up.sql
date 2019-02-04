@@ -22,16 +22,16 @@ BEGIN
     INSERT INTO server_settings (key, value) VALUES ('server.email.host', null);
     INSERT INTO server_settings (key, value) VALUES ('server.analytics.asd', 'true');
 
-    INSERT INTO integration_type (name, auth_flow, creation_date, group_type) VALUES ('test integration type', 'LDAP', now(), 'AUTH');
+    INSERT INTO integration_type (enabled, name, auth_flow, creation_date, group_type) VALUES (true, 'test integration type', 'LDAP', now(), 'AUTH');
     ldap := (SELECT currval(pg_get_serial_sequence('integration_type', 'id')));
 
-    INSERT INTO integration_type (name, auth_flow, creation_date, group_type) VALUES ('RALLY', 'OAUTH', now(), 'BTS') ;
+    INSERT INTO integration_type (enabled, name, auth_flow, creation_date, group_type) VALUES (true, 'RALLY', 'OAUTH', now(), 'BTS') ;
     rally := (SELECT currval(pg_get_serial_sequence('integration_type', 'id')));
 
-    INSERT INTO integration_type (name, auth_flow, creation_date, group_type) VALUES ('JIRA', 'BASIC', now(), 'BTS');
+    INSERT INTO integration_type (enabled, name, auth_flow, creation_date, group_type) VALUES (true, 'JIRA', 'BASIC', now(), 'BTS');
     jira := (SELECT currval(pg_get_serial_sequence('integration_type', 'id')));
 
-    INSERT INTO integration_type (name, creation_date, group_type) VALUES ('email', now(), 'NOTIFICATION');
+    INSERT INTO integration_type (enabled, name, creation_date, group_type) VALUES (true, 'email', now(), 'NOTIFICATION');
     email := (SELECT currval(pg_get_serial_sequence('integration_type', 'id')));
 
     INSERT INTO issue_group (issue_group_id, issue_group) VALUES (1, 'TO_INVESTIGATE');
