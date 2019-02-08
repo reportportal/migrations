@@ -57,6 +57,8 @@ BEGIN
     INSERT INTO attribute (name) VALUES ('analyzer.indexingRunning');
     INSERT INTO attribute (name) VALUES ('analyzer.isAutoAnalyzerEnabled');
     INSERT INTO attribute (name) VALUES ('analyzer.autoAnalyzerMode');
+    INSERT INTO attribute (name) VALUES ('email.enabled');
+    INSERT INTO attribute (name) VALUES ('email.from');
 
     -- Superadmin project and user
     INSERT INTO project (name, project_type, creation_date, metadata) VALUES ('superadmin_personal', 'PERSONAL', now(), '{"metadata": {"additional_info": ""}}');
@@ -98,6 +100,8 @@ BEGIN
     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (9, false, defaultProject), (9, false, superadminProject);
     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (10, false, defaultProject), (10, false, superadminProject);
     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (11, 'LAUNCH_NAME', defaultProject), (11, 'LAUNCH_NAME', superadminProject);
+    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (12, 'true', defaultProject), (12, 'reportportal@example.com', superadminProject);
+    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (13, 'true', defaultProject), (13, 'reportportal@example.com', superadminProject);
 
     INSERT INTO integration (project_id, type, enabled, params)
       VALUES (defaultProject, email, false, '{"params": {"rules": [{"recipients": ["owner"]}, {"launchStatsRule": "always"}]}}');
