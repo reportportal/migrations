@@ -743,6 +743,12 @@ BEGIN
         has_retries = FALSE,
         path        = ((SELECT path FROM test_item WHERE item_id = newitemid) :: TEXT || '.' || item_id) :: LTREE
     WHERE unique_id = newitemuniqueid
+      AND (retry_of IN (SELECT DISTINCT retries_parent.item_id
+                        FROM test_item retries_parent
+                               LEFT JOIN test_item retries ON retries_parent.item_id = retries.retry_of
+                        WHERE retries_parent.launch_id = newitemlaunchid
+                          AND retries_parent.unique_id = newitemuniqueid)
+             OR (retry_of IS NULL AND launch_id = newitemlaunchid))
       AND item_id != newitemid;
 
     UPDATE test_item
