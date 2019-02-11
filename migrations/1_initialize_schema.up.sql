@@ -129,17 +129,17 @@ CREATE TABLE sender_case (
 
 CREATE TABLE launch_names (
   sender_case_id BIGINT REFERENCES sender_case (id) ON DELETE CASCADE,
-  launch_name            VARCHAR(256)
+  launch_name    VARCHAR(256)
 );
 
 CREATE TABLE launch_attributes (
-  sender_case_id BIGINT REFERENCES sender_case (id) ON DELETE CASCADE,
-  launch_attribute            VARCHAR(256)
+  sender_case_id   BIGINT REFERENCES sender_case (id) ON DELETE CASCADE,
+  launch_attribute VARCHAR(256)
 );
 
 CREATE TABLE recipients (
   sender_case_id BIGINT REFERENCES sender_case (id) ON DELETE CASCADE,
-  recipient            VARCHAR(256)
+  recipient      VARCHAR(256)
 );
 
 CREATE TABLE attribute (
@@ -656,22 +656,20 @@ BEGIN
         THEN
           UPDATE test_item
           SET parent_id = parentitemid,
-              path      = text2ltree(concat(parentitempath :: text, '.', test_item.item_id :: text))
+              path      = text2ltree(concat(parentitempath :: TEXT, '.', test_item.item_id :: TEXT))
           WHERE test_item.path <@ mergingtestitemfield.path_value
             AND test_item.path != mergingtestitemfield.path_value
             AND nlevel(test_item.path) = i + 1
             AND test_item.retry_of IS NULL;
-          DELETE
-          FROM test_item
-          WHERE test_item.path = mergingtestitemfield.path_value
-            AND test_item.item_id != parentitemid;
+          DELETE FROM test_item WHERE test_item.path = mergingtestitemfield.path_value
+                                  AND test_item.item_id != parentitemid;
 
         END IF;
 
         IF mergingtestitemfield.has_retries
         THEN
           UPDATE test_item
-          SET path = text2ltree(concat(mergingtestitemfield.path_value :: text, '.', test_item.item_id :: text))
+          SET path = text2ltree(concat(mergingtestitemfield.path_value :: TEXT, '.', test_item.item_id :: TEXT))
           WHERE test_item.retry_of = mergingtestitemfield.item_id;
         END IF;
 
@@ -985,6 +983,7 @@ BEGIN
                 DO UPDATE SET s_counter = statistics.s_counter + 1;
     RETURN new;
   END IF;
+  RETURN new;
 END;
 $$
 LANGUAGE plpgsql;
