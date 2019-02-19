@@ -78,11 +78,24 @@ CREATE TABLE project_user (
   project_role PROJECT_ROLE_ENUM NOT NULL
 );
 
+-- CREATE TABLE oauth_access_token (
+--   user_id    BIGINT REFERENCES users (id) ON DELETE CASCADE,
+--   token      VARCHAR                NOT NULL,
+--   token_type ACCESS_TOKEN_TYPE_ENUM NOT NULL,
+--   CONSTRAINT access_tokens_pk PRIMARY KEY (user_id, token_type)
+-- );
+
 CREATE TABLE oauth_access_token (
-  user_id    BIGINT REFERENCES users (id) ON DELETE CASCADE,
-  token      VARCHAR                NOT NULL,
-  token_type ACCESS_TOKEN_TYPE_ENUM NOT NULL,
-  CONSTRAINT access_tokens_pk PRIMARY KEY (user_id, token_type)
+  id                BIGSERIAL PRIMARY KEY,
+  token_id          VARCHAR(255),
+  token             BYTEA,
+  authentication_id VARCHAR(255),
+  username          VARCHAR(255),
+  user_id           BIGINT REFERENCES users (id) ON DELETE CASCADE,
+  client_id         VARCHAR(255),
+  authentication    BYTEA,
+  refresh_token     VARCHAR(255),
+  CONSTRAINT users_access_token_unique UNIQUE (token_id, user_id)
 );
 
 CREATE TABLE oauth_registration (
