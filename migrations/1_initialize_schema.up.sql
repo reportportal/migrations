@@ -66,7 +66,6 @@ CREATE TABLE users (
   role                 VARCHAR NOT NULL,
   type                 VARCHAR NOT NULL,
   expired              BOOLEAN NOT NULL,
-  default_project_id   BIGINT REFERENCES project (id) ON DELETE SET NULL,
   full_name            VARCHAR NOT NULL,
   metadata             JSONB   NULL
 );
@@ -145,9 +144,11 @@ CREATE TABLE launch_names (
   launch_name    VARCHAR(256)
 );
 
-CREATE TABLE launch_attributes (
-  sender_case_id   BIGINT REFERENCES sender_case (id) ON DELETE CASCADE,
-  launch_attribute VARCHAR(256)
+CREATE TABLE launch_attribute_rules (
+  id             BIGSERIAL CONSTRAINT launch_attribute_rules_pk PRIMARY KEY,
+  sender_case_id BIGINT REFERENCES sender_case (id) ON DELETE CASCADE NOT NULL,
+  key            VARCHAR(256),
+  value          VARCHAR(256)                                         NOT NULL
 );
 
 CREATE TABLE recipients (
@@ -471,7 +472,7 @@ CREATE TABLE statistics (
 
 CREATE TABLE issue_type_project (
   project_id    BIGINT REFERENCES project ON DELETE CASCADE,
-  issue_type_id BIGINT REFERENCES issue_type,
+  issue_type_id BIGINT REFERENCES issue_type ON DELETE CASCADE,
   CONSTRAINT issue_type_project_pk PRIMARY KEY (project_id, issue_type_id)
 );
 ----------------------------------------------------------------------------------------
