@@ -12,8 +12,11 @@ DROP TRIGGER IF EXISTS before_item_delete
 ON test_item_results;
 DROP TRIGGER IF EXISTS before_issue_delete
 ON issue;
+DROP TRIGGER IF EXISTS approximate_duration_trigger
+ON launch;
 
 DROP FUNCTION IF EXISTS get_last_launch_number();
+DROP FUNCTION IF EXISTS count_approximate_duration();
 DROP FUNCTION IF EXISTS check_wired_tickets();
 DROP FUNCTION IF EXISTS check_wired_widgets();
 DROP FUNCTION IF EXISTS update_executions_statistics();

@@ -334,19 +334,20 @@ CREATE TABLE widget_filter (
 --------------------------- Launches, items, logs --------------------------------------
 
 CREATE TABLE launch (
-  id            BIGSERIAL CONSTRAINT launch_pk PRIMARY KEY,
-  uuid          VARCHAR                                                             NOT NULL,
-  project_id    BIGINT REFERENCES project (id) ON DELETE CASCADE                    NOT NULL,
-  user_id       BIGINT REFERENCES users (id) ON DELETE SET NULL,
-  name          VARCHAR(256)                                                        NOT NULL,
-  description   TEXT,
-  start_time    TIMESTAMP                                                           NOT NULL,
-  end_time      TIMESTAMP,
-  number        INTEGER                                                             NOT NULL,
-  last_modified TIMESTAMP DEFAULT now()                                             NOT NULL,
-  mode          LAUNCH_MODE_ENUM                                                    NOT NULL,
-  status        STATUS_ENUM                                                         NOT NULL,
-  has_retries   BOOLEAN                                                             NOT NULL DEFAULT FALSE,
+  id                   BIGSERIAL CONSTRAINT launch_pk PRIMARY KEY,
+  uuid                 VARCHAR                                                             NOT NULL,
+  project_id           BIGINT REFERENCES project (id) ON DELETE CASCADE                    NOT NULL,
+  user_id              BIGINT REFERENCES users (id) ON DELETE SET NULL,
+  name                 VARCHAR(256)                                                        NOT NULL,
+  description          TEXT,
+  start_time           TIMESTAMP                                                           NOT NULL,
+  end_time             TIMESTAMP,
+  number               INTEGER                                                             NOT NULL,
+  last_modified        TIMESTAMP DEFAULT now()                                             NOT NULL,
+  mode                 LAUNCH_MODE_ENUM                                                    NOT NULL,
+  status               STATUS_ENUM                                                         NOT NULL,
+  has_retries          BOOLEAN                                                             NOT NULL DEFAULT FALSE,
+  approximate_duration DOUBLE PRECISION                                                             DEFAULT 0.0,
   CONSTRAINT unq_name_number UNIQUE (name, number, project_id, uuid)
 );
 
@@ -857,6 +858,26 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
+
+CREATE OR REPLACE FUNCTION count_approximate_duration()
+  RETURNS TRIGGER AS
+$BODY$
+DECLARE approximateduration DOUBLE PRECISION;
+BEGIN
+  approximateduration = (SELECT CAST(EXTRACT(EPOCH FROM avg(end_time - start_time)) AS DOUBLE PRECISION)
+                         FROM launch
+                         WHERE name = new.name
+                           AND project_id = new.project_id
+                           AND mode = 'DEFAULT'
+                           AND status NOT IN ('INTERRUPTED', 'IN_PROGRESS', 'STOPPED'));
+  new.approximate_duration = CASE WHEN approximateduration IS NULL
+    THEN 0
+                             ELSE approximateduration END;
+  RETURN new;
+END;
+$BODY$
+LANGUAGE plpgsql;
+
 CREATE FUNCTION check_wired_tickets()
   RETURNS TRIGGER AS
 $BODY$
@@ -881,6 +902,12 @@ CREATE TRIGGER last_launch_number_trigger
   ON launch
   FOR EACH ROW
 EXECUTE PROCEDURE get_last_launch_number();
+
+CREATE TRIGGER approximate_duration_trigger
+  BEFORE INSERT
+  ON launch
+  FOR EACH ROW
+EXECUTE PROCEDURE count_approximate_duration();
 
 -------------------------- Execution statistics triggers end functions ------------------------------
 
