@@ -66,7 +66,7 @@ BEGIN
 
     INSERT INTO users (login, password, email, role, type, full_name, expired, metadata)
     VALUES ('superadmin', '5d39d85bddde885f6579f8121e11eba2', 'superadminemail@domain.com', 'ADMINISTRATOR', 'INTERNAL', 'tester', FALSE,
-            '{"metadata": {"last_login": "now"}}');
+            '{"metadata": {"last_login": "1551260886"}}');
     superadmin := (SELECT currval(pg_get_serial_sequence('users', 'id')));
 
     INSERT INTO project_user (user_id, project_id, project_role) VALUES (superadmin, superadminProject, 'PROJECT_MANAGER');
@@ -77,7 +77,7 @@ BEGIN
 
     INSERT INTO users (login, password, email, role, type, full_name, expired, metadata)
     VALUES ('default', '3fde6bb0541387e4ebdadf7c2ff31123', 'defaultemail@domain.com', 'USER', 'INTERNAL', 'tester', FALSE,
-            '{"metadata": {"last_login": "now"}}');
+            '{"metadata": {"last_login": "1551260886"}}');
     defaultId := (SELECT currval(pg_get_serial_sequence('users', 'id')));
 
     INSERT INTO project_user (user_id, project_id, project_role) VALUES (defaultId, defaultProject, 'PROJECT_MANAGER');
