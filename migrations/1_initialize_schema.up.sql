@@ -864,15 +864,17 @@ CREATE OR REPLACE FUNCTION count_approximate_duration()
 $BODY$
 DECLARE approximateduration DOUBLE PRECISION;
 BEGIN
-  approximateduration = (SELECT CAST(EXTRACT(EPOCH FROM avg(end_time - start_time)) AS DOUBLE PRECISION)
-                         FROM launch
-                         WHERE name = new.name
-                           AND project_id = new.project_id
-                           AND mode = 'DEFAULT'
-                           AND status NOT IN ('INTERRUPTED', 'IN_PROGRESS', 'STOPPED'));
-  new.approximate_duration = CASE WHEN approximateduration IS NULL
-    THEN 0
-                             ELSE approximateduration END;
+  approximateduration = (SELECT CAST(extract(EPOCH FROM avg(tmp.diff)) AS DOUBLE PRECISION)
+                         FROM (SELECT (end_time - start_time) diff
+                               FROM launch
+                               WHERE name = new.name
+                                 AND project_id = new.project_id
+                                 AND mode = 'DEFAULT'
+                                 AND status NOT IN ('INTERRUPTED', 'IN_PROGRESS', 'STOPPED')
+                               LIMIT 5) tmp)
+  NEW. approximate_duration = CASE WHEN approximateduration IS NULL
+  THEN 0
+                              ELSE approximateduration END;
   RETURN new;
 END;
 $BODY$
