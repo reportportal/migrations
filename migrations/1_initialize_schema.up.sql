@@ -465,8 +465,8 @@ CREATE TABLE item_attribute
 
 CREATE TABLE attachment (
   id             BIGSERIAL CONSTRAINT attachment_pk PRIMARY KEY,
-  path           TEXT NOT NULL,
-  thumbnail_path TEXT,
+  file_id        TEXT NOT NULL,
+  thumbnail_id   TEXT,
   content_type   TEXT,
   project_id     BIGINT,
   launch_id      BIGINT,
