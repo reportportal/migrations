@@ -57,7 +57,7 @@ BEGIN
     INSERT INTO attribute (name) VALUES ('analyzer.indexingRunning');
     INSERT INTO attribute (name) VALUES ('analyzer.isAutoAnalyzerEnabled');
     INSERT INTO attribute (name) VALUES ('analyzer.autoAnalyzerMode');
-    INSERT INTO attribute (name) VALUES ('email.enabled');
+    INSERT INTO attribute (name) VALUES ('notifications.enabled');
     INSERT INTO attribute (name) VALUES ('email.from');
 
     -- Superadmin project and user
@@ -102,8 +102,8 @@ BEGIN
     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (9, FALSE, defaultproject), (9, FALSE, superadminproject);
     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (10, FALSE, defaultproject), (10, FALSE, superadminproject);
     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (11, 'LAUNCH_NAME', defaultproject), (11, 'LAUNCH_NAME', superadminproject);
-    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (12, 'true', defaultproject), (12, 'reportportal@example.com', superadminproject);
-    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (13, 'true', defaultproject), (13, 'reportportal@example.com', superadminproject);
+    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (12, 'true', defaultproject), (12, 'true', superadminproject);
+    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (13, 'reportportal@example.com', defaultproject), (13, 'reportportal@example.com', superadminproject);
 
     INSERT INTO integration (project_id, type, enabled, params)
       VALUES (defaultproject, email, FALSE, '{"params": {"rules": [{"recipients": ["owner"]}, {"launchStatsRule": "always"}]}}');
