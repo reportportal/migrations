@@ -463,18 +463,31 @@ CREATE TABLE item_attribute
   CHECK ((item_id IS NOT NULL AND launch_id IS NULL) OR (item_id IS NULL AND launch_id IS NOT NULL))
 );
 
-CREATE TABLE log
-(
-  id                   BIGSERIAL
-    CONSTRAINT log_pk PRIMARY KEY,
-  log_time             TIMESTAMP                                               NOT NULL,
-  log_message          TEXT                                                    NOT NULL,
-  item_id              BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE NOT NULL,
-  last_modified        TIMESTAMP                                               NOT NULL,
-  log_level            INTEGER                                                 NOT NULL,
-  attachment           TEXT,
-  attachment_thumbnail TEXT,
-  content_type         TEXT
+CREATE TABLE attachment (
+  id             BIGSERIAL CONSTRAINT attachment_pk PRIMARY KEY,
+  file_id        TEXT NOT NULL,
+  thumbnail_id   TEXT,
+  content_type   TEXT,
+  project_id     BIGINT,
+  launch_id      BIGINT,
+  item_id        BIGINT
+);
+
+CREATE INDEX att_project_idx
+  ON attachment(project_id);
+CREATE INDEX att_launch_idx
+  ON attachment(launch_id);
+CREATE INDEX att_item_idx
+  ON attachment(item_id);
+
+CREATE TABLE log (
+  id                   BIGSERIAL CONSTRAINT log_pk PRIMARY KEY,
+  log_time             TIMESTAMP                                                NOT NULL,
+  log_message          TEXT                                                     NOT NULL,
+  item_id              BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE  NOT NULL,
+  last_modified        TIMESTAMP                                                NOT NULL,
+  log_level            INTEGER                                                  NOT NULL,
+  attachment_id        BIGINT REFERENCES attachment (id) ON DELETE SET NULL
 );
 
 CREATE TABLE activity
