@@ -56,6 +56,9 @@ CREATE TABLE user_creation_bid
   role               VARCHAR NOT NULL
 );
 
+CREATE INDEX user_bid_project_idx
+  ON user_creation_bid (default_project_id);
+
 CREATE TABLE restore_password_bid
 (
   uuid          VARCHAR
@@ -101,6 +104,9 @@ CREATE TABLE oauth_access_token
   refresh_token     VARCHAR(255),
   CONSTRAINT users_access_token_unique UNIQUE (token_id, user_id)
 );
+
+CREATE INDEX oauth_at_user_idx
+  ON oauth_access_token (user_id);
 
 CREATE TABLE oauth_registration
 (
@@ -151,11 +157,17 @@ CREATE TABLE sender_case
   project_id BIGSERIAL REFERENCES project (id) ON DELETE CASCADE
 );
 
+CREATE INDEX sender_case_project_idx
+  ON sender_case (project_id);
+
 CREATE TABLE launch_names
 (
   sender_case_id BIGINT REFERENCES sender_case (id) ON DELETE CASCADE,
   launch_name    VARCHAR(256)
 );
+
+CREATE INDEX ln_send_case_idx
+  ON launch_names (sender_case_id);
 
 CREATE TABLE launch_attribute_rules
 (
@@ -166,11 +178,17 @@ CREATE TABLE launch_attribute_rules
   value          VARCHAR(256)                                         NOT NULL
 );
 
+CREATE INDEX l_attr_rl_send_case_idx
+  ON launch_attribute_rules (sender_case_id);
+
 CREATE TABLE recipients
 (
   sender_case_id BIGINT REFERENCES sender_case (id) ON DELETE CASCADE,
   recipient      VARCHAR(256)
 );
+
+CREATE INDEX rcpnt_send_case_idx
+  ON recipients (sender_case_id);
 
 CREATE TABLE attribute
 (
@@ -188,47 +206,6 @@ CREATE TABLE project_attribute
   CONSTRAINT unique_attribute_per_project UNIQUE (attribute_id, project_id)
 );
 -----------------------------------------------------------------------------------
-
-
------------------------------- Bug tracking systems ------------------------------
-CREATE TABLE bug_tracking_system
-(
-  id          BIGSERIAL
-    CONSTRAINT bug_tracking_system_pk PRIMARY KEY,
-  url         VARCHAR                                          NOT NULL,
-  type        VARCHAR                                          NOT NULL,
-  bts_project VARCHAR                                          NOT NULL,
-  project_id  BIGINT REFERENCES project (id) ON DELETE CASCADE NOT NULL,
-  CONSTRAINT unique_bts UNIQUE (url, type, bts_project, project_id)
-);
-
-CREATE TABLE defect_form_field
-(
-  id                     BIGSERIAL
-    CONSTRAINT defect_form_field_pk PRIMARY KEY,
-  bug_tracking_system_id BIGINT REFERENCES bug_tracking_system (id) ON DELETE CASCADE,
-  field_id               VARCHAR NOT NULL,
-  type                   VARCHAR NOT NULL,
-  required               BOOLEAN NOT NULL DEFAULT FALSE
-);
-
-CREATE TABLE defect_field_allowed_value
-(
-  id                BIGSERIAL
-    CONSTRAINT defect_field_allowed_value_pk PRIMARY KEY,
-  defect_form_field BIGINT REFERENCES defect_form_field (id) ON DELETE CASCADE,
-  value_id          VARCHAR NOT NULL,
-  value_name        VARCHAR NOT NULL
-);
-
-CREATE TABLE defect_form_field_value
-(
-  id     BIGINT REFERENCES defect_form_field (id) ON DELETE CASCADE,
-  values VARCHAR NOT NULL
-);
-
------------------------------------------------------------------------------------
-
 
 -------------------------- Integrations -----------------------------
 CREATE TABLE integration_type
@@ -253,6 +230,9 @@ CREATE TABLE integration
   params        JSONB                   NULL,
   creation_date TIMESTAMP DEFAULT now() NOT NULL
 );
+
+CREATE INDEX integr_project_idx
+  ON integration (project_id);
 
 -------------------------------- LDAP configurations ------------------------------
 CREATE TABLE ldap_synchronization_attributes
@@ -311,6 +291,11 @@ CREATE TABLE shareable_entity
   project_id BIGINT  NOT NULL REFERENCES project (id) ON DELETE CASCADE
 );
 
+CREATE INDEX shared_entity_ownerx
+  ON shareable_entity (owner);
+CREATE INDEX shared_entity_project_idx
+  ON shareable_entity (project_id);
+
 CREATE TABLE filter
 (
   id          BIGINT  NOT NULL PRIMARY KEY
@@ -331,6 +316,9 @@ CREATE TABLE filter_condition
   negative        BOOLEAN               NOT NULL
 );
 
+CREATE INDEX filter_cond_filter_idx
+  ON filter_condition (filter_id);
+
 CREATE TABLE filter_sort
 (
   id        BIGSERIAL
@@ -339,6 +327,9 @@ CREATE TABLE filter_sort
   field     VARCHAR             NOT NULL,
   direction SORT_DIRECTION_ENUM NOT NULL DEFAULT 'ASC'
 );
+
+CREATE INDEX filter_sort_filter_idx
+  ON filter_sort (filter_id);
 
 CREATE TABLE dashboard
 (
@@ -365,6 +356,9 @@ CREATE TABLE content_field
   id    BIGINT REFERENCES widget (id) ON DELETE CASCADE,
   field VARCHAR NOT NULL
 );
+
+CREATE INDEX content_field_widget_idx
+  ON content_field (id);
 
 CREATE TABLE dashboard_widget
 (
@@ -396,19 +390,24 @@ CREATE TABLE launch
     CONSTRAINT launch_pk PRIMARY KEY,
   uuid                 VARCHAR                                          NOT NULL,
   project_id           BIGINT REFERENCES project (id) ON DELETE CASCADE NOT NULL,
-  user_id              BIGINT                                           REFERENCES users (id) ON DELETE SET NULL,
+  user_id              BIGINT REFERENCES users (id) ON DELETE SET NULL,
   name                 VARCHAR(256)                                     NOT NULL,
   description          TEXT,
   start_time           TIMESTAMP                                        NOT NULL,
   end_time             TIMESTAMP,
   number               INTEGER                                          NOT NULL,
-  last_modified        TIMESTAMP                                                 DEFAULT now() NOT NULL,
+  last_modified        TIMESTAMP DEFAULT now()                          NOT NULL,
   mode                 LAUNCH_MODE_ENUM                                 NOT NULL,
   status               STATUS_ENUM                                      NOT NULL,
   has_retries          BOOLEAN                                          NOT NULL DEFAULT FALSE,
   approximate_duration DOUBLE PRECISION                                          DEFAULT 0.0,
   CONSTRAINT unq_name_number UNIQUE (name, number, project_id, uuid)
 );
+
+CREATE INDEX launch_project_idx
+  ON launch (project_id);
+CREATE INDEX launch_user_idx
+  ON launch (user_id);
 
 CREATE TABLE test_item
 (
@@ -428,6 +427,13 @@ CREATE TABLE test_item
   launch_id     BIGINT REFERENCES launch (id) ON DELETE CASCADE
 );
 
+CREATE INDEX ti_parent_idx
+  ON test_item (parent_id NULLS LAST);
+CREATE INDEX ti_launch_idx
+  ON test_item (launch_id NULLS LAST);
+CREATE INDEX ti_retry_of_idx
+  ON test_item (retry_of NULLS LAST);
+
 CREATE TABLE test_item_results
 (
   result_id BIGINT
@@ -439,10 +445,10 @@ CREATE TABLE test_item_results
 
 CREATE INDEX path_gist_idx
   ON test_item
-    USING gist (path);
+  USING gist (path);
 CREATE INDEX path_idx
   ON test_item
-    USING btree (path);
+  USING btree (path);
 
 CREATE TABLE parameter
 (
@@ -450,6 +456,9 @@ CREATE TABLE parameter
   key     VARCHAR NOT NULL,
   value   VARCHAR NOT NULL
 );
+
+CREATE INDEX parameter_ti_idx
+  ON parameter (item_id);
 
 CREATE TABLE item_attribute
 (
@@ -463,32 +472,40 @@ CREATE TABLE item_attribute
   CHECK ((item_id IS NOT NULL AND launch_id IS NULL) OR (item_id IS NULL AND launch_id IS NOT NULL))
 );
 
+CREATE INDEX item_attr_ti_idx
+  ON item_attribute (item_id NULLS LAST);
+CREATE INDEX item_attr_launch_idx
+  ON item_attribute (launch_id NULLS LAST);
+
 CREATE TABLE attachment (
-  id             BIGSERIAL CONSTRAINT attachment_pk PRIMARY KEY,
-  file_id        TEXT NOT NULL,
-  thumbnail_id   TEXT,
-  content_type   TEXT,
-  project_id     BIGINT,
-  launch_id      BIGINT,
-  item_id        BIGINT
+  id           BIGSERIAL CONSTRAINT attachment_pk PRIMARY KEY,
+  file_id      TEXT NOT NULL,
+  thumbnail_id TEXT,
+  content_type TEXT,
+  project_id   BIGINT,
+  launch_id    BIGINT,
+  item_id      BIGINT
 );
 
 CREATE INDEX att_project_idx
-  ON attachment(project_id);
+  ON attachment (project_id);
 CREATE INDEX att_launch_idx
-  ON attachment(launch_id);
+  ON attachment (launch_id);
 CREATE INDEX att_item_idx
-  ON attachment(item_id);
+  ON attachment (item_id);
 
 CREATE TABLE log (
-  id                   BIGSERIAL CONSTRAINT log_pk PRIMARY KEY,
-  log_time             TIMESTAMP                                                NOT NULL,
-  log_message          TEXT                                                     NOT NULL,
-  item_id              BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE  NOT NULL,
-  last_modified        TIMESTAMP                                                NOT NULL,
-  log_level            INTEGER                                                  NOT NULL,
-  attachment_id        BIGINT REFERENCES attachment (id) ON DELETE SET NULL
+  id            BIGSERIAL CONSTRAINT log_pk PRIMARY KEY,
+  log_time      TIMESTAMP                                                NOT NULL,
+  log_message   TEXT                                                     NOT NULL,
+  item_id       BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE  NOT NULL,
+  last_modified TIMESTAMP                                                NOT NULL,
+  log_level     INTEGER                                                  NOT NULL,
+  attachment_id BIGINT REFERENCES attachment (id) ON DELETE SET NULL
 );
+
+CREATE INDEX log_ti_idx
+  ON log (item_id);
 
 CREATE TABLE activity
 (
@@ -503,6 +520,9 @@ CREATE TABLE activity
   creation_date TIMESTAMP                                        NOT NULL,
   object_id     BIGINT                                           NULL
 );
+
+CREATE INDEX activity_project_idx
+  ON activity (project_id);
 
 ----------------------------------------------------------------------------------------
 
@@ -536,6 +556,9 @@ CREATE TABLE issue_type
   hex_color      VARCHAR(7)         NOT NULL
 );
 
+CREATE INDEX issue_type_group_idx
+  ON issue_type (issue_group_id);
+
 CREATE TABLE statistics_field
 (
   sf_id BIGSERIAL
@@ -554,8 +577,13 @@ CREATE TABLE statistics
   CONSTRAINT unique_stats_item UNIQUE (statistics_field_id, item_id),
   CONSTRAINT unique_stats_launch UNIQUE (statistics_field_id, launch_id),
   CHECK (statistics.s_counter >= 0 AND ((item_id IS NOT NULL AND launch_id IS NULL) OR (launch_id IS NOT NULL AND item_id IS NULL))
-    )
+  )
 );
+
+CREATE INDEX statistics_ti_idx
+  ON statistics (item_id NULLS LAST);
+CREATE INDEX statistics_launch_idx
+  ON statistics (launch_id NULLS LAST);
 
 CREATE TABLE issue_type_project
 (
@@ -576,6 +604,9 @@ CREATE TABLE issue
   ignore_analyzer   BOOLEAN DEFAULT FALSE
 );
 
+CREATE INDEX issue_it_idx
+  ON issue (issue_type);
+
 CREATE TABLE ticket
 (
   id           BIGSERIAL
@@ -587,6 +618,9 @@ CREATE TABLE ticket
   bts_project  VARCHAR(256)                                                  NOT NULL,
   url          VARCHAR(256)                                                  NOT NULL
 );
+
+CREATE INDEX ticket_submitter_idx
+  ON ticket (submitter_id);
 
 CREATE TABLE issue_ticket
 (
@@ -607,6 +641,9 @@ CREATE TABLE acl_sid
   sid       VARCHAR(100) NOT NULL REFERENCES users (login) ON DELETE CASCADE,
   CONSTRAINT unique_uk_1 UNIQUE (sid, principal)
 );
+
+CREATE INDEX acl_sid_idx
+  ON acl_sid (sid);
 
 CREATE TABLE acl_class
 (
