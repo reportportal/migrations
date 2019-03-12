@@ -25,6 +25,7 @@ CREATE TYPE PASSWORD_ENCODER_TYPE AS ENUM ('PLAIN', 'SHA', 'LDAP_SHA', 'MD4', 'M
 CREATE TYPE SORT_DIRECTION_ENUM AS ENUM ('ASC', 'DESC');
 
 CREATE EXTENSION IF NOT EXISTS ltree;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 CREATE TABLE server_settings
 (
@@ -45,6 +46,10 @@ CREATE TABLE project
   creation_date TIMESTAMP DEFAULT now() NOT NULL,
   metadata      JSONB                   NULL
 );
+
+CREATE INDEX trgm_idx_project_name
+  ON project
+  USING gin (name gin_trgm_ops);
 
 CREATE TABLE user_creation_bid
 (
@@ -82,6 +87,10 @@ CREATE TABLE users
   full_name            VARCHAR NOT NULL,
   metadata             JSONB   NULL
 );
+
+CREATE INDEX trgm_idx_users_full_name
+  ON users
+  USING gin (full_name gin_trgm_ops);
 
 CREATE TABLE project_user
 (
@@ -194,7 +203,7 @@ CREATE TABLE attribute
 (
   id   BIGSERIAL
     CONSTRAINT attribute_pk PRIMARY KEY,
-  name VARCHAR(256)
+  name VARCHAR(256) UNIQUE NOT NULL
 );
 
 CREATE TABLE project_attribute
@@ -305,6 +314,10 @@ CREATE TABLE filter
   description VARCHAR
 );
 
+CREATE INDEX trgm_idx_filter_name
+  ON filter
+  USING gin (name gin_trgm_ops);
+
 CREATE TABLE filter_condition
 (
   id              BIGSERIAL
@@ -340,6 +353,10 @@ CREATE TABLE dashboard
   creation_date TIMESTAMP NOT NULL DEFAULT now()
 );
 
+CREATE INDEX trgm_idx_dashboard_name
+  ON dashboard
+  USING gin (name gin_trgm_ops);
+
 CREATE TABLE widget
 (
   id             BIGINT  NOT NULL PRIMARY KEY
@@ -350,6 +367,10 @@ CREATE TABLE widget
   items_count    SMALLINT,
   widget_options JSONB   NULL
 );
+
+CREATE INDEX trgm_idx_widget_name
+  ON widget
+  USING gin (name gin_trgm_ops);
 
 CREATE TABLE content_field
 (
@@ -408,6 +429,12 @@ CREATE INDEX launch_project_idx
   ON launch (project_id);
 CREATE INDEX launch_user_idx
   ON launch (user_id);
+CREATE INDEX trgm_idx_launch_name
+  ON launch
+  USING gin (name gin_trgm_ops);
+CREATE INDEX trgm_idx_filter_description
+  ON launch
+  USING gin (description gin_trgm_ops);
 
 CREATE TABLE test_item
 (
@@ -433,6 +460,12 @@ CREATE INDEX ti_launch_idx
   ON test_item (launch_id NULLS LAST);
 CREATE INDEX ti_retry_of_idx
   ON test_item (retry_of NULLS LAST);
+CREATE INDEX trgm_idx_test_item_name
+  ON test_item
+  USING gin (name gin_trgm_ops);
+CREATE INDEX trgm_idx_test_item_description
+  ON test_item
+  USING gin (description gin_trgm_ops);
 
 CREATE TABLE test_item_results
 (
@@ -476,6 +509,12 @@ CREATE INDEX item_attr_ti_idx
   ON item_attribute (item_id NULLS LAST);
 CREATE INDEX item_attr_launch_idx
   ON item_attribute (launch_id NULLS LAST);
+CREATE INDEX trgm_idx_item_attr_key
+  ON item_attribute
+  USING gin (key gin_trgm_ops);
+CREATE INDEX trgm_idx_item_attr_value
+  ON item_attribute
+  USING gin (value gin_trgm_ops);
 
 CREATE TABLE attachment (
   id           BIGSERIAL CONSTRAINT attachment_pk PRIMARY KEY,
@@ -523,6 +562,15 @@ CREATE TABLE activity
 
 CREATE INDEX activity_project_idx
   ON activity (project_id);
+CREATE INDEX trgm_idx_activity_username
+  ON activity
+  USING gin (username gin_trgm_ops);
+CREATE INDEX trgm_idx_activity_entity
+  ON activity
+  USING gin (entity gin_trgm_ops);
+CREATE INDEX trgm_idx_activity_action
+  ON activity
+  USING gin (action gin_trgm_ops);
 
 ----------------------------------------------------------------------------------------
 
@@ -621,6 +669,8 @@ CREATE TABLE ticket
 
 CREATE INDEX ticket_submitter_idx
   ON ticket (submitter_id);
+CREATE INDEX ticket_bts_project_url_idx
+  ON ticket (bts_url, bts_project);
 
 CREATE TABLE issue_ticket
 (

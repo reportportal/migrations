@@ -29,6 +29,7 @@ DROP FUNCTION IF EXISTS handle_retries(itemId BIGINT);
 DROP FUNCTION IF EXISTS retries_statistics(cur_launch_id BIGINT);
 
 DROP EXTENSION IF EXISTS ltree CASCADE;
+DROP EXTENSION IF EXISTS pg_trgm CASCADE;
 
 DROP TABLE IF EXISTS server_settings CASCADE;
 DROP TABLE IF EXISTS bug_tracking_system CASCADE;
