@@ -353,10 +353,12 @@ CREATE TABLE widget
 
 CREATE TABLE content_field
 (
-  id    BIGINT  NOT NULL PRIMARY KEY
-    CONSTRAINT content_field_id_fk REFERENCES widget (id) ON DELETE CASCADE,
+  id    BIGINT REFERENCES widget (id) ON DELETE CASCADE,
   field VARCHAR NOT NULL
 );
+
+CREATE INDEX content_field_widget_idx
+  ON content_field (id);
 
 CREATE TABLE dashboard_widget
 (
