@@ -11,16 +11,7 @@ $$DECLARE
 BEGIN
 
     INSERT INTO server_settings (key, value) VALUES ('server.analytics.all', 'true');
-    INSERT INTO server_settings (key, value) VALUES ('server.email.star_tls_enabled', 'false');
-    INSERT INTO server_settings (key, value) VALUES ('server.email.password', NULL);
-    INSERT INTO server_settings (key, value) VALUES ('server.email.port', '587');
-    INSERT INTO server_settings (key, value) VALUES ('server.email.protocol', 'smtp');
-    INSERT INTO server_settings (key, value) VALUES ('server.email.ssl_enabled', 'false');
-    INSERT INTO server_settings (key, value) VALUES ('server.email.auth_enabled', 'false');
-    INSERT INTO server_settings (key, value) VALUES ('server.email.enabled', 'true');
-    INSERT INTO server_settings (key, value) VALUES ('server.email.username', NULL);
-    INSERT INTO server_settings (key, value) VALUES ('server.email.host', NULL);
-    INSERT INTO server_settings (key, value) VALUES ('server.analytics.asd', 'true');
+    INSERT INTO server_settings (key, value) VALUES ('server.details.instance', gen_random_uuid());
 
     INSERT INTO integration_type (enabled, name, auth_flow, creation_date, group_type) VALUES (TRUE, 'test integration type', 'LDAP', now(), 'AUTH');
     ldap := (SELECT currval(pg_get_serial_sequence('integration_type', 'id')));
