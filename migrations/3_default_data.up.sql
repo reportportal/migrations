@@ -96,11 +96,5 @@ BEGIN
     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (12, 'true', defaultproject), (12, 'true', superadminproject);
     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (13, 'reportportal@example.com', defaultproject), (13, 'reportportal@example.com', superadminproject);
 
-    INSERT INTO integration (project_id, type, enabled, params)
-      VALUES (defaultproject, email, FALSE, '{"params": {"rules": [{"recipients": ["owner"]}, {"launchStatsRule": "always"}]}}');
-
-    INSERT INTO integration (project_id, type, enabled, params)
-      VALUES (superadminproject, email, FALSE, '{"params": {"rules": [{"recipients": ["owner"]}, {"launchStatsRule": "always"}]}}');
-
 END
 $$;
