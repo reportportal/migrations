@@ -1067,7 +1067,6 @@ CREATE OR REPLACE FUNCTION update_executions_statistics()
   RETURNS TRIGGER AS
 $$
 DECLARE
-          cur_id                    BIGINT;
   DECLARE executions_field          VARCHAR;
   DECLARE executions_field_id       BIGINT;
   DECLARE executions_field_old      VARCHAR;
@@ -1119,22 +1118,19 @@ BEGIN
 
   IF old.status = 'IN_PROGRESS' :: STATUS_ENUM
   THEN
-    FOR cur_id IN
-    (SELECT item_id FROM test_item WHERE path @> (SELECT path FROM test_item WHERE item_id = new.result_id))
-    LOOP
-      /* increment item executions statistics for concrete field */
-      INSERT INTO statistics (s_counter, statistics_field_id, item_id)
-      VALUES (1, executions_field_id, cur_id)
-      ON CONFLICT (statistics_field_id,
-                  item_id)
-                  DO UPDATE SET s_counter = statistics.s_counter + 1;
-      /* increment item executions statistics for total field */
-      INSERT INTO statistics (s_counter, statistics_field_id, item_id)
-      VALUES (1, executions_field_total_id, cur_id)
-      ON CONFLICT (statistics_field_id,
-                  item_id)
-                  DO UPDATE SET s_counter = statistics.s_counter + 1;
-    END LOOP;
+    INSERT INTO statistics (s_counter, statistics_field_id, item_id)
+        (SELECT 1, executions_field_id, item_id
+         FROM (SELECT item_id FROM test_item WHERE path @> (SELECT path FROM test_item WHERE item_id = new.result_id)) as temp_bulk)
+    ON CONFLICT (statistics_field_id,
+                item_id)
+                DO UPDATE SET s_counter = statistics.s_counter + 1;
+
+    INSERT INTO statistics (s_counter, statistics_field_id, item_id)
+        (SELECT 1, executions_field_total_id, item_id
+         FROM (SELECT item_id FROM test_item WHERE path @> (SELECT path FROM test_item WHERE item_id = new.result_id)) as temp_bulk)
+    ON CONFLICT (statistics_field_id,
+                item_id)
+                DO UPDATE SET s_counter = statistics.s_counter + 1;
 
     /* increment launch executions statistics for concrete field */
     INSERT INTO statistics (s_counter, statistics_field_id, launch_id)
@@ -1159,21 +1155,20 @@ BEGIN
                                FROM statistics_field
                                WHERE statistics_field.name = executions_field_old);
 
-    FOR cur_id IN
-    (SELECT item_id FROM test_item WHERE path @> (SELECT path FROM test_item WHERE item_id = new.result_id))
+    /* decrease item executions statistics for old field */
+    UPDATE statistics
+    SET s_counter = s_counter - 1
+    WHERE statistics_field_id = executions_field_old_id
+      AND item_id IN (SELECT item_id FROM test_item WHERE path @> (SELECT path FROM test_item WHERE item_id = new.result_id));
 
-    LOOP
-      /* decrease item executions statistics for old field */
-      UPDATE statistics SET s_counter = s_counter - 1 WHERE statistics_field_id = executions_field_old_id
-                                                        AND item_id = cur_id;
+    /* increment item executions statistics for concrete field */
+    INSERT INTO statistics (s_counter, statistics_field_id, item_id)
+        (SELECT 1, executions_field_id, item_id
+         FROM (SELECT item_id FROM test_item WHERE path @> (SELECT path FROM test_item WHERE item_id = new.result_id)) as temp_bulk)
+    ON CONFLICT (statistics_field_id,
+                item_id)
+                DO UPDATE SET s_counter = statistics.s_counter + 1;
 
-      /* increment item executions statistics for concrete field */
-      INSERT INTO statistics (s_counter, statistics_field_id, item_id)
-      VALUES (1, executions_field_id, cur_id)
-      ON CONFLICT (statistics_field_id,
-                  item_id)
-                  DO UPDATE SET s_counter = statistics.s_counter + 1;
-    END LOOP;
 
     /* decrease item executions statistics for old field */
     UPDATE statistics SET s_counter = s_counter - 1 WHERE statistics_field_id = executions_field_old_id
@@ -1203,7 +1198,6 @@ CREATE OR REPLACE FUNCTION increment_defect_statistics()
   RETURNS TRIGGER AS
 $$
 DECLARE
-          cur_id                BIGINT;
   DECLARE defect_field          VARCHAR;
   DECLARE defect_field_id       BIGINT;
   DECLARE defect_field_total    VARCHAR;
@@ -1248,23 +1242,19 @@ BEGIN
                            FROM statistics_field
                            WHERE statistics_field.name = defect_field_total);
 
-  FOR cur_id IN
-  (SELECT item_id FROM test_item WHERE path @> (SELECT path FROM test_item WHERE item_id = new.issue_id))
+  INSERT INTO statistics (s_counter, statistics_field_id, item_id)
+        (SELECT 1, defect_field_id, item_id
+         FROM (SELECT item_id FROM test_item WHERE path @> (SELECT path FROM test_item WHERE item_id = new.issue_id)) as temp_bulk)
+    ON CONFLICT (statistics_field_id,
+                item_id)
+                DO UPDATE SET s_counter = statistics.s_counter + 1;
 
-  LOOP
-    /* increment item defects statistics for concrete field */
-    INSERT INTO statistics (s_counter, statistics_field_id, item_id)
-    VALUES (1, defect_field_id, cur_id)
+  INSERT INTO statistics (s_counter, statistics_field_id, item_id)
+        (SELECT 1, defect_field_total_id, item_id
+         FROM (SELECT item_id FROM test_item WHERE path @> (SELECT path FROM test_item WHERE item_id = new.issue_id)) as temp_bulk)
     ON CONFLICT (statistics_field_id,
                 item_id)
                 DO UPDATE SET s_counter = statistics.s_counter + 1;
-    /* increment item defects statistics for total field */
-    INSERT INTO statistics (s_counter, statistics_field_id, item_id)
-    VALUES (1, defect_field_total_id, cur_id)
-    ON CONFLICT (statistics_field_id,
-                item_id)
-                DO UPDATE SET s_counter = statistics.s_counter + 1;
-  END LOOP;
 
   /* increment launch defects statistics for concrete field */
   INSERT INTO statistics (s_counter, statistics_field_id, launch_id)
