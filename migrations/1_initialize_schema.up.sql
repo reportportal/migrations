@@ -1077,20 +1077,13 @@ DECLARE
   DECLARE cur_launch_id             BIGINT;
 
 BEGIN
-  IF exists(SELECT 1 FROM test_item AS s
-                            JOIN test_item AS s2 ON s.item_id = s2.parent_id WHERE s.item_id = new.result_id)
-  THEN
-    RETURN new;
-  END IF;
-
-  IF exists(SELECT 1 FROM test_item ti WHERE ti.item_id = new.result_id
-                                         AND ti.type != 'STEP' :: TEST_ITEM_TYPE_ENUM)
+  IF (new.status = 'SUITE' :: TEST_ITEM_TYPE_ENUM) OR exists(SELECT 1 FROM test_item WHERE test_item.parent_id = new.result_id LIMIT 1)
   THEN
     RETURN new;
   END IF;
 
   IF exists(SELECT 1 FROM test_item WHERE item_id = new.result_id
-                                      AND retry_of IS NOT NULL)
+                                      AND retry_of IS NOT NULL LIMIT 1)
   THEN
     RETURN new;
   END IF;
@@ -1212,13 +1205,13 @@ DECLARE
 
 BEGIN
   IF exists(SELECT 1 FROM test_item AS s
-                            JOIN test_item AS s2 ON s.item_id = s2.parent_id WHERE s.item_id = new.issue_id)
+                            JOIN test_item AS s2 ON s.item_id = s2.parent_id WHERE s.item_id = new.issue_id LIMIT 1)
   THEN
     RETURN new;
   END IF;
 
   IF exists(SELECT 1 FROM test_item WHERE item_id = new.issue_id
-                                      AND retry_of IS NOT NULL)
+                                      AND retry_of IS NOT NULL LIMIT 1)
   THEN
     RETURN new;
   END IF;
@@ -1306,13 +1299,13 @@ DECLARE
 
 BEGIN
   IF exists(SELECT 1 FROM test_item AS s
-                            JOIN test_item AS s2 ON s.item_id = s2.parent_id WHERE s.item_id = new.issue_id)
+                            JOIN test_item AS s2 ON s.item_id = s2.parent_id WHERE s.item_id = new.issue_id LIMIT 1)
   THEN
     RETURN new;
   END IF;
 
   IF exists(SELECT 1 FROM test_item WHERE item_id = new.issue_id
-                                      AND retry_of IS NOT NULL)
+                                      AND retry_of IS NOT NULL LIMIT 1)
   THEN
     RETURN new;
   END IF;
@@ -1503,7 +1496,7 @@ BEGIN
   END IF;
 
   IF exists(SELECT 1 FROM test_item WHERE item_id = old.result_id
-                                      AND retry_of IS NOT NULL)
+                                      AND retry_of IS NOT NULL LIMIT 1)
   THEN
     RETURN old;
   END IF;
