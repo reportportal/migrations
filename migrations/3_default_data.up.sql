@@ -5,22 +5,14 @@ $$DECLARE
   defaultid BIGINT;
   superadmin BIGINT;
   ldap BIGINT;
-  rally BIGINT;
-  jira BIGINT;
   email BIGINT;
 BEGIN
 
     INSERT INTO server_settings (key, value) VALUES ('server.analytics.all', 'true');
     INSERT INTO server_settings (key, value) VALUES ('server.details.instance', gen_random_uuid());
 
-    INSERT INTO integration_type (enabled, name, auth_flow, creation_date, group_type) VALUES (TRUE, 'test integration type', 'LDAP', now(), 'AUTH');
+    INSERT INTO integration_type (enabled, name, auth_flow, creation_date, group_type) VALUES (TRUE, 'ldap', 'LDAP', now(), 'AUTH');
     ldap := (SELECT currval(pg_get_serial_sequence('integration_type', 'id')));
-
-    INSERT INTO integration_type (enabled, name, auth_flow, creation_date, group_type) VALUES (TRUE, 'RALLY', 'OAUTH', now(), 'BTS') ;
-    rally := (SELECT currval(pg_get_serial_sequence('integration_type', 'id')));
-
-    INSERT INTO integration_type (enabled, name, auth_flow, creation_date, group_type) VALUES (TRUE, 'JIRA', 'BASIC', now(), 'BTS');
-    jira := (SELECT currval(pg_get_serial_sequence('integration_type', 'id')));
 
     INSERT INTO integration_type (enabled, name, creation_date, group_type) VALUES (TRUE, 'email', now(), 'NOTIFICATION');
     email := (SELECT currval(pg_get_serial_sequence('integration_type', 'id')));
@@ -79,8 +71,6 @@ BEGIN
     (superadminproject, 1), (superadminproject, 2), (superadminproject, 3), (superadminproject, 4), (superadminproject, 5),
     (defaultproject, 1),(defaultproject, 2),(defaultproject, 3),(defaultproject, 4),(defaultproject, 5);
 
-    INSERT INTO integration (project_id, type, enabled, creation_date) VALUES (superadminproject, rally, FALSE, now()), (defaultproject, rally, FALSE, now());
-    INSERT INTO integration (project_id, type, enabled, creation_date) VALUES (superadminproject, jira, FALSE, now()), (defaultproject, jira, FALSE, now());
 
     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (1, '1 day', defaultproject), (1, '1 day', superadminproject);
     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (2, '3 months', defaultproject), (2, '3 months', superadminproject);
@@ -95,12 +85,6 @@ BEGIN
     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (11, 'LAUNCH_NAME', defaultproject), (11, 'LAUNCH_NAME', superadminproject);
     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (12, 'true', defaultproject), (12, 'true', superadminproject);
     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (13, 'reportportal@example.com', defaultproject), (13, 'reportportal@example.com', superadminproject);
-
-    INSERT INTO integration (project_id, type, enabled, params)
-      VALUES (defaultproject, email, FALSE, '{"params": {"rules": [{"recipients": ["owner"]}, {"launchStatsRule": "always"}]}}');
-
-    INSERT INTO integration (project_id, type, enabled, params)
-      VALUES (superadminproject, email, FALSE, '{"params": {"rules": [{"recipients": ["owner"]}, {"launchStatsRule": "always"}]}}');
 
 END
 $$;
