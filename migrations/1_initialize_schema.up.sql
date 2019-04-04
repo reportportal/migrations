@@ -639,7 +639,7 @@ CREATE TABLE acl_sid
 (
   id        BIGSERIAL    NOT NULL PRIMARY KEY,
   principal BOOLEAN      NOT NULL,
-  sid       VARCHAR(100) NOT NULL REFERENCES users (login) ON DELETE CASCADE,
+  sid       VARCHAR(128) NOT NULL REFERENCES users (login) ON DELETE CASCADE,
   CONSTRAINT unique_uk_1 UNIQUE (sid, principal)
 );
 
@@ -649,8 +649,8 @@ CREATE INDEX acl_sid_idx
 CREATE TABLE acl_class
 (
   id            BIGSERIAL    NOT NULL PRIMARY KEY,
-  class         VARCHAR(100) NOT NULL,
-  class_id_type VARCHAR(100),
+  class         VARCHAR(128) NOT NULL,
+  class_id_type VARCHAR(128),
   CONSTRAINT unique_uk_2 UNIQUE (class)
 );
 
