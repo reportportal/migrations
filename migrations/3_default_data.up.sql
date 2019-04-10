@@ -29,19 +29,19 @@ BEGIN
     INSERT INTO issue_type (issue_group_id, locator, issue_name, abbreviation, hex_color) VALUES (4, 'nd001', 'No Defect', 'ND', '#777777');
     INSERT INTO issue_type (issue_group_id, locator, issue_name, abbreviation, hex_color) VALUES (5, 'si001', 'System Issue', 'SI', '#0274d1');
 
-    INSERT INTO attribute (name) VALUES ('job.interruptJobTime');
-    INSERT INTO attribute (name) VALUES ('job.keepLaunches');
-    INSERT INTO attribute (name) VALUES ('job.keepLogs');
-    INSERT INTO attribute (name) VALUES ('job.keepScreenshots');
-    INSERT INTO attribute (name) VALUES ('analyzer.minDocFreq');
-    INSERT INTO attribute (name) VALUES ('analyzer.minTermFreq');
-    INSERT INTO attribute (name) VALUES ('analyzer.minShouldMatch');
-    INSERT INTO attribute (name) VALUES ('analyzer.numberOfLogLines');
-    INSERT INTO attribute (name) VALUES ('analyzer.indexingRunning');
-    INSERT INTO attribute (name) VALUES ('analyzer.isAutoAnalyzerEnabled');
-    INSERT INTO attribute (name) VALUES ('analyzer.autoAnalyzerMode');
-    INSERT INTO attribute (name) VALUES ('notifications.enabled');
-    INSERT INTO attribute (name) VALUES ('email.from');
+    INSERT INTO attribute (name) VALUES ('job$interruptJobTime');
+    INSERT INTO attribute (name) VALUES ('job$keepLaunches');
+    INSERT INTO attribute (name) VALUES ('job$keepLogs');
+    INSERT INTO attribute (name) VALUES ('job$keepScreenshots');
+    INSERT INTO attribute (name) VALUES ('analyzer$minDocFreq');
+    INSERT INTO attribute (name) VALUES ('analyzer$minTermFreq');
+    INSERT INTO attribute (name) VALUES ('analyzer$minShouldMatch');
+    INSERT INTO attribute (name) VALUES ('analyzer$numberOfLogLines');
+    INSERT INTO attribute (name) VALUES ('analyzer$indexingRunning');
+    INSERT INTO attribute (name) VALUES ('analyzer$isAutoAnalyzerEnabled');
+    INSERT INTO attribute (name) VALUES ('analyzer$autoAnalyzerMode');
+    INSERT INTO attribute (name) VALUES ('notifications$enabled');
+    INSERT INTO attribute (name) VALUES ('email$from');
 
     -- Superadmin project and user
     INSERT INTO project (name, project_type, creation_date, metadata) VALUES ('superadmin_personal', 'PERSONAL', now(), '{"metadata": {"additional_info": ""}}');
