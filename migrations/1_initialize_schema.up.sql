@@ -52,7 +52,7 @@ CREATE TABLE user_creation_bid
   uuid               VARCHAR
     CONSTRAINT user_creation_bid_pk PRIMARY KEY,
   last_modified      TIMESTAMP DEFAULT now(),
-  email              VARCHAR NOT NULL UNIQUE,
+  email              VARCHAR NOT NULL,
   default_project_id BIGINT REFERENCES project (id) ON DELETE CASCADE,
   role               VARCHAR NOT NULL
 );
@@ -391,13 +391,13 @@ CREATE TABLE launch
     CONSTRAINT launch_pk PRIMARY KEY,
   uuid                 VARCHAR                                          NOT NULL,
   project_id           BIGINT REFERENCES project (id) ON DELETE CASCADE NOT NULL,
-  user_id              BIGINT REFERENCES users (id) ON DELETE SET NULL,
+  user_id              BIGINT                                           REFERENCES users (id) ON DELETE SET NULL,
   name                 VARCHAR(256)                                     NOT NULL,
   description          TEXT,
   start_time           TIMESTAMP                                        NOT NULL,
   end_time             TIMESTAMP,
   number               INTEGER                                          NOT NULL,
-  last_modified        TIMESTAMP DEFAULT now()                          NOT NULL,
+  last_modified        TIMESTAMP                                                 DEFAULT now() NOT NULL,
   mode                 LAUNCH_MODE_ENUM                                 NOT NULL,
   status               STATUS_ENUM                                      NOT NULL,
   has_retries          BOOLEAN                                          NOT NULL DEFAULT FALSE,
@@ -446,10 +446,10 @@ CREATE TABLE test_item_results
 
 CREATE INDEX path_gist_idx
   ON test_item
-  USING gist (path);
+    USING gist (path);
 CREATE INDEX path_idx
   ON test_item
-  USING btree (path);
+    USING btree (path);
 
 CREATE TABLE parameter
 (
@@ -478,8 +478,10 @@ CREATE INDEX item_attr_ti_idx
 CREATE INDEX item_attr_launch_idx
   ON item_attribute (launch_id NULLS LAST);
 
-CREATE TABLE attachment (
-  id           BIGSERIAL CONSTRAINT attachment_pk PRIMARY KEY,
+CREATE TABLE attachment
+(
+  id           BIGSERIAL
+    CONSTRAINT attachment_pk PRIMARY KEY,
   file_id      TEXT NOT NULL,
   thumbnail_id TEXT,
   content_type TEXT,
@@ -495,14 +497,16 @@ CREATE INDEX att_launch_idx
 CREATE INDEX att_item_idx
   ON attachment (item_id);
 
-CREATE TABLE log (
-  id            BIGSERIAL CONSTRAINT log_pk PRIMARY KEY,
-  log_time      TIMESTAMP                                                NOT NULL,
-  log_message   TEXT                                                     NOT NULL,
-  item_id       BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE  NOT NULL,
-  last_modified TIMESTAMP                                                NOT NULL,
-  log_level     INTEGER                                                  NOT NULL,
-  attachment_id BIGINT REFERENCES attachment (id) ON DELETE SET NULL
+CREATE TABLE log
+(
+  id            BIGSERIAL
+    CONSTRAINT log_pk PRIMARY KEY,
+  log_time      TIMESTAMP                                               NOT NULL,
+  log_message   TEXT                                                    NOT NULL,
+  item_id       BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE NOT NULL,
+  last_modified TIMESTAMP                                               NOT NULL,
+  log_level     INTEGER                                                 NOT NULL,
+  attachment_id BIGINT                                                  REFERENCES attachment (id) ON DELETE SET NULL
 );
 
 CREATE INDEX log_ti_idx
@@ -578,7 +582,7 @@ CREATE TABLE statistics
   CONSTRAINT unique_stats_item UNIQUE (statistics_field_id, item_id),
   CONSTRAINT unique_stats_launch UNIQUE (statistics_field_id, launch_id),
   CHECK (statistics.s_counter >= 0 AND ((item_id IS NOT NULL AND launch_id IS NULL) OR (launch_id IS NOT NULL AND item_id IS NULL))
-  )
+    )
 );
 
 CREATE INDEX statistics_ti_idx
@@ -612,12 +616,12 @@ CREATE TABLE ticket
 (
   id           BIGSERIAL
     CONSTRAINT ticket_pk PRIMARY KEY,
-  ticket_id    VARCHAR(64)                                                   NOT NULL UNIQUE,
-  submitter_id BIGINT REFERENCES users (id) ON DELETE CASCADE                NOT NULL,
-  submit_date  TIMESTAMP DEFAULT now()                                       NOT NULL,
-  bts_url      VARCHAR(256)                                                  NOT NULL,
-  bts_project  VARCHAR(256)                                                  NOT NULL,
-  url          VARCHAR(256)                                                  NOT NULL
+  ticket_id    VARCHAR(64)                                    NOT NULL UNIQUE,
+  submitter_id BIGINT REFERENCES users (id) ON DELETE CASCADE NOT NULL,
+  submit_date  TIMESTAMP DEFAULT now()                        NOT NULL,
+  bts_url      VARCHAR(256)                                   NOT NULL,
+  bts_project  VARCHAR(256)                                   NOT NULL,
+  url          VARCHAR(256)                                   NOT NULL
 );
 
 CREATE INDEX ticket_submitter_idx
@@ -694,13 +698,16 @@ $$
 DECLARE
   haschilds BOOLEAN;
 BEGIN
-  SELECT EXISTS(SELECT 1 FROM test_item t WHERE t.path <@ path_value
-                                            AND t.path != path_value LIMIT 1) INTO haschilds;
+  SELECT EXISTS(SELECT 1
+                FROM test_item t
+                WHERE t.path <@ path_value
+                  AND t.path != path_value
+                LIMIT 1) INTO haschilds;
 
   RETURN haschilds;
 END;
 $$
-LANGUAGE plpgsql;
+  LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION merge_launch(launchid BIGINT)
   RETURNS INTEGER
@@ -719,7 +726,7 @@ DECLARE targettestitemcursor CURSOR (id BIGINT, lvl INT) FOR
     AND nlevel(test_item.path) = lvl
     AND test_item.launch_id = launchid;
   DECLARE
-          targettestitemfield  RECORD;
+  targettestitemfield          RECORD;
   DECLARE mergingtestitemfield RECORD;
   DECLARE maxlevel             BIGINT;
   DECLARE firstitemid          VARCHAR;
@@ -730,108 +737,109 @@ BEGIN
   maxlevel := (SELECT MAX(nlevel(path)) FROM test_item WHERE launch_id = launchid);
 
   FOR i IN 1..maxlevel
-  LOOP
-
-    OPEN targettestitemcursor(launchid, i);
-
     LOOP
-      FETCH targettestitemcursor INTO targettestitemfield;
 
-      EXIT WHEN NOT found;
-
-      firstitemid := targettestitemfield.unique_id;
-      parentitemid := targettestitemfield.item_id;
-      parentitempath := targettestitemfield.path_value;
-
-      EXIT WHEN firstitemid ISNULL;
-
-      SELECT string_agg(description, chr(10)) INTO concatenated_descr
-      FROM test_item
-      WHERE test_item.unique_id = firstitemid
-        AND nlevel(test_item.path) = i
-        AND test_item.launch_id = launchid;
-
-      UPDATE test_item SET description = concatenated_descr WHERE test_item.item_id = parentitemid;
-
-      UPDATE test_item
-      SET start_time = (SELECT min(start_time)
-                        FROM test_item
-                        WHERE test_item.unique_id = firstitemid
-                          AND nlevel(test_item.path) = i
-                          AND test_item.launch_id = launchid)
-      WHERE test_item.item_id = parentitemid;
-
-      UPDATE test_item_results
-      SET end_time = (SELECT max(end_time)
-                      FROM test_item
-                             JOIN test_item_results result ON test_item.item_id = result.result_id
-                      WHERE test_item.unique_id = firstitemid
-                        AND nlevel(test_item.path) = i
-                        AND test_item.launch_id = launchid)
-      WHERE test_item_results.result_id = parentitemid;
-
-      INSERT INTO statistics (statistics_field_id, item_id, launch_id, s_counter)
-      SELECT statistics_field_id, parentitemid, NULL, sum(s_counter)
-      FROM statistics
-             JOIN test_item ti ON statistics.item_id = ti.item_id
-      WHERE ti.unique_id = firstitemid
-        AND ti.launch_id = launchid
-        AND nlevel(ti.path) = i
-      GROUP BY statistics_field_id
-      ON CONFLICT ON CONSTRAINT unique_stats_item DO UPDATE
-        SET
-          s_counter = excluded.s_counter;
-
-      IF exists(SELECT 1
-                FROM test_item_results
-                       JOIN test_item t ON test_item_results.result_id = t.item_id
-                WHERE test_item_results.status != 'PASSED'
-                  AND t.unique_id = firstitemid
-                  AND nlevel(t.path) = i
-                  AND t.launch_id = launchid
-                LIMIT 1)
-      THEN
-        UPDATE test_item_results SET status = 'FAILED' WHERE test_item_results.result_id = parentitemid;
-      END IF;
-
-      OPEN mergingtestitemcursor(targettestitemfield.unique_id, i, launchid);
+      OPEN targettestitemcursor(launchid, i);
 
       LOOP
-
-        FETCH mergingtestitemcursor INTO mergingtestitemfield;
+        FETCH targettestitemcursor INTO targettestitemfield;
 
         EXIT WHEN NOT found;
 
-        IF has_child(mergingtestitemfield.path_value)
-        THEN
-          UPDATE test_item
-          SET parent_id = parentitemid,
-              path      = text2ltree(concat(parentitempath :: TEXT, '.', test_item.item_id :: TEXT))
-          WHERE test_item.path <@ mergingtestitemfield.path_value
-            AND test_item.path != mergingtestitemfield.path_value
-            AND nlevel(test_item.path) = i + 1
-            AND test_item.retry_of IS NULL;
-          DELETE FROM test_item WHERE test_item.path = mergingtestitemfield.path_value
-                                  AND test_item.item_id != parentitemid;
+        firstitemid := targettestitemfield.unique_id;
+        parentitemid := targettestitemfield.item_id;
+        parentitempath := targettestitemfield.path_value;
 
+        EXIT WHEN firstitemid ISNULL;
+
+        SELECT string_agg(description, chr(10)) INTO concatenated_descr
+        FROM test_item
+        WHERE test_item.unique_id = firstitemid
+          AND nlevel(test_item.path) = i
+          AND test_item.launch_id = launchid;
+
+        UPDATE test_item SET description = concatenated_descr WHERE test_item.item_id = parentitemid;
+
+        UPDATE test_item
+        SET start_time = (SELECT min(start_time)
+                          FROM test_item
+                          WHERE test_item.unique_id = firstitemid
+                            AND nlevel(test_item.path) = i
+                            AND test_item.launch_id = launchid)
+        WHERE test_item.item_id = parentitemid;
+
+        UPDATE test_item_results
+        SET end_time = (SELECT max(end_time)
+                        FROM test_item
+                               JOIN test_item_results result ON test_item.item_id = result.result_id
+                        WHERE test_item.unique_id = firstitemid
+                          AND nlevel(test_item.path) = i
+                          AND test_item.launch_id = launchid)
+        WHERE test_item_results.result_id = parentitemid;
+
+        INSERT INTO statistics (statistics_field_id, item_id, launch_id, s_counter)
+        SELECT statistics_field_id, parentitemid, NULL, sum(s_counter)
+        FROM statistics
+               JOIN test_item ti ON statistics.item_id = ti.item_id
+        WHERE ti.unique_id = firstitemid
+          AND ti.launch_id = launchid
+          AND nlevel(ti.path) = i
+        GROUP BY statistics_field_id
+        ON CONFLICT ON CONSTRAINT unique_stats_item DO UPDATE
+          SET s_counter = excluded.s_counter;
+
+        IF exists(SELECT 1
+                  FROM test_item_results
+                         JOIN test_item t ON test_item_results.result_id = t.item_id
+                  WHERE test_item_results.status != 'PASSED'
+                    AND t.unique_id = firstitemid
+                    AND nlevel(t.path) = i
+                    AND t.launch_id = launchid
+                  LIMIT 1)
+        THEN
+          UPDATE test_item_results SET status = 'FAILED' WHERE test_item_results.result_id = parentitemid;
         END IF;
 
-        IF mergingtestitemfield.has_retries
-        THEN
-          UPDATE test_item
-          SET path = text2ltree(concat(mergingtestitemfield.path_value :: TEXT, '.', test_item.item_id :: TEXT))
-          WHERE test_item.retry_of = mergingtestitemfield.item_id;
-        END IF;
+        OPEN mergingtestitemcursor(targettestitemfield.unique_id, i, launchid);
+
+        LOOP
+
+          FETCH mergingtestitemcursor INTO mergingtestitemfield;
+
+          EXIT WHEN NOT found;
+
+          IF has_child(mergingtestitemfield.path_value)
+          THEN
+            UPDATE test_item
+            SET parent_id = parentitemid,
+                path      = text2ltree(concat(parentitempath :: TEXT, '.', test_item.item_id :: TEXT))
+            WHERE test_item.path <@ mergingtestitemfield.path_value
+              AND test_item.path != mergingtestitemfield.path_value
+              AND nlevel(test_item.path) = i + 1
+              AND test_item.retry_of IS NULL;
+            DELETE
+            FROM test_item
+            WHERE test_item.path = mergingtestitemfield.path_value
+              AND test_item.item_id != parentitemid;
+
+          END IF;
+
+          IF mergingtestitemfield.has_retries
+          THEN
+            UPDATE test_item
+            SET path = text2ltree(concat(mergingtestitemfield.path_value :: TEXT, '.', test_item.item_id :: TEXT))
+            WHERE test_item.retry_of = mergingtestitemfield.item_id;
+          END IF;
+
+        END LOOP;
+
+        CLOSE mergingtestitemcursor;
 
       END LOOP;
 
-      CLOSE mergingtestitemcursor;
+      CLOSE targettestitemcursor;
 
     END LOOP;
-
-    CLOSE targettestitemcursor;
-
-  END LOOP;
 
 
   INSERT INTO statistics (statistics_field_id, launch_id, s_counter)
@@ -842,25 +850,24 @@ BEGIN
     AND ti.parent_id IS NULL
   GROUP BY statistics_field_id
   ON CONFLICT ON CONSTRAINT unique_stats_launch DO UPDATE
-    SET
-      s_counter = excluded.s_counter;
+    SET s_counter = excluded.s_counter;
 
   RETURN 0;
 END;
 $$
-LANGUAGE plpgsql;
+  LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION retries_statistics(cur_launch_id BIGINT)
   RETURNS INTEGER AS
 $$
 DECLARE
-          cur_id                BIGINT;
+  cur_id                        BIGINT;
   DECLARE cur_statistics_fields RECORD;
   DECLARE retry_parents         RECORD;
 BEGIN
 
   IF
-  cur_launch_id IS NULL
+    cur_launch_id IS NULL
   THEN
     RETURN 1;
   END IF;
@@ -870,47 +877,47 @@ BEGIN
                                JOIN test_item item ON retries.retry_of = item.item_id
                         WHERE item.launch_id = cur_launch_id
                           AND retries.retry_of IS NOT NULL)
-  LOOP
-    FOR cur_statistics_fields IN (SELECT statistics_field_id, sum(s_counter) AS counter_sum
-                                  FROM statistics
-                                         JOIN test_item ti ON statistics.item_id = ti.item_id
-                                  WHERE ti.retry_of = retry_parents.retry_id
-                                  GROUP BY statistics_field_id)
-    LOOP
-      UPDATE statistics
-      SET s_counter = s_counter - cur_statistics_fields.counter_sum
-      WHERE statistics.statistics_field_id = cur_statistics_fields.statistics_field_id
-        AND launch_id = cur_launch_id;
-    END LOOP;
-
-    FOR cur_id IN
-    (SELECT item_id
-     FROM test_item
-     WHERE path @> (SELECT path FROM test_item WHERE item_id = retry_parents.retry_id)
-       AND item_id != retry_parents.retry_id)
-
     LOOP
       FOR cur_statistics_fields IN (SELECT statistics_field_id, sum(s_counter) AS counter_sum
                                     FROM statistics
                                            JOIN test_item ti ON statistics.item_id = ti.item_id
                                     WHERE ti.retry_of = retry_parents.retry_id
                                     GROUP BY statistics_field_id)
-      LOOP
-        UPDATE statistics
-        SET s_counter = s_counter - cur_statistics_fields.counter_sum
-        WHERE statistics.statistics_field_id = cur_statistics_fields.statistics_field_id
-          AND item_id = cur_id;
-      END LOOP;
+        LOOP
+          UPDATE statistics
+          SET s_counter = s_counter - cur_statistics_fields.counter_sum
+          WHERE statistics.statistics_field_id = cur_statistics_fields.statistics_field_id
+            AND launch_id = cur_launch_id;
+        END LOOP;
+
+      FOR cur_id IN
+        (SELECT item_id
+         FROM test_item
+         WHERE path @> (SELECT path FROM test_item WHERE item_id = retry_parents.retry_id)
+           AND item_id != retry_parents.retry_id)
+
+        LOOP
+          FOR cur_statistics_fields IN (SELECT statistics_field_id, sum(s_counter) AS counter_sum
+                                        FROM statistics
+                                               JOIN test_item ti ON statistics.item_id = ti.item_id
+                                        WHERE ti.retry_of = retry_parents.retry_id
+                                        GROUP BY statistics_field_id)
+            LOOP
+              UPDATE statistics
+              SET s_counter = s_counter - cur_statistics_fields.counter_sum
+              WHERE statistics.statistics_field_id = cur_statistics_fields.statistics_field_id
+                AND item_id = cur_id;
+            END LOOP;
+        END LOOP;
+
+      DELETE FROM issue WHERE issue_id IN (SELECT item_id FROM test_item WHERE retry_of = retry_parents.retry_id);
+      DELETE FROM statistics WHERE item_id IN (SELECT item_id FROM test_item WHERE retry_of = retry_parents.retry_id);
+
     END LOOP;
-
-    DELETE FROM issue WHERE issue_id IN (SELECT item_id FROM test_item WHERE retry_of = retry_parents.retry_id);
-    DELETE FROM statistics WHERE item_id IN (SELECT item_id FROM test_item WHERE retry_of = retry_parents.retry_id);
-
-  END LOOP;
   RETURN 0;
 END;
 $$
-LANGUAGE plpgsql;
+  LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION handle_retries(itemid BIGINT)
   RETURNS INTEGER
@@ -943,13 +950,13 @@ BEGIN
   LIMIT 1 INTO itemidwithmaxstarttime, maxstarttime;
 
   IF
-  maxstarttime IS NULL
+    maxstarttime IS NULL
   THEN
     RETURN 0;
   END IF;
 
   IF
-  maxstarttime < newitemstarttime
+    maxstarttime < newitemstarttime
   THEN
     UPDATE test_item
     SET retry_of    = newitemid,
@@ -962,7 +969,7 @@ BEGIN
                                LEFT JOIN test_item retries ON retries_parent.item_id = retries.retry_of
                         WHERE retries_parent.launch_id = newitemlaunchid
                           AND retries_parent.unique_id = newitemuniqueid)
-             OR (retry_of IS NULL AND launch_id = newitemlaunchid))
+      OR (retry_of IS NULL AND launch_id = newitemlaunchid))
       AND item_id != newitemid;
 
     UPDATE test_item
@@ -988,22 +995,26 @@ BEGIN
   RETURN 0;
 END;
 $$
-LANGUAGE plpgsql;
+  LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION get_last_launch_number()
   RETURNS TRIGGER AS
 $BODY$
 BEGIN
-  new.number = (SELECT number FROM launch WHERE name = new.name
-                                            AND project_id = new.project_id ORDER BY number DESC LIMIT 1) + 1;
+  new.number = (SELECT number
+                FROM launch
+                WHERE name = new.name
+                  AND project_id = new.project_id
+                ORDER BY number DESC
+                LIMIT 1) + 1;
   new.number = CASE
-               WHEN new.number IS NULL
-                 THEN 1
-               ELSE new.number END;
+                 WHEN new.number IS NULL
+                   THEN 1
+                 ELSE new.number END;
   RETURN new;
 END;
 $BODY$
-LANGUAGE plpgsql;
+  LANGUAGE plpgsql;
 
 
 CREATE OR REPLACE FUNCTION count_approximate_duration()
@@ -1021,13 +1032,13 @@ BEGIN
                                  AND status NOT IN ('INTERRUPTED', 'IN_PROGRESS', 'STOPPED')
                                LIMIT 5) tmp);
   new.approximate_duration = CASE
-                             WHEN approximateduration IS NULL
-                               THEN 0
-                             ELSE approximateduration END;
+                               WHEN approximateduration IS NULL
+                                 THEN 0
+                               ELSE approximateduration END;
   RETURN new;
 END;
 $BODY$
-LANGUAGE plpgsql;
+  LANGUAGE plpgsql;
 
 CREATE FUNCTION check_wired_tickets()
   RETURNS TRIGGER AS
@@ -1040,7 +1051,7 @@ BEGIN
   RETURN NULL;
 END;
 $BODY$
-LANGUAGE plpgsql;
+  LANGUAGE plpgsql;
 
 CREATE TRIGGER after_ticket_delete
   AFTER DELETE
@@ -1067,7 +1078,8 @@ CREATE OR REPLACE FUNCTION update_executions_statistics()
   RETURNS TRIGGER AS
 $$
 DECLARE
-  DECLARE executions_field          VARCHAR;
+  DECLARE
+  executions_field                  VARCHAR;
   DECLARE executions_field_id       BIGINT;
   DECLARE executions_field_old      VARCHAR;
   DECLARE executions_field_old_id   BIGINT;
@@ -1085,8 +1097,11 @@ BEGIN
     RETURN new;
   END IF;
 
-  IF exists(SELECT 1 FROM test_item WHERE item_id = new.result_id
-                                      AND retry_of IS NOT NULL LIMIT 1)
+  IF exists(SELECT 1
+            FROM test_item
+            WHERE item_id = new.result_id
+              AND retry_of IS NOT NULL
+            LIMIT 1)
   THEN
     RETURN new;
   END IF;
@@ -1116,31 +1131,31 @@ BEGIN
   IF old.status = 'IN_PROGRESS' :: STATUS_ENUM
   THEN
     INSERT INTO statistics (s_counter, statistics_field_id, item_id)
-        (SELECT 1, executions_field_id, item_id
-         FROM (SELECT item_id FROM test_item WHERE path @> (SELECT path FROM test_item WHERE item_id = new.result_id)) as temp_bulk)
+      (SELECT 1, executions_field_id, item_id
+       FROM (SELECT item_id FROM test_item WHERE path @> (SELECT path FROM test_item WHERE item_id = new.result_id)) as temp_bulk)
     ON CONFLICT (statistics_field_id,
-                item_id)
-                DO UPDATE SET s_counter = statistics.s_counter + 1;
+      item_id)
+      DO UPDATE SET s_counter = statistics.s_counter + 1;
 
     INSERT INTO statistics (s_counter, statistics_field_id, item_id)
-        (SELECT 1, executions_field_total_id, item_id
-         FROM (SELECT item_id FROM test_item WHERE path @> (SELECT path FROM test_item WHERE item_id = new.result_id)) as temp_bulk)
+      (SELECT 1, executions_field_total_id, item_id
+       FROM (SELECT item_id FROM test_item WHERE path @> (SELECT path FROM test_item WHERE item_id = new.result_id)) as temp_bulk)
     ON CONFLICT (statistics_field_id,
-                item_id)
-                DO UPDATE SET s_counter = statistics.s_counter + 1;
+      item_id)
+      DO UPDATE SET s_counter = statistics.s_counter + 1;
 
     /* increment launch executions statistics for concrete field */
     INSERT INTO statistics (s_counter, statistics_field_id, launch_id)
     VALUES (1, executions_field_id, cur_launch_id)
     ON CONFLICT (statistics_field_id,
-                launch_id)
-                DO UPDATE SET s_counter = statistics.s_counter + 1;
+      launch_id)
+      DO UPDATE SET s_counter = statistics.s_counter + 1;
     /* increment launch executions statistics for total field */
     INSERT INTO statistics (s_counter, statistics_field_id, launch_id)
     VALUES (1, executions_field_total_id, cur_launch_id)
     ON CONFLICT (statistics_field_id,
-                launch_id)
-                DO UPDATE SET s_counter = statistics.s_counter + 1;
+      launch_id)
+      DO UPDATE SET s_counter = statistics.s_counter + 1;
     RETURN new;
   END IF;
 
@@ -1160,28 +1175,30 @@ BEGIN
 
     /* increment item executions statistics for concrete field */
     INSERT INTO statistics (s_counter, statistics_field_id, item_id)
-        (SELECT 1, executions_field_id, item_id
-         FROM (SELECT item_id FROM test_item WHERE path @> (SELECT path FROM test_item WHERE item_id = new.result_id)) as temp_bulk)
+      (SELECT 1, executions_field_id, item_id
+       FROM (SELECT item_id FROM test_item WHERE path @> (SELECT path FROM test_item WHERE item_id = new.result_id)) as temp_bulk)
     ON CONFLICT (statistics_field_id,
-                item_id)
-                DO UPDATE SET s_counter = statistics.s_counter + 1;
+      item_id)
+      DO UPDATE SET s_counter = statistics.s_counter + 1;
 
 
     /* decrease item executions statistics for old field */
-    UPDATE statistics SET s_counter = s_counter - 1 WHERE statistics_field_id = executions_field_old_id
-                                                      AND launch_id = cur_launch_id;
+    UPDATE statistics
+    SET s_counter = s_counter - 1
+    WHERE statistics_field_id = executions_field_old_id
+      AND launch_id = cur_launch_id;
     /* increment launch executions statistics for concrete field */
     INSERT INTO statistics (s_counter, statistics_field_id, launch_id)
     VALUES (1, executions_field_id, cur_launch_id)
     ON CONFLICT (statistics_field_id,
-                launch_id)
-                DO UPDATE SET s_counter = statistics.s_counter + 1;
+      launch_id)
+      DO UPDATE SET s_counter = statistics.s_counter + 1;
     RETURN new;
   END IF;
   RETURN new;
 END;
 $$
-LANGUAGE plpgsql;
+  LANGUAGE plpgsql;
 
 
 CREATE TRIGGER after_test_results_update
@@ -1195,21 +1212,28 @@ CREATE OR REPLACE FUNCTION increment_defect_statistics()
   RETURNS TRIGGER AS
 $$
 DECLARE
-  DECLARE defect_field          VARCHAR;
+  DECLARE
+  defect_field                  VARCHAR;
   DECLARE defect_field_id       BIGINT;
   DECLARE defect_field_total    VARCHAR;
   DECLARE defect_field_total_id BIGINT;
   DECLARE cur_launch_id         BIGINT;
 
 BEGIN
-  IF exists(SELECT 1 FROM test_item AS s
-                            JOIN test_item AS s2 ON s.item_id = s2.parent_id WHERE s.item_id = new.issue_id LIMIT 1)
+  IF exists(SELECT 1
+            FROM test_item AS s
+                   JOIN test_item AS s2 ON s.item_id = s2.parent_id
+            WHERE s.item_id = new.issue_id
+            LIMIT 1)
   THEN
     RETURN new;
   END IF;
 
-  IF exists(SELECT 1 FROM test_item WHERE item_id = new.issue_id
-                                      AND retry_of IS NOT NULL LIMIT 1)
+  IF exists(SELECT 1
+            FROM test_item
+            WHERE item_id = new.issue_id
+              AND retry_of IS NOT NULL
+            LIMIT 1)
   THEN
     RETURN new;
   END IF;
@@ -1240,35 +1264,35 @@ BEGIN
                            WHERE statistics_field.name = defect_field_total);
 
   INSERT INTO statistics (s_counter, statistics_field_id, item_id)
-        (SELECT 1, defect_field_id, item_id
-         FROM (SELECT item_id FROM test_item WHERE path @> (SELECT path FROM test_item WHERE item_id = new.issue_id)) as temp_bulk)
-    ON CONFLICT (statistics_field_id,
-                item_id)
-                DO UPDATE SET s_counter = statistics.s_counter + 1;
+    (SELECT 1, defect_field_id, item_id
+     FROM (SELECT item_id FROM test_item WHERE path @> (SELECT path FROM test_item WHERE item_id = new.issue_id)) as temp_bulk)
+  ON CONFLICT (statistics_field_id,
+    item_id)
+    DO UPDATE SET s_counter = statistics.s_counter + 1;
 
   INSERT INTO statistics (s_counter, statistics_field_id, item_id)
-        (SELECT 1, defect_field_total_id, item_id
-         FROM (SELECT item_id FROM test_item WHERE path @> (SELECT path FROM test_item WHERE item_id = new.issue_id)) as temp_bulk)
-    ON CONFLICT (statistics_field_id,
-                item_id)
-                DO UPDATE SET s_counter = statistics.s_counter + 1;
+    (SELECT 1, defect_field_total_id, item_id
+     FROM (SELECT item_id FROM test_item WHERE path @> (SELECT path FROM test_item WHERE item_id = new.issue_id)) as temp_bulk)
+  ON CONFLICT (statistics_field_id,
+    item_id)
+    DO UPDATE SET s_counter = statistics.s_counter + 1;
 
   /* increment launch defects statistics for concrete field */
   INSERT INTO statistics (s_counter, statistics_field_id, launch_id)
   VALUES (1, defect_field_id, cur_launch_id)
   ON CONFLICT (statistics_field_id,
-              launch_id)
-              DO UPDATE SET s_counter = statistics.s_counter + 1;
+    launch_id)
+    DO UPDATE SET s_counter = statistics.s_counter + 1;
   /* increment launch defects statistics for total field */
   INSERT INTO statistics (s_counter, statistics_field_id, launch_id)
   VALUES (1, defect_field_total_id, cur_launch_id)
   ON CONFLICT (statistics_field_id,
-              launch_id)
-              DO UPDATE SET s_counter = statistics.s_counter + 1;
+    launch_id)
+    DO UPDATE SET s_counter = statistics.s_counter + 1;
   RETURN new;
 END;
 $$
-LANGUAGE plpgsql;
+  LANGUAGE plpgsql;
 
 
 CREATE TRIGGER after_issue_insert
@@ -1282,7 +1306,7 @@ CREATE OR REPLACE FUNCTION update_defect_statistics()
   RETURNS TRIGGER AS
 $$
 DECLARE
-          cur_id                    BIGINT;
+  cur_id                            BIGINT;
   DECLARE defect_field              VARCHAR;
   DECLARE defect_field_total        VARCHAR;
   DECLARE defect_field_old_id       BIGINT;
@@ -1292,14 +1316,20 @@ DECLARE
   DECLARE cur_launch_id             BIGINT;
 
 BEGIN
-  IF exists(SELECT 1 FROM test_item AS s
-                            JOIN test_item AS s2 ON s.item_id = s2.parent_id WHERE s.item_id = new.issue_id LIMIT 1)
+  IF exists(SELECT 1
+            FROM test_item AS s
+                   JOIN test_item AS s2 ON s.item_id = s2.parent_id
+            WHERE s.item_id = new.issue_id
+            LIMIT 1)
   THEN
     RETURN new;
   END IF;
 
-  IF exists(SELECT 1 FROM test_item WHERE item_id = new.issue_id
-                                      AND retry_of IS NOT NULL LIMIT 1)
+  IF exists(SELECT 1
+            FROM test_item
+            WHERE item_id = new.issue_id
+              AND retry_of IS NOT NULL
+            LIMIT 1)
   THEN
     RETURN new;
   END IF;
@@ -1350,58 +1380,66 @@ BEGIN
                            WHERE statistics_field.name = defect_field_total);
 
   FOR cur_id IN
-  (SELECT item_id FROM test_item WHERE path @> (SELECT path FROM test_item WHERE item_id = new.issue_id))
+    (SELECT item_id FROM test_item WHERE path @> (SELECT path FROM test_item WHERE item_id = new.issue_id))
 
-  LOOP
-    /* decrease item defects statistics for concrete field */
-    UPDATE statistics SET s_counter = s_counter - 1 WHERE statistics_field_id = defect_field_old_id
-                                                      AND statistics.item_id = cur_id;
+    LOOP
+      /* decrease item defects statistics for concrete field */
+      UPDATE statistics
+      SET s_counter = s_counter - 1
+      WHERE statistics_field_id = defect_field_old_id
+        AND statistics.item_id = cur_id;
 
-    /* increment item defects statistics for concrete field */
-    INSERT INTO statistics (s_counter, statistics_field_id, item_id)
-    VALUES (1, defect_field_id, cur_id)
-    ON CONFLICT (statistics_field_id,
-                item_id)
-                DO UPDATE SET s_counter = statistics.s_counter + 1;
+      /* increment item defects statistics for concrete field */
+      INSERT INTO statistics (s_counter, statistics_field_id, item_id)
+      VALUES (1, defect_field_id, cur_id)
+      ON CONFLICT (statistics_field_id,
+        item_id)
+        DO UPDATE SET s_counter = statistics.s_counter + 1;
 
-    /* decrease item defects statistics for total field */
-    UPDATE statistics SET s_counter = s_counter - 1 WHERE statistics_field_id = defect_field_old_total_id
-                                                      AND item_id = cur_id;
+      /* decrease item defects statistics for total field */
+      UPDATE statistics
+      SET s_counter = s_counter - 1
+      WHERE statistics_field_id = defect_field_old_total_id
+        AND item_id = cur_id;
 
-    /* increment item defects statistics for total field */
-    INSERT INTO statistics (s_counter, statistics_field_id, item_id)
-    VALUES (1, defect_field_total_id, cur_id)
-    ON CONFLICT (statistics_field_id,
-                item_id)
-                DO UPDATE SET s_counter = statistics.s_counter + 1;
+      /* increment item defects statistics for total field */
+      INSERT INTO statistics (s_counter, statistics_field_id, item_id)
+      VALUES (1, defect_field_total_id, cur_id)
+      ON CONFLICT (statistics_field_id,
+        item_id)
+        DO UPDATE SET s_counter = statistics.s_counter + 1;
 
-  END LOOP;
+    END LOOP;
 
   /* decrease launch defects statistics for concrete field */
-  UPDATE statistics SET s_counter = s_counter - 1 WHERE statistics_field_id = defect_field_old_id
-                                                    AND launch_id = cur_launch_id;
+  UPDATE statistics
+  SET s_counter = s_counter - 1
+  WHERE statistics_field_id = defect_field_old_id
+    AND launch_id = cur_launch_id;
 
   /* increment launch defects statistics for concrete field */
   INSERT INTO statistics (s_counter, statistics_field_id, launch_id)
   VALUES (1, defect_field_id, cur_launch_id)
   ON CONFLICT (statistics_field_id,
-              launch_id)
-              DO UPDATE SET s_counter = statistics.s_counter + 1;
+    launch_id)
+    DO UPDATE SET s_counter = statistics.s_counter + 1;
 
   /* decrease launch defects statistics for total field */
-  UPDATE statistics SET s_counter = s_counter - 1 WHERE statistics_field_id = defect_field_old_total_id
-                                                    AND launch_id = cur_launch_id;
+  UPDATE statistics
+  SET s_counter = s_counter - 1
+  WHERE statistics_field_id = defect_field_old_total_id
+    AND launch_id = cur_launch_id;
 
   /* increment launch defects statistics for total field */
   INSERT INTO statistics (s_counter, statistics_field_id, launch_id)
   VALUES (1, defect_field_total_id, cur_launch_id)
   ON CONFLICT (statistics_field_id,
-              launch_id)
-              DO UPDATE SET s_counter = statistics.s_counter + 1;
+    launch_id)
+    DO UPDATE SET s_counter = statistics.s_counter + 1;
   RETURN new;
 END;
 $$
-LANGUAGE plpgsql;
+  LANGUAGE plpgsql;
 
 CREATE TRIGGER after_issue_update
   AFTER UPDATE
@@ -1413,7 +1451,7 @@ CREATE OR REPLACE FUNCTION delete_defect_statistics()
   RETURNS TRIGGER AS
 $$
 DECLARE
-          cur_id                    BIGINT;
+  cur_id                            BIGINT;
   DECLARE cur_launch_id             BIGINT;
   DECLARE defect_field_old_id       BIGINT;
   DECLARE defect_field_old_total_id BIGINT;
@@ -1443,28 +1481,36 @@ BEGIN
                                        WHERE issue_type.id = old.issue_type));
 
   FOR cur_id IN
-  (SELECT item_id FROM test_item WHERE path @> (SELECT path FROM test_item WHERE item_id = old.issue_id))
+    (SELECT item_id FROM test_item WHERE path @> (SELECT path FROM test_item WHERE item_id = old.issue_id))
 
-  LOOP
-    /* decrease item defects statistics for concrete field */
-    UPDATE statistics SET s_counter = s_counter - 1 WHERE statistics_field_id = defect_field_old_id
-                                                      AND statistics.item_id = cur_id;
+    LOOP
+      /* decrease item defects statistics for concrete field */
+      UPDATE statistics
+      SET s_counter = s_counter - 1
+      WHERE statistics_field_id = defect_field_old_id
+        AND statistics.item_id = cur_id;
 
-    /* decrease item defects statistics for total field */
-    UPDATE statistics SET s_counter = s_counter - 1 WHERE statistics_field_id = defect_field_old_total_id
-                                                      AND item_id = cur_id;
-  END LOOP;
+      /* decrease item defects statistics for total field */
+      UPDATE statistics
+      SET s_counter = s_counter - 1
+      WHERE statistics_field_id = defect_field_old_total_id
+        AND item_id = cur_id;
+    END LOOP;
 
   /* decrease launch defects statistics for concrete field */
-  UPDATE statistics SET s_counter = s_counter - 1 WHERE statistics_field_id = defect_field_old_id
-                                                    AND launch_id = cur_launch_id;
+  UPDATE statistics
+  SET s_counter = s_counter - 1
+  WHERE statistics_field_id = defect_field_old_id
+    AND launch_id = cur_launch_id;
   /* decrease launch defects statistics for total field */
-  UPDATE statistics SET s_counter = s_counter - 1 WHERE statistics_field_id = defect_field_old_total_id
-                                                    AND launch_id = cur_launch_id;
+  UPDATE statistics
+  SET s_counter = s_counter - 1
+  WHERE statistics_field_id = defect_field_old_total_id
+    AND launch_id = cur_launch_id;
   RETURN old;
 END;
 $$
-LANGUAGE plpgsql;
+  LANGUAGE plpgsql;
 
 CREATE TRIGGER before_issue_delete
   BEFORE DELETE
@@ -1477,7 +1523,7 @@ CREATE OR REPLACE FUNCTION decrease_statistics()
   RETURNS TRIGGER AS
 $$
 DECLARE
-          cur_launch_id         BIGINT;
+  cur_launch_id                 BIGINT;
   DECLARE cur_id                BIGINT;
   DECLARE cur_statistics_fields RECORD;
 BEGIN
@@ -1489,37 +1535,40 @@ BEGIN
     RETURN old;
   END IF;
 
-  IF exists(SELECT 1 FROM test_item WHERE item_id = old.result_id
-                                      AND retry_of IS NOT NULL LIMIT 1)
+  IF exists(SELECT 1
+            FROM test_item
+            WHERE item_id = old.result_id
+              AND retry_of IS NOT NULL
+            LIMIT 1)
   THEN
     RETURN old;
   END IF;
 
   FOR cur_statistics_fields IN (SELECT statistics_field_id, s_counter FROM statistics WHERE item_id = old.result_id)
-  LOOP
-    UPDATE statistics
-    SET s_counter = s_counter - cur_statistics_fields.s_counter
-    WHERE statistics.statistics_field_id = cur_statistics_fields.statistics_field_id
-      AND launch_id = cur_launch_id;
-  END LOOP;
-
-  FOR cur_id IN
-  (SELECT item_id FROM test_item WHERE path @> (SELECT path FROM test_item WHERE item_id = old.result_id))
-
-  LOOP
-    FOR cur_statistics_fields IN (SELECT statistics_field_id, s_counter FROM statistics WHERE item_id = old.result_id)
     LOOP
       UPDATE statistics
       SET s_counter = s_counter - cur_statistics_fields.s_counter
       WHERE statistics.statistics_field_id = cur_statistics_fields.statistics_field_id
-        AND item_id = cur_id;
+        AND launch_id = cur_launch_id;
     END LOOP;
-  END LOOP;
+
+  FOR cur_id IN
+    (SELECT item_id FROM test_item WHERE path @> (SELECT path FROM test_item WHERE item_id = old.result_id))
+
+    LOOP
+      FOR cur_statistics_fields IN (SELECT statistics_field_id, s_counter FROM statistics WHERE item_id = old.result_id)
+        LOOP
+          UPDATE statistics
+          SET s_counter = s_counter - cur_statistics_fields.s_counter
+          WHERE statistics.statistics_field_id = cur_statistics_fields.statistics_field_id
+            AND item_id = cur_id;
+        END LOOP;
+    END LOOP;
 
   RETURN old;
 END;
 $$
-LANGUAGE plpgsql;
+  LANGUAGE plpgsql;
 
 CREATE TRIGGER before_item_delete
   BEFORE DELETE
