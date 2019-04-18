@@ -2,6 +2,7 @@ version: '2'
 services:
   postgres:
     image: postgres:10.1-alpine
+    command: -c shared_buffers=2048MB -c work_mem=16MB -c min_wal_size=256MB -c max_wal_size=2048MB -c checkpoint_completion_target=0.85
     environment:
       POSTGRES_USER: rpuser
       POSTGRES_PASSWORD: rppass
