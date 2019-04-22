@@ -451,6 +451,21 @@ CREATE INDEX path_idx
   ON test_item
     USING btree (path);
 
+CREATE TABLE pattern_template
+(
+  id         BIGSERIAL CONSTRAINT pattern_template_pk PRIMARY KEY,
+  name       VARCHAR                        NOT NULL,
+  value      VARCHAR                        NOT NULL,
+  type       VARCHAR                        NOT NULL,
+  project_id BIGINT REFERENCES project (id) NOT NULL
+);
+
+CREATE TABLE pattern_template_test_item
+(
+  pattern_id BIGINT REFERENCES pattern_template (id) NOT NULL,
+  item_id    BIGINT REFERENCES test_item (item_id)   NOT NULL
+);
+
 CREATE TABLE parameter
 (
   item_id BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE,
