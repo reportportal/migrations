@@ -26,6 +26,7 @@ CREATE TYPE SORT_DIRECTION_ENUM AS ENUM ('ASC', 'DESC');
 
 CREATE EXTENSION IF NOT EXISTS ltree;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 CREATE TABLE server_settings
 (
@@ -527,6 +528,8 @@ CREATE TABLE log
 
 CREATE INDEX log_ti_idx
   ON log (item_id);
+CREATE INDEX log_message_trgm_idx
+  ON log USING GIN(log_message gin_trgm_ops);
 
 CREATE TABLE activity
 (
