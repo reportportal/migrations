@@ -457,6 +457,7 @@ CREATE TABLE pattern_template
   name       VARCHAR                        NOT NULL,
   value      VARCHAR                        NOT NULL,
   type       VARCHAR                        NOT NULL,
+  enabled    BOOLEAN                        NOT NULL,
   project_id BIGINT REFERENCES project (id) NOT NULL
 );
 
