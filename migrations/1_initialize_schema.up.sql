@@ -1092,7 +1092,9 @@ BEGIN
   IF exists(SELECT 1
             FROM test_item
             WHERE test_item.parent_id = new.result_id
-               OR (test_item.item_id = new.result_id AND test_item.type = 'SUITE' :: TEST_ITEM_TYPE_ENUM)
+               OR (test_item.item_id = new.result_id AND
+                   (test_item.type != 'TEST' :: TEST_ITEM_TYPE_ENUM AND
+                    test_item.type != 'STEP' :: TEST_ITEM_TYPE_ENUM))
             LIMIT 1)
   THEN
     RETURN new;
