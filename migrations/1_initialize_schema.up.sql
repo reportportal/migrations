@@ -498,6 +498,7 @@ CREATE INDEX att_item_idx
 
 CREATE TABLE log (
   id            BIGSERIAL CONSTRAINT log_pk PRIMARY KEY,
+  uuid          VARCHAR,
   log_time      TIMESTAMP                                                NOT NULL,
   log_message   TEXT                                                     NOT NULL,
   item_id       BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE  NOT NULL,
