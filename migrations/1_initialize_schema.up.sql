@@ -467,7 +467,7 @@ CREATE TABLE pattern_template_test_item
 (
   pattern_id BIGINT REFERENCES pattern_template (id) ON DELETE CASCADE NOT NULL,
   item_id    BIGINT REFERENCES test_item (item_id)   ON DELETE CASCADE NOT NULL,
-  CONSTRAINT pattern_item_unq PRIMARY KEY (pattern_id, item_id),
+  CONSTRAINT pattern_item_unq PRIMARY KEY (pattern_id, item_id)
 );
 
 CREATE INDEX pattern_item_pattern_id_idx
