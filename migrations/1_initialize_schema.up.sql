@@ -464,8 +464,8 @@ CREATE TABLE pattern_template
 
 CREATE TABLE pattern_template_test_item
 (
-  pattern_id BIGINT REFERENCES pattern_template (id) NOT NULL ON DELETE CASCADE,
-  item_id    BIGINT REFERENCES test_item (item_id)   NOT NULL ON DELETE CASCADE
+  pattern_id BIGINT REFERENCES pattern_template (id) ON DELETE CASCADE NOT NULL,
+  item_id    BIGINT REFERENCES test_item (item_id)   ON DELETE CASCADE NOT NULL
 );
 
 CREATE INDEX pattern_item_pattern_id_idx
