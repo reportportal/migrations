@@ -459,13 +459,15 @@ CREATE TABLE pattern_template
   value      VARCHAR                        NOT NULL,
   type       VARCHAR                        NOT NULL,
   enabled    BOOLEAN                        NOT NULL,
-  project_id BIGINT REFERENCES project (id) NOT NULL
+  project_id BIGINT REFERENCES project (id) NOT NULL,
+  CONSTRAINT unq_name_projectId UNIQUE (name, project_id)
 );
 
 CREATE TABLE pattern_template_test_item
 (
   pattern_id BIGINT REFERENCES pattern_template (id) ON DELETE CASCADE NOT NULL,
-  item_id    BIGINT REFERENCES test_item (item_id)   ON DELETE CASCADE NOT NULL
+  item_id    BIGINT REFERENCES test_item (item_id)   ON DELETE CASCADE NOT NULL,
+  CONSTRAINT pattern_item_unq PRIMARY KEY (pattern_id, item_id),
 );
 
 CREATE INDEX pattern_item_pattern_id_idx
