@@ -409,6 +409,8 @@ CREATE INDEX launch_project_idx
   ON launch (project_id);
 CREATE INDEX launch_user_idx
   ON launch (user_id);
+CREATE INDEX launch_uuid_idx
+  ON launch (uuid);
 
 CREATE TABLE test_item
 (
@@ -435,6 +437,8 @@ CREATE INDEX ti_launch_idx
   ON test_item (launch_id NULLS LAST);
 CREATE INDEX ti_retry_of_idx
   ON test_item (retry_of NULLS LAST);
+CREATE INDEX ti_uuid_idx
+  ON test_item (uuid NULLS LAST);
 
 CREATE TABLE test_item_results
 (
@@ -509,6 +513,8 @@ CREATE TABLE log (
 
 CREATE INDEX log_ti_idx
   ON log (item_id);
+CREATE INDEX log_uuid_idx
+  ON log (uuid);
 
 CREATE TABLE activity
 (
