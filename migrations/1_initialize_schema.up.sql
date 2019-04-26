@@ -26,6 +26,7 @@ CREATE TYPE SORT_DIRECTION_ENUM AS ENUM ('ASC', 'DESC');
 
 CREATE EXTENSION IF NOT EXISTS ltree;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 CREATE TABLE server_settings
 (
@@ -451,6 +452,29 @@ CREATE INDEX path_idx
   ON test_item
     USING btree (path);
 
+CREATE TABLE pattern_template
+(
+  id         BIGSERIAL CONSTRAINT pattern_template_pk PRIMARY KEY,
+  name       VARCHAR                        NOT NULL,
+  value      VARCHAR                        NOT NULL,
+  type       VARCHAR                        NOT NULL,
+  enabled    BOOLEAN                        NOT NULL,
+  project_id BIGINT REFERENCES project (id) NOT NULL,
+  CONSTRAINT unq_name_projectId UNIQUE (name, project_id)
+);
+
+CREATE TABLE pattern_template_test_item
+(
+  pattern_id BIGINT REFERENCES pattern_template (id) ON DELETE CASCADE NOT NULL,
+  item_id    BIGINT REFERENCES test_item (item_id)   ON DELETE CASCADE NOT NULL,
+  CONSTRAINT pattern_item_unq PRIMARY KEY (pattern_id, item_id)
+);
+
+CREATE INDEX pattern_item_pattern_id_idx
+  ON pattern_template_test_item (pattern_id);
+CREATE INDEX pattern_item_item_id_idx
+  ON pattern_template_test_item (item_id);
+
 CREATE TABLE parameter
 (
   item_id BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE,
@@ -511,6 +535,8 @@ CREATE TABLE log
 
 CREATE INDEX log_ti_idx
   ON log (item_id);
+CREATE INDEX log_message_trgm_idx
+  ON log USING GIN(log_message gin_trgm_ops);
 
 CREATE TABLE activity
 (
