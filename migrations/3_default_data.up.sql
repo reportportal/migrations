@@ -84,7 +84,7 @@ BEGIN
     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (9, FALSE, defaultproject), (9, FALSE, superadminproject);
     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (10, FALSE, defaultproject), (10, FALSE, superadminproject);
     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (11, 'LAUNCH_NAME', defaultproject), (11, 'LAUNCH_NAME', superadminproject);
-    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (12, 'true', defaultproject), (12, 'true', superadminproject);
+    INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (12, 'false', defaultproject), (12, 'false', superadminproject);
     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (13, 'reportportal@example.com', defaultproject), (13, 'reportportal@example.com', superadminproject);
     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (14, 'false', defaultproject), (14, 'false', superadminproject);
 
