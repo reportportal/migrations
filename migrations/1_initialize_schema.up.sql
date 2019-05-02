@@ -410,11 +410,14 @@ CREATE INDEX launch_project_idx
   ON launch (project_id);
 CREATE INDEX launch_user_idx
   ON launch (user_id);
+CREATE INDEX launch_uuid_idx
+  ON launch (uuid);
 
 CREATE TABLE test_item
 (
   item_id       BIGSERIAL
     CONSTRAINT test_item_pk PRIMARY KEY,
+  uuid          VARCHAR,
   name          VARCHAR(256),
   type          TEST_ITEM_TYPE_ENUM NOT NULL,
   start_time    TIMESTAMP           NOT NULL,
@@ -435,6 +438,8 @@ CREATE INDEX ti_launch_idx
   ON test_item (launch_id NULLS LAST);
 CREATE INDEX ti_retry_of_idx
   ON test_item (retry_of NULLS LAST);
+CREATE INDEX ti_uuid_idx
+  ON test_item (uuid NULLS LAST);
 
 CREATE TABLE test_item_results
 (
@@ -525,6 +530,7 @@ CREATE TABLE log
 (
   id            BIGSERIAL
     CONSTRAINT log_pk PRIMARY KEY,
+  uuid          VARCHAR,
   log_time      TIMESTAMP                                               NOT NULL,
   log_message   TEXT                                                    NOT NULL,
   item_id       BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE NOT NULL,
@@ -537,6 +543,8 @@ CREATE INDEX log_ti_idx
   ON log (item_id);
 CREATE INDEX log_message_trgm_idx
   ON log USING GIN(log_message gin_trgm_ops);
+CREATE INDEX log_uuid_idx
+  ON log (uuid);
 
 CREATE TABLE activity
 (
