@@ -226,6 +226,7 @@ CREATE TABLE integration
 (
   id            SERIAL
     CONSTRAINT integration_pk PRIMARY KEY,
+  name          VARCHAR,
   project_id    BIGINT REFERENCES project (id) ON DELETE CASCADE,
   type          INTEGER REFERENCES integration_type (id) ON DELETE CASCADE,
   enabled       BOOLEAN                 NOT NULL,
