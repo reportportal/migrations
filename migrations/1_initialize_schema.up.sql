@@ -465,7 +465,7 @@ CREATE TABLE pattern_template
   value      VARCHAR                        NOT NULL,
   type       VARCHAR                        NOT NULL,
   enabled    BOOLEAN                        NOT NULL,
-  project_id BIGINT REFERENCES project (id) NOT NULL,
+  project_id BIGINT REFERENCES project (id) ON DELETE CASCADE NOT NULL,
   CONSTRAINT unq_name_projectId UNIQUE (name, project_id)
 );
 
