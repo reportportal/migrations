@@ -771,6 +771,10 @@ DECLARE targettestitemcursor CURSOR (id BIGINT, lvl INT) FOR
 BEGIN
   maxlevel := (SELECT MAX(nlevel(path)) FROM test_item WHERE launch_id = launchid);
 
+  IF (maxlevel ISNULL) THEN
+    RETURN 0;
+  END IF;
+
   FOR i IN 1..maxlevel
     LOOP
 
