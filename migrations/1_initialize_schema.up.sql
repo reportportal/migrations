@@ -751,7 +751,7 @@ DECLARE targettestitemcursor CURSOR (id BIGINT, lvl INT) FOR
   DECLARE parentitempath       LTREE;
   DECLARE concatenated_descr   TEXT;
 BEGIN
-  maxlevel := (SELECT MAX(nlevel(path)) FROM test_item WHERE launch_id = 3);
+  maxlevel := (SELECT MAX(nlevel(path)) FROM test_item WHERE launch_id = launchid);
 
   FOR i IN 1..maxlevel
   LOOP
