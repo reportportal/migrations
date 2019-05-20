@@ -372,6 +372,7 @@ CREATE TABLE dashboard_widget
   widget_height     INT     NOT NULL,
   widget_position_x INT     NOT NULL,
   widget_position_y INT     NOT NULL,
+  is_created_on     BOOLEAN NOT NULL DEFAULT FALSE,
   CONSTRAINT dashboard_widget_pk PRIMARY KEY (dashboard_id, widget_id),
   CONSTRAINT widget_on_dashboard_unq UNIQUE (dashboard_id, widget_name)
 );
