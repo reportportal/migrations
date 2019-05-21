@@ -368,13 +368,14 @@ CREATE TABLE dashboard_widget
   dashboard_id      BIGINT REFERENCES dashboard (id) ON DELETE CASCADE,
   widget_id         BIGINT REFERENCES widget (id) ON DELETE CASCADE,
   widget_name       VARCHAR NOT NULL,
+  widget_owner      VARCHAR NOT NULL,
   widget_width      INT     NOT NULL,
   widget_height     INT     NOT NULL,
   widget_position_x INT     NOT NULL,
   widget_position_y INT     NOT NULL,
   is_created_on     BOOLEAN NOT NULL DEFAULT FALSE,
   CONSTRAINT dashboard_widget_pk PRIMARY KEY (dashboard_id, widget_id),
-  CONSTRAINT widget_on_dashboard_unq UNIQUE (dashboard_id, widget_name)
+  CONSTRAINT widget_on_dashboard_unq UNIQUE (dashboard_id, widget_name, widget_owner)
 );
 
 CREATE TABLE widget_filter
