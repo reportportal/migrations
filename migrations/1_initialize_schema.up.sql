@@ -954,6 +954,7 @@ DECLARE
   newitemlaunchid        BIGINT;
   newitemuniqueid        VARCHAR;
   newitemid              BIGINT;
+  newitempathlevel       INTEGER;
 BEGIN
 
   IF itemid ISNULL
@@ -961,15 +962,16 @@ BEGIN
     RETURN 1;
   END IF;
 
-  SELECT item_id, start_time, launch_id, unique_id
+  SELECT item_id, start_time, launch_id, unique_id, nlevel(path)
   FROM test_item
-  WHERE item_id = itemid INTO newitemid, newitemstarttime, newitemlaunchid, newitemuniqueid;
+  WHERE item_id = itemid INTO newitemid, newitemstarttime, newitemlaunchid, newitemuniqueid, newitempathlevel;
 
   SELECT item_id, start_time
   FROM test_item
   WHERE launch_id = newitemlaunchid
     AND unique_id = newitemuniqueid
     AND item_id != newitemid
+    AND nlevel(path) = newitempathlevel
   ORDER BY start_time DESC, item_id DESC
   LIMIT 1 INTO itemidwithmaxstarttime, maxstarttime;
 
