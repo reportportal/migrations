@@ -1065,6 +1065,7 @@ BEGIN
                                  AND project_id = new.project_id
                                  AND mode = 'DEFAULT'
                                  AND status NOT IN ('INTERRUPTED', 'IN_PROGRESS', 'STOPPED')
+                               ORDER BY launch.start_time DESC
                                LIMIT 5) tmp);
   new.approximate_duration = CASE
                                WHEN approximateduration IS NULL
