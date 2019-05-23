@@ -368,12 +368,14 @@ CREATE TABLE dashboard_widget
   dashboard_id      BIGINT REFERENCES dashboard (id) ON DELETE CASCADE,
   widget_id         BIGINT REFERENCES widget (id) ON DELETE CASCADE,
   widget_name       VARCHAR NOT NULL,
+  widget_owner      VARCHAR NOT NULL,
   widget_width      INT     NOT NULL,
   widget_height     INT     NOT NULL,
   widget_position_x INT     NOT NULL,
   widget_position_y INT     NOT NULL,
+  is_created_on     BOOLEAN NOT NULL DEFAULT FALSE,
   CONSTRAINT dashboard_widget_pk PRIMARY KEY (dashboard_id, widget_id),
-  CONSTRAINT widget_on_dashboard_unq UNIQUE (dashboard_id, widget_name)
+  CONSTRAINT widget_on_dashboard_unq UNIQUE (dashboard_id, widget_name, widget_owner)
 );
 
 CREATE TABLE widget_filter
@@ -726,34 +728,16 @@ CREATE TABLE acl_entry
 
 ------- Functions and triggers -----------------------
 
-CREATE OR REPLACE FUNCTION has_child(path_value LTREE)
-  RETURNS BOOLEAN
-AS
-$$
-DECLARE
-  haschilds BOOLEAN;
-BEGIN
-  SELECT EXISTS(SELECT 1
-                FROM test_item t
-                WHERE t.path <@ path_value
-                  AND t.path != path_value
-                LIMIT 1) INTO haschilds;
-
-  RETURN haschilds;
-END;
-$$
-  LANGUAGE plpgsql;
-
 CREATE OR REPLACE FUNCTION merge_launch(launchid BIGINT)
   RETURNS INTEGER
 AS
 $$
 DECLARE targettestitemcursor CURSOR (id BIGINT, lvl INT) FOR
   SELECT DISTINCT ON (unique_id) unique_id, item_id, path AS path_value
-  FROM test_item
-  WHERE test_item.launch_id = id
-    AND nlevel(test_item.path) = lvl
-    AND has_child(test_item.path);
+  FROM test_item parent
+  WHERE parent.launch_id = id
+    AND nlevel(parent.path) = lvl
+    AND (parent.type = 'SUITE' OR (SELECT EXISTS(SELECT 1 FROM test_item t WHERE t.parent_id = parent.item_id LIMIT 1)));
   DECLARE mergingtestitemcursor CURSOR (uniqueid VARCHAR, lvl INT, launchid BIGINT) FOR
   SELECT item_id, path AS path_value, has_retries
   FROM test_item
@@ -761,7 +745,7 @@ DECLARE targettestitemcursor CURSOR (id BIGINT, lvl INT) FOR
     AND nlevel(test_item.path) = lvl
     AND test_item.launch_id = launchid;
   DECLARE
-  targettestitemfield          RECORD;
+          targettestitemfield  RECORD;
   DECLARE mergingtestitemfield RECORD;
   DECLARE maxlevel             BIGINT;
   DECLARE firstitemid          VARCHAR;
@@ -771,110 +755,115 @@ DECLARE targettestitemcursor CURSOR (id BIGINT, lvl INT) FOR
 BEGIN
   maxlevel := (SELECT MAX(nlevel(path)) FROM test_item WHERE launch_id = launchid);
 
+  IF (maxlevel ISNULL) THEN
+    RETURN 0;
+  END IF;
+
   FOR i IN 1..maxlevel
+  LOOP
+
+    OPEN targettestitemcursor(launchid, i);
+
     LOOP
+      FETCH targettestitemcursor INTO targettestitemfield;
 
-      OPEN targettestitemcursor(launchid, i);
+      EXIT WHEN NOT found;
 
-      LOOP
-        FETCH targettestitemcursor INTO targettestitemfield;
+      firstitemid := targettestitemfield.unique_id;
+      parentitemid := targettestitemfield.item_id;
+      parentitempath := targettestitemfield.path_value;
 
-        EXIT WHEN NOT found;
+      EXIT WHEN firstitemid ISNULL;
 
-        firstitemid := targettestitemfield.unique_id;
-        parentitemid := targettestitemfield.item_id;
-        parentitempath := targettestitemfield.path_value;
+      SELECT string_agg(description, chr(10)) INTO concatenated_descr
+      FROM test_item
+      WHERE test_item.unique_id = firstitemid
+        AND nlevel(test_item.path) = i
+        AND test_item.launch_id = launchid;
 
-        EXIT WHEN firstitemid ISNULL;
+      UPDATE test_item SET description = concatenated_descr WHERE test_item.item_id = parentitemid;
 
-        SELECT string_agg(description, chr(10)) INTO concatenated_descr
-        FROM test_item
-        WHERE test_item.unique_id = firstitemid
-          AND nlevel(test_item.path) = i
-          AND test_item.launch_id = launchid;
-
-        UPDATE test_item SET description = concatenated_descr WHERE test_item.item_id = parentitemid;
-
-        UPDATE test_item
-        SET start_time = (SELECT min(start_time)
-                          FROM test_item
-                          WHERE test_item.unique_id = firstitemid
-                            AND nlevel(test_item.path) = i
-                            AND test_item.launch_id = launchid)
-        WHERE test_item.item_id = parentitemid;
-
-        UPDATE test_item_results
-        SET end_time = (SELECT max(end_time)
+      UPDATE test_item
+      SET start_time = (SELECT min(start_time)
                         FROM test_item
-                               JOIN test_item_results result ON test_item.item_id = result.result_id
                         WHERE test_item.unique_id = firstitemid
                           AND nlevel(test_item.path) = i
                           AND test_item.launch_id = launchid)
-        WHERE test_item_results.result_id = parentitemid;
+      WHERE test_item.item_id = parentitemid;
 
-        INSERT INTO statistics (statistics_field_id, item_id, launch_id, s_counter)
-        SELECT statistics_field_id, parentitemid, NULL, sum(s_counter)
-        FROM statistics
-               JOIN test_item ti ON statistics.item_id = ti.item_id
-        WHERE ti.unique_id = firstitemid
-          AND ti.launch_id = launchid
-          AND nlevel(ti.path) = i
-        GROUP BY statistics_field_id
-        ON CONFLICT ON CONSTRAINT unique_stats_item DO UPDATE
-          SET s_counter = excluded.s_counter;
+      UPDATE test_item_results
+      SET end_time = (SELECT max(end_time)
+                      FROM test_item
+                             JOIN test_item_results result ON test_item.item_id = result.result_id
+                      WHERE test_item.unique_id = firstitemid
+                        AND nlevel(test_item.path) = i
+                        AND test_item.launch_id = launchid)
+      WHERE test_item_results.result_id = parentitemid;
 
-        IF exists(SELECT 1
-                  FROM test_item_results
-                         JOIN test_item t ON test_item_results.result_id = t.item_id
-                  WHERE test_item_results.status != 'PASSED'
-                    AND t.unique_id = firstitemid
-                    AND nlevel(t.path) = i
-                    AND t.launch_id = launchid
-                  LIMIT 1)
+      INSERT INTO statistics (statistics_field_id, item_id, launch_id, s_counter)
+      SELECT statistics_field_id, parentitemid, NULL, sum(s_counter)
+      FROM statistics
+             JOIN test_item ti ON statistics.item_id = ti.item_id
+      WHERE ti.unique_id = firstitemid
+        AND ti.launch_id = launchid
+        AND nlevel(ti.path) = i
+      GROUP BY statistics_field_id
+      ON CONFLICT ON CONSTRAINT unique_stats_item DO UPDATE
+        SET s_counter = excluded.s_counter;
+
+      IF exists(SELECT 1
+                FROM test_item_results
+                       JOIN test_item t ON test_item_results.result_id = t.item_id
+                WHERE test_item_results.status != 'PASSED'
+                  AND t.unique_id = firstitemid
+                  AND nlevel(t.path) = i
+                  AND t.launch_id = launchid
+                LIMIT 1)
+      THEN
+        UPDATE test_item_results SET status = 'FAILED' WHERE test_item_results.result_id = parentitemid;
+      END IF;
+
+      OPEN mergingtestitemcursor(targettestitemfield.unique_id, i, launchid);
+
+      LOOP
+
+        FETCH mergingtestitemcursor INTO mergingtestitemfield;
+
+        EXIT WHEN NOT found;
+
+        IF (SELECT EXISTS(SELECT 1
+                          FROM test_item t
+                          WHERE t.parent_id = mergingtestitemfield.item_id
+                             OR (t.item_id = mergingtestitemfield.item_id AND t.type = 'SUITE')
+                          LIMIT 1))
         THEN
-          UPDATE test_item_results SET status = 'FAILED' WHERE test_item_results.result_id = parentitemid;
+          UPDATE test_item
+          SET parent_id = parentitemid,
+              path      = text2ltree(concat(parentitempath :: TEXT, '.', test_item.item_id :: TEXT))
+          WHERE test_item.parent_id = mergingtestitemfield.item_id
+            AND nlevel(test_item.path) = i + 1
+            AND test_item.retry_of IS NULL;
+          DELETE FROM test_item WHERE test_item.path = mergingtestitemfield.path_value
+                                  AND test_item.item_id != parentitemid;
+
         END IF;
 
-        OPEN mergingtestitemcursor(targettestitemfield.unique_id, i, launchid);
-
-        LOOP
-
-          FETCH mergingtestitemcursor INTO mergingtestitemfield;
-
-          EXIT WHEN NOT found;
-
-          IF has_child(mergingtestitemfield.path_value)
-          THEN
-            UPDATE test_item
-            SET parent_id = parentitemid,
-                path      = text2ltree(concat(parentitempath :: TEXT, '.', test_item.item_id :: TEXT))
-            WHERE test_item.path <@ mergingtestitemfield.path_value
-              AND test_item.path != mergingtestitemfield.path_value
-              AND nlevel(test_item.path) = i + 1
-              AND test_item.retry_of IS NULL;
-            DELETE
-            FROM test_item
-            WHERE test_item.path = mergingtestitemfield.path_value
-              AND test_item.item_id != parentitemid;
-
-          END IF;
-
-          IF mergingtestitemfield.has_retries
-          THEN
-            UPDATE test_item
-            SET path = text2ltree(concat(mergingtestitemfield.path_value :: TEXT, '.', test_item.item_id :: TEXT))
-            WHERE test_item.retry_of = mergingtestitemfield.item_id;
-          END IF;
-
-        END LOOP;
-
-        CLOSE mergingtestitemcursor;
+        IF mergingtestitemfield.has_retries
+        THEN
+          UPDATE test_item
+          SET path = text2ltree(concat(mergingtestitemfield.path_value :: TEXT, '.', test_item.item_id :: TEXT))
+          WHERE test_item.retry_of = mergingtestitemfield.item_id;
+        END IF;
 
       END LOOP;
 
-      CLOSE targettestitemcursor;
+      CLOSE mergingtestitemcursor;
 
     END LOOP;
+
+    CLOSE targettestitemcursor;
+
+  END LOOP;
 
 
   INSERT INTO statistics (statistics_field_id, launch_id, s_counter)
@@ -890,7 +879,7 @@ BEGIN
   RETURN 0;
 END;
 $$
-  LANGUAGE plpgsql;
+LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION retries_statistics(cur_launch_id BIGINT)
   RETURNS INTEGER AS
@@ -965,6 +954,7 @@ DECLARE
   newitemlaunchid        BIGINT;
   newitemuniqueid        VARCHAR;
   newitemid              BIGINT;
+  newitempathlevel       INTEGER;
 BEGIN
 
   IF itemid ISNULL
@@ -972,15 +962,16 @@ BEGIN
     RETURN 1;
   END IF;
 
-  SELECT item_id, start_time, launch_id, unique_id
+  SELECT item_id, start_time, launch_id, unique_id, nlevel(path)
   FROM test_item
-  WHERE item_id = itemid INTO newitemid, newitemstarttime, newitemlaunchid, newitemuniqueid;
+  WHERE item_id = itemid INTO newitemid, newitemstarttime, newitemlaunchid, newitemuniqueid, newitempathlevel;
 
   SELECT item_id, start_time
   FROM test_item
   WHERE launch_id = newitemlaunchid
     AND unique_id = newitemuniqueid
     AND item_id != newitemid
+    AND nlevel(path) = newitempathlevel
   ORDER BY start_time DESC, item_id DESC
   LIMIT 1 INTO itemidwithmaxstarttime, maxstarttime;
 
