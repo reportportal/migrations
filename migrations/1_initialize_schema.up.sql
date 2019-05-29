@@ -536,10 +536,12 @@ CREATE TABLE log
   uuid          VARCHAR,
   log_time      TIMESTAMP                                               NOT NULL,
   log_message   TEXT                                                    NOT NULL,
-  item_id       BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE NOT NULL,
+  item_id       BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE,
+  launch_id     BIGINT REFERENCES launch(id) ON DELETE CASCADE,
   last_modified TIMESTAMP                                               NOT NULL,
   log_level     INTEGER                                                 NOT NULL,
-  attachment_id BIGINT                                                  REFERENCES attachment (id) ON DELETE SET NULL
+  attachment_id BIGINT                                                  REFERENCES attachment (id) ON DELETE SET NULL,
+  CHECK ((item_id IS NOT NULL AND launch_id IS NULL) OR (item_id IS NULL AND launch_id IS NOT NULL))
 );
 
 CREATE INDEX log_ti_idx
