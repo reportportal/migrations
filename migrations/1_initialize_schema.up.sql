@@ -369,6 +369,7 @@ CREATE TABLE dashboard_widget
   widget_id         BIGINT REFERENCES widget (id) ON DELETE CASCADE,
   widget_name       VARCHAR NOT NULL,
   widget_owner      VARCHAR NOT NULL,
+  widget_type       VARCHAR NOT NULL,
   widget_width      INT     NOT NULL,
   widget_height     INT     NOT NULL,
   widget_position_x INT     NOT NULL,
