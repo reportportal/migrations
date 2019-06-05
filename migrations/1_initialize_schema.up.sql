@@ -954,6 +954,7 @@ DECLARE
   newitemlaunchid        BIGINT;
   newitemuniqueid        VARCHAR;
   newitemid              BIGINT;
+  newitemname            VARCHAR;
   newitempathlevel       INTEGER;
 BEGIN
 
@@ -962,14 +963,15 @@ BEGIN
     RETURN 1;
   END IF;
 
-  SELECT item_id, start_time, launch_id, unique_id, nlevel(path)
+  SELECT item_id, name, start_time, launch_id, unique_id, nlevel(path)
   FROM test_item
-  WHERE item_id = itemid INTO newitemid, newitemstarttime, newitemlaunchid, newitemuniqueid, newitempathlevel;
+  WHERE item_id = itemid INTO newitemid, newitemname, newitemstarttime, newitemlaunchid, newitemuniqueid, newitempathlevel;
 
   SELECT item_id, start_time
   FROM test_item
   WHERE launch_id = newitemlaunchid
     AND unique_id = newitemuniqueid
+    AND name = newitemname
     AND item_id != newitemid
     AND nlevel(path) = newitempathlevel
   ORDER BY start_time DESC, item_id DESC
@@ -996,6 +998,7 @@ BEGIN
                         WHERE retries_parent.launch_id = newitemlaunchid
                           AND retries_parent.unique_id = newitemuniqueid)
       OR (retry_of IS NULL AND launch_id = newitemlaunchid))
+      AND name = newitemname
       AND item_id != newitemid;
 
     UPDATE test_item
