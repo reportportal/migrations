@@ -421,7 +421,7 @@ CREATE TABLE test_item
   item_id       BIGSERIAL
     CONSTRAINT test_item_pk PRIMARY KEY,
   uuid          VARCHAR,
-  name          VARCHAR(256),
+  name          VARCHAR(1024),
   type          TEST_ITEM_TYPE_ENUM NOT NULL,
   start_time    TIMESTAMP           NOT NULL,
   description   TEXT,
