@@ -430,6 +430,7 @@ CREATE TABLE test_item
   unique_id     VARCHAR(256),
   has_children  BOOLEAN DEFAULT FALSE,
   has_retries   BOOLEAN DEFAULT FALSE,
+  has_stats     BOOLEAN DEFAULT TRUE,
   parent_id     BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE,
   retry_of      BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE,
   launch_id     BIGINT REFERENCES launch (id) ON DELETE CASCADE
@@ -1121,10 +1122,11 @@ DECLARE
 BEGIN
   IF exists(SELECT 1
             FROM test_item
-            WHERE test_item.parent_id = new.result_id
-               OR (test_item.item_id = new.result_id AND
+            WHERE (test_item.parent_id = new.result_id
+                     AND test_item.has_stats)
+               OR (test_item.item_id = new.result_id AND (NOT test_item.has_stats OR
                    (test_item.type != 'TEST' :: TEST_ITEM_TYPE_ENUM AND
-                    test_item.type != 'STEP' :: TEST_ITEM_TYPE_ENUM))
+                    test_item.type != 'STEP' :: TEST_ITEM_TYPE_ENUM)))
             LIMIT 1)
   THEN
     RETURN new;
@@ -1256,9 +1258,9 @@ DECLARE
 
 BEGIN
   IF exists(SELECT 1
-            FROM test_item AS s
-                   JOIN test_item AS s2 ON s.item_id = s2.parent_id
-            WHERE s.item_id = new.issue_id
+            FROM test_item AS parent
+                   JOIN test_item AS child ON parent.item_id = child.parent_id
+            WHERE (parent.item_id = new.issue_id AND child.has_stats)
             LIMIT 1)
   THEN
     RETURN new;
@@ -1352,9 +1354,9 @@ DECLARE
 
 BEGIN
   IF exists(SELECT 1
-            FROM test_item AS s
-                   JOIN test_item AS s2 ON s.item_id = s2.parent_id
-            WHERE s.item_id = new.issue_id
+            FROM test_item AS parent
+                   JOIN test_item AS child ON parent.item_id = child.parent_id
+            WHERE (parent.item_id = new.issue_id AND child.has_stats)
             LIMIT 1)
   THEN
     RETURN new;
@@ -1491,6 +1493,13 @@ DECLARE
   DECLARE defect_field_old_id       BIGINT;
   DECLARE defect_field_old_total_id BIGINT;
 BEGIN
+
+  IF exists(SELECT 1 FROM test_item WHERE item_id = old.issue_id
+                                      AND NOT has_stats LIMIT 1)
+  THEN
+    RETURN old;
+  END IF;
+
   cur_launch_id := (SELECT launch_id FROM test_item WHERE test_item.item_id = old.issue_id);
 
   IF cur_launch_id IS NULL
@@ -1562,6 +1571,12 @@ DECLARE
   DECLARE cur_id                BIGINT;
   DECLARE cur_statistics_fields RECORD;
 BEGIN
+
+  IF exists(SELECT 1 FROM test_item WHERE item_id = old.result_id
+                                      AND NOT has_stats LIMIT 1)
+  THEN
+    RETURN old;
+  END IF;
 
   cur_launch_id := (SELECT launch_id FROM test_item WHERE item_id = old.result_id);
 
