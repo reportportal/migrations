@@ -1210,7 +1210,12 @@ BEGIN
 
   IF old.status != 'IN_PROGRESS' :: STATUS_ENUM AND old.status != new.status
   THEN
-    executions_field_old := concat('statistics$executions$', lower(old.status :: VARCHAR));
+    IF old.status = 'INTERRUPTED' :: STATUS_ENUM
+    THEN
+      executions_field_old := 'statistics$executions$failed';
+    ELSE
+      executions_field_old := concat('statistics$executions$', lower(old.status :: VARCHAR));
+    END IF;
 
     executions_field_old_id = (SELECT DISTINCT ON (statistics_field.name) sf_id
                                FROM statistics_field
