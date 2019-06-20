@@ -11,7 +11,7 @@ node {
         }
 
         stage('Push tag') {
-            sh 'git tag -a ${RELEASE_VERSION}'
+            sh 'git tag ${RELEASE_VERSION}'
             sh 'git push --tags'
         }
 
