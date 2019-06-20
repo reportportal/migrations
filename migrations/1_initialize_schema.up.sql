@@ -274,6 +274,21 @@ CREATE TABLE ldap_config
   passwordencodertype PASSWORD_ENCODER_TYPE
 );
 
+-------------------------------- SAML configurations ------------------------------
+CREATE TABLE saml_provider_details (
+  id                      BIGSERIAL PRIMARY KEY,
+  idp_name                VARCHAR NOT NULL,
+  idp_metadata_url        VARCHAR NOT NULL,
+  idp_name_id             VARCHAR,
+  idp_alias               VARCHAR,
+  idp_url                 VARCHAR,
+  full_name_attribute_id  VARCHAR,
+  first_name_attribute_id VARCHAR,
+  last_name_attribute_id  VARCHAR,
+  email_attribute_id      VARCHAR NOT NULL,
+  enabled                 BOOLEAN
+);
+
 CREATE TABLE auth_config
 (
   id                         VARCHAR
@@ -423,6 +438,7 @@ CREATE TABLE test_item
     CONSTRAINT test_item_pk PRIMARY KEY,
   uuid          VARCHAR,
   name          VARCHAR(1024),
+  location      VARCHAR(256),
   type          TEST_ITEM_TYPE_ENUM NOT NULL,
   start_time    TIMESTAMP           NOT NULL,
   description   TEXT,
@@ -1194,7 +1210,12 @@ BEGIN
 
   IF old.status != 'IN_PROGRESS' :: STATUS_ENUM AND old.status != new.status
   THEN
-    executions_field_old := concat('statistics$executions$', lower(old.status :: VARCHAR));
+    IF old.status = 'INTERRUPTED' :: STATUS_ENUM
+    THEN
+      executions_field_old := 'statistics$executions$failed';
+    ELSE
+      executions_field_old := concat('statistics$executions$', lower(old.status :: VARCHAR));
+    END IF;
 
     executions_field_old_id = (SELECT DISTINCT ON (statistics_field.name) sf_id
                                FROM statistics_field
