@@ -4,30 +4,15 @@ node {
 
     load "$JENKINS_HOME/jobvars.env"
 
-        environment {
-            registry = "reportportal/migrations"
-            registryCredential = 'dockerhub'
-            dockerImage = ''
-        }
-
         stage('Checkout') {
             checkout scm
             sh 'git checkout master'
             sh 'git pull'
         }
 
-        stage('Building image') {
-            dockerImage = docker.build registry + ":${RELEASE_VERSION}"
-        }
-
-        stage('Deploy Image') {
-            docker.withRegistry( '', registryCredential ) {
-              dockerImage.push()
-            }
-        }
-
-        stage('Remove Unused docker image') {
-            sh "docker rmi $registry:${RELEASE_VERSION}"
+        stage('Push tag') {
+            sh 'git tag -a ${RELEASE_VERSION}'
+            sh 'git push --tags'
         }
 
 }
