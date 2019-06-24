@@ -1,19 +1,19 @@
 DROP TRIGGER IF EXISTS last_launch_number_trigger
-ON launch;
+    ON launch;
 DROP TRIGGER IF EXISTS after_ticket_delete
-ON issue_ticket;
+    ON issue_ticket;
 DROP TRIGGER IF EXISTS after_test_results_update
-ON test_item_results;
+    ON test_item_results;
 DROP TRIGGER IF EXISTS after_issue_insert
-ON issue;
+    ON issue;
 DROP TRIGGER IF EXISTS after_issue_update
-ON issue;
+    ON issue;
 DROP TRIGGER IF EXISTS before_item_delete
-ON test_item_results;
+    ON test_item_results;
 DROP TRIGGER IF EXISTS before_issue_delete
-ON issue;
+    ON issue;
 DROP TRIGGER IF EXISTS approximate_duration_trigger
-ON launch;
+    ON launch;
 
 DROP FUNCTION IF EXISTS get_last_launch_number();
 DROP FUNCTION IF EXISTS count_approximate_duration();
@@ -95,6 +95,7 @@ DROP TABLE IF EXISTS log CASCADE;
 DROP TABLE IF EXISTS attachment CASCADE;
 DROP TABLE IF EXISTS auth_config CASCADE;
 DROP TABLE IF EXISTS ldap_config CASCADE;
+DROP TABLE IF EXISTS saml_provider_details CASCADE;
 DROP TABLE IF EXISTS active_directory_config CASCADE;
 DROP TABLE IF EXISTS ldap_synchronization_attributes CASCADE;
 DROP TABLE IF EXISTS integration CASCADE;

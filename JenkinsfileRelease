@@ -1,0 +1,18 @@
+#!groovy
+
+node {
+
+    load "$JENKINS_HOME/jobvars.env"
+
+        stage('Checkout') {
+            checkout scm
+            sh 'git checkout master'
+            sh 'git pull'
+        }
+
+        stage('Push tag') {
+            sh 'git tag ${RELEASE_VERSION}'
+            sh 'git push --tags'
+        }
+
+}
