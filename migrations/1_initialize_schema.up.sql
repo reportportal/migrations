@@ -231,6 +231,7 @@ CREATE TABLE integration
   type          INTEGER REFERENCES integration_type (id) ON DELETE CASCADE,
   enabled       BOOLEAN                 NOT NULL,
   params        JSONB                   NULL,
+  creator       VARCHAR                 NOT NULL,
   creation_date TIMESTAMP DEFAULT now() NOT NULL
 );
 
