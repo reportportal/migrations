@@ -422,6 +422,7 @@ CREATE TABLE launch
   mode                 LAUNCH_MODE_ENUM                                 NOT NULL,
   status               STATUS_ENUM                                      NOT NULL,
   has_retries          BOOLEAN                                          NOT NULL DEFAULT FALSE,
+  rerun                BOOLEAN                                          NOT NULL DEFAULT FALSE,
   approximate_duration DOUBLE PRECISION                                          DEFAULT 0.0,
   CONSTRAINT unq_name_number UNIQUE (name, number, project_id, uuid)
 );
