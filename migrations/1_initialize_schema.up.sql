@@ -440,7 +440,7 @@ CREATE TABLE test_item
     CONSTRAINT test_item_pk PRIMARY KEY,
   uuid          VARCHAR,
   name          VARCHAR(1024),
-  location      VARCHAR(256),
+  code_ref      VARCHAR(256),
   type          TEST_ITEM_TYPE_ENUM NOT NULL,
   start_time    TIMESTAMP           NOT NULL,
   description   TEXT,
