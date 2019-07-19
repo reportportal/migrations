@@ -410,7 +410,7 @@ CREATE TABLE launch
 (
   id                   BIGSERIAL
     CONSTRAINT launch_pk PRIMARY KEY,
-  uuid                 VARCHAR                                          NOT NULL,
+  uuid                 VARCHAR(36)                                      NOT NULL UNIQUE,
   project_id           BIGINT REFERENCES project (id) ON DELETE CASCADE NOT NULL,
   user_id              BIGINT                                           REFERENCES users (id) ON DELETE SET NULL,
   name                 VARCHAR(256)                                     NOT NULL,
@@ -432,13 +432,13 @@ CREATE INDEX launch_project_idx
 CREATE INDEX launch_user_idx
   ON launch (user_id);
 CREATE INDEX launch_uuid_idx
-  ON launch (uuid);
+  ON launch USING HASH (uuid);
 
 CREATE TABLE test_item
 (
   item_id       BIGSERIAL
     CONSTRAINT test_item_pk PRIMARY KEY,
-  uuid          VARCHAR,
+  uuid          VARCHAR(36)         NOT NULL UNIQUE,
   name          VARCHAR(1024),
   location      VARCHAR(256),
   type          TEST_ITEM_TYPE_ENUM NOT NULL,
@@ -462,7 +462,7 @@ CREATE INDEX ti_launch_idx
 CREATE INDEX ti_retry_of_idx
   ON test_item (retry_of NULLS LAST);
 CREATE INDEX ti_uuid_idx
-  ON test_item (uuid NULLS LAST);
+  ON test_item USING HASH (uuid);
 
 CREATE TABLE test_item_results
 (
@@ -553,7 +553,7 @@ CREATE TABLE log
 (
   id            BIGSERIAL
     CONSTRAINT log_pk PRIMARY KEY,
-  uuid          VARCHAR,
+  uuid          VARCHAR(36)                                             NOT NULL UNIQUE,
   log_time      TIMESTAMP                                               NOT NULL,
   log_message   TEXT                                                    NOT NULL,
   item_id       BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE,
@@ -569,7 +569,7 @@ CREATE INDEX log_ti_idx
 CREATE INDEX log_message_trgm_idx
   ON log USING GIN(log_message gin_trgm_ops);
 CREATE INDEX log_uuid_idx
-  ON log (uuid);
+  ON log USING HASH (uuid);
 
 CREATE TABLE activity
 (
