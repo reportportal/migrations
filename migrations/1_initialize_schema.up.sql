@@ -429,8 +429,6 @@ CREATE TABLE launch
 
 CREATE INDEX launch_project_idx
   ON launch (project_id);
-CREATE INDEX launch_user_idx
-  ON launch (user_id);
 CREATE INDEX launch_uuid_idx
   ON launch USING HASH (uuid);
 
