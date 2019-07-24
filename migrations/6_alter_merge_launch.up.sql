@@ -7,15 +7,16 @@ DECLARE targettestitemcursor CURSOR (id BIGINT, lvl INT) FOR
   FROM test_item parent
   WHERE parent.launch_id = id
     AND nlevel(parent.path) = lvl
+    AND has_stats
     AND (parent.type = 'SUITE' OR (SELECT EXISTS(SELECT 1 FROM test_item t WHERE t.parent_id = parent.item_id LIMIT 1)));
   DECLARE mergingtestitemcursor CURSOR (uniqueid VARCHAR, lvl INT, launchid BIGINT) FOR
   SELECT item_id, path AS path_value, has_retries
   FROM test_item
   WHERE test_item.unique_id = uniqueid
+    AND has_stats
     AND nlevel(test_item.path) = lvl
     AND test_item.launch_id = launchid;
-  DECLARE
-          targettestitemfield  RECORD;
+  DECLARE targettestitemfield  RECORD;
   DECLARE mergingtestitemfield RECORD;
   DECLARE maxlevel             BIGINT;
   DECLARE firstitemid          VARCHAR;
@@ -23,7 +24,7 @@ DECLARE targettestitemcursor CURSOR (id BIGINT, lvl INT) FOR
   DECLARE parentitempath       LTREE;
   DECLARE concatenated_descr   TEXT;
 BEGIN
-  maxlevel := (SELECT MAX(nlevel(path)) FROM test_item WHERE launch_id = launchid);
+  maxlevel := (SELECT MAX(nlevel(path)) FROM test_item WHERE launch_id = launchid AND has_stats);
 
   IF (maxlevel ISNULL) THEN
     RETURN 0;
@@ -48,6 +49,7 @@ BEGIN
       SELECT string_agg(description, chr(10)) INTO concatenated_descr
       FROM test_item
       WHERE test_item.unique_id = firstitemid
+        AND has_stats
         AND nlevel(test_item.path) = i
         AND test_item.launch_id = launchid;
 
@@ -57,6 +59,7 @@ BEGIN
       SET start_time = (SELECT min(start_time)
                         FROM test_item
                         WHERE test_item.unique_id = firstitemid
+                          AND has_stats
                           AND nlevel(test_item.path) = i
                           AND test_item.launch_id = launchid)
       WHERE test_item.item_id = parentitemid;
@@ -66,6 +69,7 @@ BEGIN
                       FROM test_item
                              JOIN test_item_results result ON test_item.item_id = result.result_id
                       WHERE test_item.unique_id = firstitemid
+                        AND has_stats
                         AND nlevel(test_item.path) = i
                         AND test_item.launch_id = launchid)
       WHERE test_item_results.result_id = parentitemid;
@@ -77,6 +81,7 @@ BEGIN
       WHERE ti.unique_id = firstitemid
         AND ti.launch_id = launchid
         AND nlevel(ti.path) = i
+        AND ti.has_stats
       GROUP BY statistics_field_id
       ON CONFLICT ON CONSTRAINT unique_stats_item DO UPDATE
         SET s_counter = excluded.s_counter;
@@ -87,6 +92,7 @@ BEGIN
                 WHERE test_item_results.status != 'PASSED'
                   AND t.unique_id = firstitemid
                   AND nlevel(t.path) = i
+                  AND t.has_stats
                   AND t.launch_id = launchid
                 LIMIT 1)
       THEN
@@ -103,8 +109,9 @@ BEGIN
 
         IF (SELECT EXISTS(SELECT 1
                           FROM test_item t
-                          WHERE t.parent_id = mergingtestitemfield.item_id
-                             OR (t.item_id = mergingtestitemfield.item_id AND t.type = 'SUITE')
+                          WHERE (t.parent_id = mergingtestitemfield.item_id
+                             OR (t.item_id = mergingtestitemfield.item_id AND t.type = 'SUITE'))
+                             AND t.has_stats
                           LIMIT 1))
         THEN
           UPDATE test_item
@@ -112,8 +119,10 @@ BEGIN
               path      = text2ltree(concat(parentitempath :: TEXT, '.', test_item.item_id :: TEXT))
           WHERE test_item.parent_id = mergingtestitemfield.item_id
             AND nlevel(test_item.path) = i + 1
+            AND has_stats
             AND test_item.retry_of IS NULL;
           DELETE FROM test_item WHERE test_item.path = mergingtestitemfield.path_value
+                                  AND test_item.has_stats
                                   AND test_item.item_id != parentitemid;
 
         END IF;
@@ -141,6 +150,7 @@ BEGIN
   FROM statistics
          JOIN test_item ti ON statistics.item_id = ti.item_id
   WHERE ti.launch_id = launchid
+    AND ti.has_stats
     AND ti.parent_id IS NULL
   GROUP BY statistics_field_id
   ON CONFLICT ON CONSTRAINT unique_stats_launch DO UPDATE
@@ -150,65 +160,3 @@ BEGIN
 END;
 $$
 LANGUAGE plpgsql;
-
-CREATE OR REPLACE FUNCTION retries_statistics(cur_launch_id BIGINT)
-  RETURNS INTEGER AS
-$$
-DECLARE
-  cur_id                        BIGINT;
-  DECLARE cur_statistics_fields RECORD;
-  DECLARE retry_parents         RECORD;
-BEGIN
-
-  IF
-    cur_launch_id IS NULL
-  THEN
-    RETURN 1;
-  END IF;
-
-  FOR retry_parents IN (SELECT DISTINCT retries.retry_of AS retry_id
-                        FROM test_item retries
-                               JOIN test_item item ON retries.retry_of = item.item_id
-                        WHERE item.launch_id = cur_launch_id
-                          AND retries.retry_of IS NOT NULL)
-    LOOP
-      FOR cur_statistics_fields IN (SELECT statistics_field_id, sum(s_counter) AS counter_sum
-                                    FROM statistics
-                                           JOIN test_item ti ON statistics.item_id = ti.item_id
-                                    WHERE ti.retry_of = retry_parents.retry_id
-                                    GROUP BY statistics_field_id)
-        LOOP
-          UPDATE statistics
-          SET s_counter = s_counter - cur_statistics_fields.counter_sum
-          WHERE statistics.statistics_field_id = cur_statistics_fields.statistics_field_id
-            AND launch_id = cur_launch_id;
-        END LOOP;
-
-      FOR cur_id IN
-        (SELECT item_id
-         FROM test_item
-         WHERE path @> (SELECT path FROM test_item WHERE item_id = retry_parents.retry_id)
-           AND item_id != retry_parents.retry_id)
-
-        LOOP
-          FOR cur_statistics_fields IN (SELECT statistics_field_id, sum(s_counter) AS counter_sum
-                                        FROM statistics
-                                               JOIN test_item ti ON statistics.item_id = ti.item_id
-                                        WHERE ti.retry_of = retry_parents.retry_id
-                                        GROUP BY statistics_field_id)
-            LOOP
-              UPDATE statistics
-              SET s_counter = s_counter - cur_statistics_fields.counter_sum
-              WHERE statistics.statistics_field_id = cur_statistics_fields.statistics_field_id
-                AND item_id = cur_id;
-            END LOOP;
-        END LOOP;
-
-      DELETE FROM issue WHERE issue_id IN (SELECT item_id FROM test_item WHERE retry_of = retry_parents.retry_id);
-      DELETE FROM statistics WHERE item_id IN (SELECT item_id FROM test_item WHERE retry_of = retry_parents.retry_id);
-
-    END LOOP;
-  RETURN 0;
-END;
-$$
-  LANGUAGE plpgsql;
