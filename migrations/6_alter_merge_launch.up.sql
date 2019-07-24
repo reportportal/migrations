@@ -24,9 +24,10 @@ DECLARE targettestitemcursor CURSOR (id BIGINT, lvl INT) FOR
   DECLARE parentitempath       LTREE;
   DECLARE concatenated_descr   TEXT;
 BEGIN
-  maxlevel := (SELECT MAX(nlevel(path)) FROM test_item WHERE launch_id = launchid AND has_stats);
-
-  IF (maxlevel ISNULL) THEN
+  maxlevel := (SELECT MAX(nlevel(path)) FROM test_item WHERE launch_id = launchid
+                                                         AND has_stats);
+  IF (maxlevel ISNULL)
+  THEN
     RETURN 0;
   END IF;
 
@@ -89,7 +90,7 @@ BEGIN
       IF exists(SELECT 1
                 FROM test_item_results
                        JOIN test_item t ON test_item_results.result_id = t.item_id
-                WHERE test_item_results.status != 'PASSED'
+                WHERE (test_item_results.status != 'PASSED' AND test_item_results.status != 'SKIPPED')
                   AND t.unique_id = firstitemid
                   AND nlevel(t.path) = i
                   AND t.has_stats
@@ -97,6 +98,19 @@ BEGIN
                 LIMIT 1)
       THEN
         UPDATE test_item_results SET status = 'FAILED' WHERE test_item_results.result_id = parentitemid;
+      ELSEIF exists(SELECT 1
+                    FROM test_item_results
+                           JOIN test_item t ON test_item_results.result_id = t.item_id
+                    WHERE test_item_results.status != 'PASSED'
+                      AND t.unique_id = firstitemid
+                      AND nlevel(t.path) = i
+                      AND t.has_stats
+                      AND t.launch_id = launchid
+                    LIMIT 1)
+        THEN
+          UPDATE test_item_results SET status = 'SKIPPED' WHERE test_item_results.result_id = parentitemid;
+      ELSE
+        UPDATE test_item_results SET status = 'PASSED' WHERE test_item_results.result_id = parentitemid;
       END IF;
 
       OPEN mergingtestitemcursor(targettestitemfield.unique_id, i, launchid);
@@ -110,8 +124,8 @@ BEGIN
         IF (SELECT EXISTS(SELECT 1
                           FROM test_item t
                           WHERE (t.parent_id = mergingtestitemfield.item_id
-                             OR (t.item_id = mergingtestitemfield.item_id AND t.type = 'SUITE'))
-                             AND t.has_stats
+                                   OR (t.item_id = mergingtestitemfield.item_id AND t.type = 'SUITE'))
+                            AND t.has_stats
                           LIMIT 1))
         THEN
           UPDATE test_item
@@ -121,9 +135,11 @@ BEGIN
             AND nlevel(test_item.path) = i + 1
             AND has_stats
             AND test_item.retry_of IS NULL;
-          DELETE FROM test_item WHERE test_item.path = mergingtestitemfield.path_value
-                                  AND test_item.has_stats
-                                  AND test_item.item_id != parentitemid;
+          DELETE
+          FROM test_item
+          WHERE test_item.path = mergingtestitemfield.path_value
+            AND test_item.has_stats
+            AND test_item.item_id != parentitemid;
 
         END IF;
 
