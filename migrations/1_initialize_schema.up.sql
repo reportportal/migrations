@@ -412,7 +412,7 @@ CREATE TABLE launch
     CONSTRAINT launch_pk PRIMARY KEY,
   uuid                 VARCHAR(36)                                      NOT NULL UNIQUE,
   project_id           BIGINT REFERENCES project (id) ON DELETE CASCADE NOT NULL,
-  owner                VARCHAR                                          NOT NULL,
+  user_id              BIGINT REFERENCES users (id) ON DELETE SET NULL,
   name                 VARCHAR(256)                                     NOT NULL,
   description          TEXT,
   start_time           TIMESTAMP                                        NOT NULL,
@@ -429,8 +429,11 @@ CREATE TABLE launch
 
 CREATE INDEX launch_project_idx
   ON launch (project_id);
+CREATE INDEX launch_user_idx
+  ON launch (user_id);
 CREATE INDEX launch_uuid_idx
-  ON launch USING HASH (uuid);
+  ON launch
+  USING hash (uuid);
 
 CREATE TABLE test_item
 (
