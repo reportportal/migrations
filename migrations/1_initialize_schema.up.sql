@@ -1101,6 +1101,7 @@ EXECUTE PROCEDURE count_approximate_duration();
 
 -------------------------- Execution statistics triggers end functions ------------------------------
 
+
 CREATE OR REPLACE FUNCTION update_executions_statistics()
   RETURNS TRIGGER AS
 $$
@@ -1121,8 +1122,8 @@ BEGIN
             WHERE (test_item.parent_id = new.result_id
                      AND test_item.has_stats)
                OR (test_item.item_id = new.result_id AND (NOT test_item.has_stats OR
-                   (test_item.type != 'TEST' :: TEST_ITEM_TYPE_ENUM AND
-                    test_item.type != 'STEP' :: TEST_ITEM_TYPE_ENUM)))
+                                                          (test_item.type != 'TEST' :: TEST_ITEM_TYPE_ENUM AND
+                                                           test_item.type != 'STEP' :: TEST_ITEM_TYPE_ENUM)))
             LIMIT 1)
   THEN
     RETURN new;
@@ -1156,6 +1157,9 @@ BEGIN
                                FROM statistics_field
                                WHERE statistics_field.name = executions_field_total);
 
+  INSERT into statistics (s_counter, launch_id, statistics_field_id) VALUES (0, cur_launch_id, executions_field_id) ON CONFLICT DO NOTHING;
+  INSERT into statistics (s_counter, launch_id, statistics_field_id) VALUES (0, cur_launch_id, executions_field_total_id) ON CONFLICT DO NOTHING;
+
   IF old.status = 'IN_PROGRESS' :: STATUS_ENUM
   THEN
     INSERT INTO statistics (s_counter, statistics_field_id, item_id)
@@ -1173,17 +1177,9 @@ BEGIN
                 DO UPDATE SET s_counter = statistics.s_counter + 1;
 
     /* increment launch executions statistics for concrete field */
-    INSERT INTO statistics (s_counter, statistics_field_id, launch_id)
-    VALUES (1, executions_field_id, cur_launch_id)
-    ON CONFLICT (statistics_field_id,
-                launch_id)
-                DO UPDATE SET s_counter = statistics.s_counter + 1;
-    /* increment launch executions statistics for total field */
-    INSERT INTO statistics (s_counter, statistics_field_id, launch_id)
-    VALUES (1, executions_field_total_id, cur_launch_id)
-    ON CONFLICT (statistics_field_id,
-                launch_id)
-                DO UPDATE SET s_counter = statistics.s_counter + 1;
+    UPDATE statistics SET s_counter = statistics.s_counter + 1 WHERE statistics.launch_id = cur_launch_id AND statistics.statistics_field_id = executions_field_id;
+    UPDATE statistics SET s_counter = statistics.s_counter + 1 WHERE statistics.launch_id = cur_launch_id AND statistics.statistics_field_id = executions_field_total_id;
+
     RETURN new;
   END IF;
 
@@ -1301,36 +1297,29 @@ BEGIN
                            FROM statistics_field
                            WHERE statistics_field.name = defect_field_total);
 
-  INSERT INTO statistics (s_counter, statistics_field_id, item_id)
-    (SELECT 1, defect_field_id, item_id
-     FROM (SELECT item_id FROM test_item WHERE path @> (SELECT path FROM test_item WHERE item_id = new.issue_id)) as temp_bulk)
-  ON CONFLICT (statistics_field_id,
-    item_id)
-    DO UPDATE SET s_counter = statistics.s_counter + 1;
+  INSERT into statistics (s_counter, launch_id, statistics_field_id) VALUES (0, cur_launch_id, defect_field_id) ON CONFLICT DO NOTHING;
+  INSERT into statistics (s_counter, launch_id, statistics_field_id) VALUES (0, cur_launch_id, defect_field_total_id) ON CONFLICT DO NOTHING;
 
   INSERT INTO statistics (s_counter, statistics_field_id, item_id)
-    (SELECT 1, defect_field_total_id, item_id
-     FROM (SELECT item_id FROM test_item WHERE path @> (SELECT path FROM test_item WHERE item_id = new.issue_id)) as temp_bulk)
+      (SELECT 1, defect_field_id, item_id
+       FROM (SELECT item_id FROM test_item WHERE path @> (SELECT path FROM test_item WHERE item_id = new.issue_id)) as temp_bulk)
   ON CONFLICT (statistics_field_id,
-    item_id)
-    DO UPDATE SET s_counter = statistics.s_counter + 1;
+              item_id)
+              DO UPDATE SET s_counter = statistics.s_counter + 1;
 
-  /* increment launch defects statistics for concrete field */
-  INSERT INTO statistics (s_counter, statistics_field_id, launch_id)
-  VALUES (1, defect_field_id, cur_launch_id)
+  INSERT INTO statistics (s_counter, statistics_field_id, item_id)
+      (SELECT 1, defect_field_total_id, item_id
+       FROM (SELECT item_id FROM test_item WHERE path @> (SELECT path FROM test_item WHERE item_id = new.issue_id)) as temp_bulk)
   ON CONFLICT (statistics_field_id,
-    launch_id)
-    DO UPDATE SET s_counter = statistics.s_counter + 1;
-  /* increment launch defects statistics for total field */
-  INSERT INTO statistics (s_counter, statistics_field_id, launch_id)
-  VALUES (1, defect_field_total_id, cur_launch_id)
-  ON CONFLICT (statistics_field_id,
-    launch_id)
-    DO UPDATE SET s_counter = statistics.s_counter + 1;
+              item_id)
+              DO UPDATE SET s_counter = statistics.s_counter + 1;
+
+  UPDATE statistics SET s_counter = statistics.s_counter + 1 WHERE statistics.launch_id = cur_launch_id AND statistics.statistics_field_id = defect_field_id;
+  UPDATE statistics SET s_counter = statistics.s_counter + 1 WHERE statistics.launch_id = cur_launch_id AND statistics.statistics_field_id = defect_field_total_id;
   RETURN new;
 END;
 $$
-  LANGUAGE plpgsql;
+LANGUAGE plpgsql;
 
 
 CREATE TRIGGER after_issue_insert
@@ -1417,6 +1406,9 @@ BEGIN
                            FROM statistics_field
                            WHERE statistics_field.name = defect_field_total);
 
+  INSERT into statistics (s_counter, launch_id, statistics_field_id) VALUES (0, cur_launch_id, defect_field_id) ON CONFLICT DO NOTHING;
+  INSERT into statistics (s_counter, launch_id, statistics_field_id) VALUES (0, cur_launch_id, defect_field_total_id) ON CONFLICT DO NOTHING;
+
   FOR cur_id IN
     (SELECT item_id FROM test_item WHERE path @> (SELECT path FROM test_item WHERE item_id = new.issue_id))
 
@@ -1456,11 +1448,7 @@ BEGIN
     AND launch_id = cur_launch_id;
 
   /* increment launch defects statistics for concrete field */
-  INSERT INTO statistics (s_counter, statistics_field_id, launch_id)
-  VALUES (1, defect_field_id, cur_launch_id)
-  ON CONFLICT (statistics_field_id,
-    launch_id)
-    DO UPDATE SET s_counter = statistics.s_counter + 1;
+  UPDATE statistics SET s_counter = statistics.s_counter + 1 WHERE statistics.launch_id = cur_launch_id AND statistics.statistics_field_id = defect_field_id;
 
   /* decrease launch defects statistics for total field */
   UPDATE statistics
@@ -1469,11 +1457,8 @@ BEGIN
     AND launch_id = cur_launch_id;
 
   /* increment launch defects statistics for total field */
-  INSERT INTO statistics (s_counter, statistics_field_id, launch_id)
-  VALUES (1, defect_field_total_id, cur_launch_id)
-  ON CONFLICT (statistics_field_id,
-    launch_id)
-    DO UPDATE SET s_counter = statistics.s_counter + 1;
+  UPDATE statistics SET s_counter = statistics.s_counter + 1 WHERE statistics.launch_id = cur_launch_id AND statistics.statistics_field_id = defect_field_total_id;
+
   RETURN new;
 END;
 $$
