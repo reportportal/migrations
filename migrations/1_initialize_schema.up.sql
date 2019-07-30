@@ -1147,6 +1147,7 @@ BEGIN
                      AND test_item.has_stats)
                OR (test_item.item_id = new.result_id AND (NOT test_item.has_stats OR
                    (test_item.type != 'TEST' :: TEST_ITEM_TYPE_ENUM AND
+                    test_item.type != 'SCENARIO' :: TEST_ITEM_TYPE_ENUM AND
                     test_item.type != 'STEP' :: TEST_ITEM_TYPE_ENUM)))
             LIMIT 1)
   THEN
