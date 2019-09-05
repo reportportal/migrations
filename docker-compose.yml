@@ -1,7 +1,7 @@
 version: '2'
 services:
   postgres:
-    image: postgres:10.1-alpine
+    image: postgres:11-alpine
     environment:
       POSTGRES_USER: rpuser
       POSTGRES_PASSWORD: rppass
