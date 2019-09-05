@@ -7,6 +7,11 @@ CREATE TABLE launch_number (
     CONSTRAINT unq_project_name UNIQUE (project_id, launch_name)
 );
 
+INSERT INTO launch_number(project_id, launch_name, number)
+SELECT project_id, name, max(number)
+FROM launch
+GROUP BY name, project_id;
+
 ALTER TABLE launch
     DROP CONSTRAINT unq_name_number;
 
