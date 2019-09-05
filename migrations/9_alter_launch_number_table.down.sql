@@ -17,4 +17,10 @@ END;
 $BODY$
     LANGUAGE plpgsql;
 
+ALTER TABLE launch
+    DROP CONSTRAINT unq_name_number;
+
+ALTER TABLE launch
+    ADD CONSTRAINT unq_name_number UNIQUE (name, number, project_id, uuid);
+
 DROP TABLE IF EXISTS launch_number;

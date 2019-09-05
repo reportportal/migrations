@@ -7,6 +7,12 @@ CREATE TABLE launch_number (
     CONSTRAINT unq_project_name UNIQUE (project_id, launch_name)
 );
 
+ALTER TABLE launch
+    DROP CONSTRAINT unq_name_number;
+
+ALTER TABLE launch
+    ADD CONSTRAINT unq_name_number UNIQUE (name, number, project_id);
+
 CREATE OR REPLACE FUNCTION get_last_launch_number()
     RETURNS TRIGGER AS
 $BODY$
