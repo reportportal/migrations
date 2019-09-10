@@ -697,7 +697,7 @@ CREATE INDEX ticket_submitter_idx
 CREATE TABLE issue_ticket
 (
   issue_id  BIGINT REFERENCES issue (issue_id) ON DELETE CASCADE NOT NULL,
-  ticket_id BIGINT REFERENCES ticket (id) ON DELETE CASCADE      NOT NULL,
+  ticket_id BIGINT REFERENCES ticket (id)                        NOT NULL,
   CONSTRAINT issue_ticket_pk PRIMARY KEY (issue_id, ticket_id)
 );
 
