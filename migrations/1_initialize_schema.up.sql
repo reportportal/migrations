@@ -225,7 +225,7 @@ CREATE TABLE integration
 (
   id            SERIAL
     CONSTRAINT integration_pk PRIMARY KEY,
-  name          VARCHAR,
+  name          VARCHAR NOT NULL,
   project_id    BIGINT REFERENCES project (id) ON DELETE CASCADE,
   type          INTEGER REFERENCES integration_type (id) ON DELETE CASCADE,
   enabled       BOOLEAN                 NOT NULL,
@@ -236,6 +236,10 @@ CREATE TABLE integration
 
 CREATE INDEX integr_project_idx
   ON integration (project_id);
+CREATE UNIQUE INDEX unique_global_integration_name ON integration (name, type)
+    WHERE project_id IS NULL;
+CREATE UNIQUE INDEX unique_project_integration_name ON integration (name, type, project_id)
+    WHERE project_id IS NOT NULL;
 
 -------------------------------- LDAP configurations ------------------------------
 CREATE TABLE ldap_synchronization_attributes
