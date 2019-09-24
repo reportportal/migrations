@@ -278,6 +278,21 @@ CREATE TABLE ldap_config
   passwordencodertype PASSWORD_ENCODER_TYPE
 );
 
+-------------------------------- SAML configurations ------------------------------
+CREATE TABLE saml_provider_details (
+  id                      BIGSERIAL PRIMARY KEY,
+  idp_name                VARCHAR NOT NULL,
+  idp_metadata_url        VARCHAR NOT NULL,
+  idp_name_id             VARCHAR,
+  idp_alias               VARCHAR,
+  idp_url                 VARCHAR,
+  full_name_attribute_id  VARCHAR,
+  first_name_attribute_id VARCHAR,
+  last_name_attribute_id  VARCHAR,
+  email_attribute_id      VARCHAR NOT NULL,
+  enabled                 BOOLEAN
+);
+
 CREATE TABLE auth_config
 (
   id                         VARCHAR
