@@ -475,6 +475,10 @@ CREATE INDEX ti_retry_of_idx
   ON test_item (retry_of NULLS LAST);
 CREATE INDEX ti_uuid_idx
   ON test_item USING HASH (uuid);
+CREATE INDEX test_item_unique_id_idx
+  ON test_item (unique_id);
+CREATE INDEX test_item_unique_id_launch_id_idx
+  ON test_item (unique_id, launch_id);
 
 CREATE TABLE test_item_results
 (
