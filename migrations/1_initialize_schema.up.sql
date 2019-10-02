@@ -687,7 +687,7 @@ CREATE TABLE ticket
 (
   id           BIGSERIAL
     CONSTRAINT ticket_pk PRIMARY KEY,
-  ticket_id    VARCHAR(64)                                    NOT NULL,
+  ticket_id    VARCHAR(64)    UNIQUE                          NOT NULL,
   submitter    VARCHAR                                        NOT NULL,
   submit_date  TIMESTAMP DEFAULT now()                        NOT NULL,
   bts_url      VARCHAR(256)                                   NOT NULL,
