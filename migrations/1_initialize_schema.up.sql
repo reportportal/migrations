@@ -381,6 +381,8 @@ CREATE TABLE content_field
 
 CREATE INDEX content_field_widget_idx
   ON content_field (id);
+CREATE INDEX content_field_idx
+    ON content_field (field);
 
 CREATE TABLE dashboard_widget
 (
