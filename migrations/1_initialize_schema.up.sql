@@ -461,7 +461,7 @@ CREATE TABLE test_item
     last_modified TIMESTAMP           NOT NULL,
     path          LTREE,
     unique_id     VARCHAR(256),
-    test_case_id  VARCHAR(256),
+    test_case_id  INTEGER,
     has_children  BOOLEAN DEFAULT FALSE,
     has_retries   BOOLEAN DEFAULT FALSE,
     has_stats     BOOLEAN DEFAULT TRUE,
