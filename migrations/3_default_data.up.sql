@@ -59,11 +59,12 @@ BEGIN
     INSERT INTO attribute (name) VALUES ('analyzer.minShouldMatch');
     INSERT INTO attribute (name) VALUES ('analyzer.numberOfLogLines');
     INSERT INTO attribute (name) VALUES ('analyzer.indexingRunning');
+    INSERT INTO attribute (name) VALUES ('analyzer.isPatternAnalyzerEnabled');
     INSERT INTO attribute (name) VALUES ('analyzer.isAutoAnalyzerEnabled');
     INSERT INTO attribute (name) VALUES ('analyzer.autoAnalyzerMode');
     INSERT INTO attribute (name) VALUES ('notifications.enabled');
     INSERT INTO attribute (name) VALUES ('email.from');
-    INSERT INTO attribute (name) VALUES ('pattern.analysis.enabled');
+
 
     -- Superadmin project and user
     INSERT INTO project (name, project_type, creation_date, metadata) VALUES ('superadmin_personal', 'PERSONAL', now(), '{"metadata": {"additional_info": ""}}');
