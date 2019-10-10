@@ -59,7 +59,7 @@ BEGIN
     INSERT INTO attribute (name) VALUES ('analyzer.minShouldMatch');
     INSERT INTO attribute (name) VALUES ('analyzer.numberOfLogLines');
     INSERT INTO attribute (name) VALUES ('analyzer.indexingRunning');
-    INSERT INTO attribute (name) VALUES ('analyzer.isPatternAnalyzerEnabled');
+    INSERT INTO attribute (name) VALUES ('analyzer.isAutoPatternAnalyzerEnabled');
     INSERT INTO attribute (name) VALUES ('analyzer.isAutoAnalyzerEnabled');
     INSERT INTO attribute (name) VALUES ('analyzer.autoAnalyzerMode');
     INSERT INTO attribute (name) VALUES ('notifications.enabled');
