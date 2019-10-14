@@ -26,6 +26,8 @@ CREATE TYPE SORT_DIRECTION_ENUM AS ENUM ('ASC', 'DESC');
 CREATE EXTENSION IF NOT EXISTS ltree;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE EXTENSION IF NOT EXISTS pldbgapi;
+
 
 CREATE TABLE server_settings
 (
@@ -1186,14 +1188,13 @@ BEGIN
                OR (test_item.item_id = new.result_id AND (NOT test_item.has_stats OR
                    (test_item.type != 'TEST' :: TEST_ITEM_TYPE_ENUM AND
                     test_item.type != 'SCENARIO' :: TEST_ITEM_TYPE_ENUM AND
-                    test_item.type != 'STEP' :: TEST_ITEM_TYPE_ENUM)))
-            LIMIT 1)
+                    test_item.type != 'STEP' :: TEST_ITEM_TYPE_ENUM))))
   THEN
     RETURN new;
   END IF;
 
   IF exists(SELECT 1 FROM test_item WHERE item_id = new.result_id
-                                      AND retry_of IS NOT NULL LIMIT 1)
+                                      AND retry_of IS NOT NULL)
   THEN
     RETURN new;
   END IF;
@@ -1690,5 +1691,45 @@ CREATE TRIGGER before_item_delete
   ON test_item_results
   FOR EACH ROW
 EXECUTE PROCEDURE decrease_statistics();
+
+CREATE OR REPLACE FUNCTION delete_execution_statistics()
+    RETURNS TRIGGER AS
+$$
+  DECLARE
+  curr_item_id BIGINT;
+  curr_parent_id BIGINT;
+BEGIN
+  IF old.has_children != new.has_children
+  THEN
+    curr_item_id := old.item_id;
+    curr_parent_id := old.parent_id;
+    WHILE curr_item_id IS NOT NULL
+      LOOP
+        UPDATE statistics
+        SET s_counter = 0
+        FROM statistics_field
+        WHERE statistics_field.sf_id = statistics.statistics_field_id
+          AND item_id = curr_item_id
+          AND statistics_field.name LIKE 'statistics$executions$%';
+        curr_item_id := curr_parent_id;
+        curr_parent_id := (SELECT parent_id FROM test_item WHERE item_id = curr_item_id);
+      END LOOP;
+    UPDATE statistics
+    SET s_counter = 0
+    FROM statistics_field
+    WHERE statistics_field.sf_id = statistics.statistics_field_id
+      AND launch_id = old.launch_id
+      AND statistics_field.name LIKE 'statistics$executions$%';
+  END IF;
+  RETURN new;
+END;
+$$
+  LANGUAGE plpgsql;
+
+CREATE TRIGGER after_item_update
+    AFTER UPDATE
+    ON test_item
+    FOR EACH ROW
+EXECUTE PROCEDURE delete_execution_statistics();
 
 COMMIT;
