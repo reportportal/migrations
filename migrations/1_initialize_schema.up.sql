@@ -450,23 +450,24 @@ CREATE TABLE launch_number (
 
 CREATE TABLE test_item
 (
-  item_id       BIGSERIAL
-    CONSTRAINT test_item_pk PRIMARY KEY,
-  uuid          VARCHAR(36)         NOT NULL UNIQUE,
-  name          VARCHAR(1024),
-  code_ref      VARCHAR(256),
-  type          TEST_ITEM_TYPE_ENUM NOT NULL,
-  start_time    TIMESTAMP           NOT NULL,
-  description   TEXT,
-  last_modified TIMESTAMP           NOT NULL,
-  path          LTREE,
-  unique_id     VARCHAR(256),
-  has_children  BOOLEAN DEFAULT FALSE,
-  has_retries   BOOLEAN DEFAULT FALSE,
-  has_stats     BOOLEAN DEFAULT TRUE,
-  parent_id     BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE,
-  retry_of      BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE,
-  launch_id     BIGINT REFERENCES launch (id) ON DELETE CASCADE
+    item_id       BIGSERIAL
+        CONSTRAINT test_item_pk PRIMARY KEY,
+    uuid          VARCHAR(36)         NOT NULL UNIQUE,
+    name          VARCHAR(1024),
+    code_ref      VARCHAR(256),
+    type          TEST_ITEM_TYPE_ENUM NOT NULL,
+    start_time    TIMESTAMP           NOT NULL,
+    description   TEXT,
+    last_modified TIMESTAMP           NOT NULL,
+    path          LTREE,
+    unique_id     VARCHAR(256),
+    test_case_id  INTEGER,
+    has_children  BOOLEAN DEFAULT FALSE,
+    has_retries   BOOLEAN DEFAULT FALSE,
+    has_stats     BOOLEAN DEFAULT TRUE,
+    parent_id     BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE,
+    retry_of      BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE,
+    launch_id     BIGINT REFERENCES launch (id) ON DELETE CASCADE
 );
 
 CREATE INDEX ti_parent_idx
@@ -479,8 +480,12 @@ CREATE INDEX ti_uuid_idx
   ON test_item USING HASH (uuid);
 CREATE INDEX test_item_unique_id_idx
   ON test_item (unique_id);
+CREATE INDEX item_test_case_id_idx
+    ON test_item (test_case_id);
 CREATE INDEX test_item_unique_id_launch_id_idx
   ON test_item (unique_id, launch_id);
+CREATE INDEX item_test_case_id_launch_id_idx
+    ON test_item (test_case_id, launch_id);
 
 CREATE TABLE test_item_results
 (
