@@ -1696,7 +1696,7 @@ CREATE OR REPLACE FUNCTION delete_execution_statistics()
     RETURNS TRIGGER AS
 $$
   DECLARE
-  curr_item_id BIGINT;
+  curr_item_id   BIGINT;
   curr_parent_id BIGINT;
 BEGIN
   IF old.has_children != new.has_children
@@ -1714,12 +1714,6 @@ BEGIN
         curr_item_id := curr_parent_id;
         curr_parent_id := (SELECT parent_id FROM test_item WHERE item_id = curr_item_id);
       END LOOP;
-    UPDATE statistics
-    SET s_counter = 0
-    FROM statistics_field
-    WHERE statistics_field.sf_id = statistics.statistics_field_id
-      AND launch_id = old.launch_id
-      AND statistics_field.name LIKE 'statistics$executions$%';
   END IF;
   RETURN new;
 END;
