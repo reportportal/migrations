@@ -80,7 +80,7 @@ CREATE TABLE users
   role                 VARCHAR NOT NULL,
   type                 VARCHAR NOT NULL,
   expired              BOOLEAN NOT NULL,
-  full_name            VARCHAR NOT NULL,
+  full_name            VARCHAR NULL,
   metadata             JSONB   NULL
 );
 
