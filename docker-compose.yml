@@ -9,14 +9,14 @@ services:
     volumes:
       - reportportal-database:/var/lib/postgresql/data
     restart: on-failure
-  # If you need to access the DB locally. Could be a security risk to expose DB.
+    # If you need to access the DB locally. Could be a security risk to expose DB.
     ports:
-       - "5432:5432"
-#    logging:
-#    driver: 'json-file'
-#    options:
-#      max-size: "50M"
-#      max-file: "1"
+      - "5432:5432"
+  #    logging:
+  #    driver: 'json-file'
+  #    options:
+  #      max-size: "50M"
+  #      max-file: "1"
 
   migrations:
     build: .
@@ -28,6 +28,14 @@ services:
       POSTGRES_PASSWORD: rppass
       POSTGRES_SERVER: postgres
       POSTGRES_DB: reportportal
+
+  data-migration:
+    image: pbortnik/rp5-data-migrations
+    depends_on:
+      - postgres
+      - migrations
+    environment:
+      RP_DB_HOST: postgres
 
 volumes:
   reportportal-database:
