@@ -241,66 +241,6 @@ CREATE UNIQUE INDEX unique_global_integration_name ON integration (name, type)
 CREATE UNIQUE INDEX unique_project_integration_name ON integration (name, type, project_id)
     WHERE project_id IS NOT NULL;
 
--------------------------------- LDAP configurations ------------------------------
-CREATE TABLE ldap_synchronization_attributes
-(
-  id        BIGSERIAL
-    CONSTRAINT ldap_synchronization_attributes_pk PRIMARY KEY,
-  email     VARCHAR(256),
-  full_name VARCHAR(256),
-  photo     VARCHAR(128)
-);
-
-CREATE TABLE active_directory_config
-(
-  id                 BIGINT
-    CONSTRAINT active_directory_config_pk PRIMARY KEY REFERENCES integration (id) ON DELETE CASCADE UNIQUE,
-  url                VARCHAR(256),
-  base_dn            VARCHAR(256),
-  sync_attributes_id BIGINT REFERENCES ldap_synchronization_attributes (id) ON DELETE CASCADE,
-  domain             VARCHAR(256)
-);
-
-CREATE TABLE ldap_config
-(
-  id                  BIGINT
-    CONSTRAINT ldap_config_pk PRIMARY KEY REFERENCES integration (id) ON DELETE CASCADE UNIQUE,
-  url                 VARCHAR(256),
-  base_dn             VARCHAR(256),
-  sync_attributes_id  BIGINT REFERENCES ldap_synchronization_attributes (id) ON DELETE CASCADE,
-  user_dn_pattern     VARCHAR(256),
-  user_search_filter  VARCHAR(256),
-  group_search_base   VARCHAR(256),
-  group_search_filter VARCHAR(256),
-  password_attributes VARCHAR(256),
-  manager_dn          VARCHAR(256),
-  manager_password    VARCHAR(256),
-  passwordencodertype PASSWORD_ENCODER_TYPE
-);
-
--------------------------------- SAML configurations ------------------------------
-CREATE TABLE saml_provider_details (
-  id                      BIGSERIAL PRIMARY KEY,
-  idp_name                VARCHAR NOT NULL,
-  idp_metadata_url        VARCHAR NOT NULL,
-  idp_name_id             VARCHAR,
-  idp_alias               VARCHAR,
-  idp_url                 VARCHAR,
-  full_name_attribute_id  VARCHAR,
-  first_name_attribute_id VARCHAR,
-  last_name_attribute_id  VARCHAR,
-  email_attribute_id      VARCHAR NOT NULL,
-  enabled                 BOOLEAN
-);
-
-CREATE TABLE auth_config
-(
-  id                         VARCHAR
-    CONSTRAINT auth_config_pk PRIMARY KEY,
-  ldap_config_id             BIGINT REFERENCES ldap_config (id) ON DELETE CASCADE,
-  active_directory_config_id BIGINT REFERENCES active_directory_config (id) ON DELETE CASCADE
-);
-
 -----------------------------------------------------------------------------------
 
 -------------------------- Dashboards, widgets, user filters -----------------------------
@@ -408,7 +348,6 @@ CREATE TABLE widget_filter
   CONSTRAINT widget_filter_pk PRIMARY KEY (widget_id, filter_id)
 );
 -----------------------------------------------------------------------------------
-
 
 --------------------------- Launches, items, logs --------------------------------------
 

@@ -6,6 +6,8 @@ $$DECLARE
   superadmin BIGINT;
   ldap BIGINT;
   email BIGINT;
+  saml BIGINT;
+  ad BIGINT;
 BEGIN
 
     INSERT INTO server_settings (key, value) VALUES ('server.analytics.all', 'true');
@@ -13,6 +15,12 @@ BEGIN
 
     INSERT INTO integration_type (enabled, name, auth_flow, creation_date, group_type) VALUES (TRUE, 'ldap', 'LDAP', now(), 'AUTH');
     ldap := (SELECT currval(pg_get_serial_sequence('integration_type', 'id')));
+
+    INSERT INTO integration_type (enabled, name, creation_date, group_type) VALUES (TRUE, 'saml', now(), 'AUTH');
+    saml := (SELECT currval(pg_get_serial_sequence('integration_type', 'id')));
+
+    INSERT INTO integration_type (enabled, name, creation_date, group_type) VALUES (TRUE, 'ad', now(), 'AUTH');
+    ad := (SELECT currval(pg_get_serial_sequence('integration_type', 'id')));
 
     INSERT INTO integration_type (enabled, name, creation_date, group_type) VALUES (TRUE, 'email', now(), 'NOTIFICATION');
     email := (SELECT currval(pg_get_serial_sequence('integration_type', 'id')));
