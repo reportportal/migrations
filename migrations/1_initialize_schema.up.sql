@@ -80,7 +80,7 @@ CREATE TABLE users
   role                 VARCHAR NOT NULL,
   type                 VARCHAR NOT NULL,
   expired              BOOLEAN NOT NULL,
-  full_name            VARCHAR NOT NULL,
+  full_name            VARCHAR NULL,
   metadata             JSONB   NULL
 );
 
@@ -1696,5 +1696,23 @@ CREATE TRIGGER before_item_delete
   ON test_item_results
   FOR EACH ROW
 EXECUTE PROCEDURE decrease_statistics();
+
+CREATE OR REPLACE FUNCTION update_share_flag()
+  RETURNS TRIGGER AS
+$$
+BEGIN
+  UPDATE dashboard_widget
+  SET share = (SELECT shared FROM shareable_entity WHERE shareable_entity.id= new.id)
+  WHERE widget_id = new.id;
+  RETURN new;
+END;
+$$
+  LANGUAGE plpgsql;
+
+CREATE TRIGGER after_widget_update
+  AFTER UPDATE
+  ON widget
+  FOR EACH ROW
+EXECUTE PROCEDURE update_share_flag();
 
 COMMIT;
