@@ -398,9 +398,9 @@ CREATE TABLE launch (
     has_retries          BOOLEAN          NOT NULL DEFAULT FALSE,
     rerun                BOOLEAN          NOT NULL DEFAULT FALSE,
     approximate_duration DOUBLE PRECISION          DEFAULT 0.0,
-    CONSTRAINT unq_name_number UNIQUE (name, number, project_id)
---     FOREIGN KEY (project_id) REFERENCES project (id) ON DELETE CASCADE,
---     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL
+    CONSTRAINT unq_name_number UNIQUE (name, number, project_id),
+    FOREIGN KEY (project_id) REFERENCES project (id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL
 );
 
 -- CREATE INDEX launch_project_idx
@@ -437,10 +437,10 @@ CREATE TABLE test_item (
     has_stats     BOOLEAN DEFAULT TRUE,
     parent_id     BIGINT,
     retry_of      BIGINT,
-    launch_id     BIGINT
---     FOREIGN KEY (parent_id) REFERENCES test_item (item_id) ON DELETE CASCADE,
+    launch_id     BIGINT,
+    FOREIGN KEY (parent_id) REFERENCES test_item (item_id) ON DELETE CASCADE,
+    FOREIGN KEY (launch_id) REFERENCES launch (id) ON DELETE CASCADE
 --     FOREIGN KEY (retry_of) REFERENCES test_item (item_id) ON DELETE CASCADE,
---     FOREIGN KEY (launch_id) REFERENCES launch (id) ON DELETE CASCADE
 );
 
 CREATE INDEX ti_uuid_idx
@@ -551,9 +551,9 @@ CREATE TABLE log (
     launch_id     BIGINT,
     last_modified TIMESTAMP   NOT NULL,
     log_level     INTEGER     NOT NULL,
-    attachment_id BIGINT      REFERENCES attachment (id) ON DELETE SET NULL
---     FOREIGN KEY (item_id) REFERENCES test_item (item_id) ON DELETE CASCADE,
---     FOREIGN KEY (launch_id) REFERENCES launch (id) ON DELETE CASCADE,
+    attachment_id BIGINT,
+    FOREIGN KEY (item_id) REFERENCES test_item (item_id) ON DELETE CASCADE,
+    FOREIGN KEY (launch_id) REFERENCES launch (id) ON DELETE CASCADE
 --     FOREIGN KEY (attachment_id) REFERENCES attribute (id) ON DELETE SET NULL,
 --   CHECK ((item_id IS NOT NULL AND launch_id IS NULL) OR (item_id IS NULL AND launch_id IS NOT NULL))
 );
@@ -625,9 +625,9 @@ CREATE TABLE statistics (
     s_counter           INT DEFAULT 0,
     launch_id           BIGINT,
     item_id             BIGINT,
-    statistics_field_id BIGINT
---     FOREIGN KEY (launch_id) REFERENCES launch (id) ON DELETE CASCADE,
---     FOREIGN KEY (item_id) REFERENCES test_item (item_id) ON DELETE CASCADE,
+    statistics_field_id BIGINT,
+    FOREIGN KEY (launch_id) REFERENCES launch (id) ON DELETE CASCADE,
+    FOREIGN KEY (item_id) REFERENCES test_item (item_id) ON DELETE CASCADE
 --     FOREIGN KEY (statistics_field_id) REFERENCES statistics_field (sf_id) ON DELETE CASCADE,
 --     CONSTRAINT unique_stats_item UNIQUE (statistics_field_id, item_id),
 --     CONSTRAINT unique_stats_launch UNIQUE (statistics_field_id, launch_id),
@@ -1748,31 +1748,22 @@ $$ LANGUAGE plpgsql;
 -- migration settings
 
 ALTER TABLE test_item
-    SET (
-        AUTOVACUUM_ENABLED = FALSE
-        );
+    SET (AUTOVACUUM_ENABLED = FALSE);
 
 ALTER TABLE test_item_results
-    SET (
-        AUTOVACUUM_ENABLED = FALSE
-        );
+    SET (AUTOVACUUM_ENABLED = FALSE);
 
 ALTER TABLE item_attribute
-    SET (
-        AUTOVACUUM_ENABLED = FALSE
-        );
+    SET (AUTOVACUUM_ENABLED = FALSE);
 
 ALTER TABLE parameter
-    SET (
-        AUTOVACUUM_ENABLED = FALSE
-        );
+    SET (AUTOVACUUM_ENABLED = FALSE);
 
 ALTER TABLE issue
-    SET (
-        AUTOVACUUM_ENABLED = FALSE
-        );
+    SET (AUTOVACUUM_ENABLED = FALSE);
 
 ALTER TABLE statistics
-    SET (
-        AUTOVACUUM_ENABLED = FALSE
-        );
+    SET (AUTOVACUUM_ENABLED = FALSE);
+
+ALTER TABLE log
+    SET (AUTOVACUUM_ENABLED = FALSE);
