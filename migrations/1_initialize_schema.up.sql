@@ -664,7 +664,7 @@ CREATE TABLE issue (
 CREATE TABLE ticket (
     id          BIGSERIAL
         CONSTRAINT ticket_pk PRIMARY KEY,
-    ticket_id   VARCHAR(64)             NOT NULL,
+    ticket_id   VARCHAR(512)             NOT NULL,
     submitter   VARCHAR                 NOT NULL,
     submit_date TIMESTAMP DEFAULT now() NOT NULL,
     bts_url     VARCHAR(1024)           NOT NULL,
