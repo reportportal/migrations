@@ -1,15 +1,8 @@
 DO
 $$DECLARE
-  defaultproject BIGINT;
-  superadminproject BIGINT;
-  defaultid BIGINT;
-  superadmin BIGINT;
   ldap BIGINT;
   email BIGINT;
 BEGIN
-
---     INSERT INTO server_settings (key, value) VALUES ('server.analytics.all', 'true');
---     INSERT INTO server_settings (key, value) VALUES ('server.details.instance', gen_random_uuid());
 
     INSERT INTO integration_type (enabled, name, auth_flow, creation_date, group_type) VALUES (TRUE, 'ldap', 'LDAP', now(), 'AUTH');
     ldap := (SELECT currval(pg_get_serial_sequence('integration_type', 'id')));
@@ -64,51 +57,6 @@ BEGIN
     INSERT INTO attribute (name) VALUES ('analyzer.autoAnalyzerMode');
     INSERT INTO attribute (name) VALUES ('notifications.enabled');
     INSERT INTO attribute (name) VALUES ('email.from');
-
---
---     -- Superadmin project and user
---     INSERT INTO project (name, project_type, creation_date, metadata) VALUES ('superadmin_personal', 'PERSONAL', now(), '{"metadata": {"additional_info": ""}}');
---     superadminproject := (SELECT currval(pg_get_serial_sequence('project', 'id')));
---
---     INSERT INTO users (login, password, email, role, type, full_name, expired, metadata)
---     VALUES ('superadmin', '5d39d85bddde885f6579f8121e11eba2', 'superadminemail@domain.com', 'ADMINISTRATOR', 'INTERNAL', 'tester', FALSE,
---             '{"metadata": {"last_login": 0}}');
---     superadmin := (SELECT currval(pg_get_serial_sequence('users', 'id')));
---
---     INSERT INTO project_user (user_id, project_id, project_role) VALUES (superadmin, superadminproject, 'PROJECT_MANAGER');
---
---     -- Default project and user
---     INSERT INTO project (name, project_type, creation_date, metadata) VALUES ('default_personal', 'PERSONAL', now(), '{"metadata": {"additional_info": ""}}');
---     defaultproject := (SELECT currval(pg_get_serial_sequence('project', 'id')));
---
---     INSERT INTO users (login, password, email, role, type, full_name, expired, metadata)
---     VALUES ('default', '3fde6bb0541387e4ebdadf7c2ff31123', 'defaultemail@domain.com', 'USER', 'INTERNAL', 'tester', FALSE,
---             '{"metadata": {"last_login": 0}}');
---     defaultid := (SELECT currval(pg_get_serial_sequence('users', 'id')));
---
---     INSERT INTO project_user (user_id, project_id, project_role) VALUES (defaultid, defaultproject, 'PROJECT_MANAGER');
---
---     -- Project configurations
---
---     INSERT INTO issue_type_project (project_id, issue_type_id) VALUES
---     (superadminproject, 1), (superadminproject, 2), (superadminproject, 3), (superadminproject, 4), (superadminproject, 5),
---     (defaultproject, 1),(defaultproject, 2),(defaultproject, 3),(defaultproject, 4),(defaultproject, 5);
---
---
---     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (1, '1 day', defaultproject), (1, '1 day', superadminproject);
---     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (2, '3 months', defaultproject), (2, '3 months', superadminproject);
---     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (3, '2 weeks', defaultproject), (3, '2 weeks', superadminproject);
---     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (4, '2 weeks', defaultproject), (4, '2 weeks', superadminproject);
---     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (5, 7, defaultproject), (5, 7, superadminproject);
---     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (6, 1, defaultproject), (6, 1, superadminproject);
---     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (7, 80, defaultproject), (7, 80, superadminproject);
---     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (8, 2, defaultproject), (8, 2, superadminproject);
---     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (9, FALSE, defaultproject), (9, FALSE, superadminproject);
---     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (10, FALSE, defaultproject), (10, FALSE, superadminproject);
---     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (11, FALSE, defaultproject), (11, FALSE, superadminproject);
---     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (12, 'LAUNCH_NAME', defaultproject), (12, 'LAUNCH_NAME', superadminproject);
---     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (13, 'false', defaultproject), (13, 'false', superadminproject);
---     INSERT INTO project_attribute (attribute_id, value, project_id) VALUES (14, 'reportportal@example.com', defaultproject), (14, 'reportportal@example.com', superadminproject);
 
 END
 $$;

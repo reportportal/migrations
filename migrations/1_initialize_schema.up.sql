@@ -384,29 +384,27 @@ CREATE TABLE widget_filter (
 CREATE TABLE launch (
     id                   BIGSERIAL
         CONSTRAINT launch_pk PRIMARY KEY,
-    uuid                 VARCHAR(36)      NOT NULL UNIQUE,
-    project_id           BIGINT           NOT NULL,
-    user_id              BIGINT,
-    name                 VARCHAR(256)     NOT NULL,
+    uuid                 VARCHAR(36)                                      NOT NULL UNIQUE,
+    project_id           BIGINT REFERENCES project (id) ON DELETE CASCADE NOT NULL,
+    user_id              BIGINT                                           REFERENCES users (id) ON DELETE SET NULL,
+    name                 VARCHAR(256)                                     NOT NULL,
     description          TEXT,
-    start_time           TIMESTAMP        NOT NULL,
+    start_time           TIMESTAMP                                        NOT NULL,
     end_time             TIMESTAMP,
-    number               INTEGER          NOT NULL,
-    last_modified        TIMESTAMP                 DEFAULT now() NOT NULL,
-    mode                 LAUNCH_MODE_ENUM NOT NULL,
-    status               STATUS_ENUM      NOT NULL,
-    has_retries          BOOLEAN          NOT NULL DEFAULT FALSE,
-    rerun                BOOLEAN          NOT NULL DEFAULT FALSE,
-    approximate_duration DOUBLE PRECISION          DEFAULT 0.0,
-    CONSTRAINT unq_name_number UNIQUE (name, number, project_id),
-    FOREIGN KEY (project_id) REFERENCES project (id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL
+    number               INTEGER                                          NOT NULL,
+    last_modified        TIMESTAMP                                                 DEFAULT now() NOT NULL,
+    mode                 LAUNCH_MODE_ENUM                                 NOT NULL,
+    status               STATUS_ENUM                                      NOT NULL,
+    has_retries          BOOLEAN                                          NOT NULL DEFAULT FALSE,
+    rerun                BOOLEAN                                          NOT NULL DEFAULT FALSE,
+    approximate_duration DOUBLE PRECISION                                          DEFAULT 0.0,
+    CONSTRAINT unq_name_number UNIQUE (name, number, project_id)
 );
 
--- CREATE INDEX launch_project_idx
---   ON launch (project_id);
--- CREATE INDEX launch_user_idx
---   ON launch (user_id);
+CREATE INDEX launch_project_idx
+    ON launch (project_id);
+CREATE INDEX launch_user_idx
+    ON launch (user_id);
 CREATE INDEX launch_uuid_idx
     ON launch USING hash (uuid);
 
@@ -430,50 +428,47 @@ CREATE TABLE test_item (
     description   TEXT,
     last_modified TIMESTAMP           NOT NULL,
     path          LTREE,
-    unique_id     VARCHAR(1024),
+    unique_id     VARCHAR(256),
     test_case_id  INTEGER,
     has_children  BOOLEAN DEFAULT FALSE,
     has_retries   BOOLEAN DEFAULT FALSE,
     has_stats     BOOLEAN DEFAULT TRUE,
-    parent_id     BIGINT,
-    retry_of      BIGINT,
-    launch_id     BIGINT,
-    FOREIGN KEY (parent_id) REFERENCES test_item (item_id) ON DELETE CASCADE,
-    FOREIGN KEY (launch_id) REFERENCES launch (id) ON DELETE CASCADE
---     FOREIGN KEY (retry_of) REFERENCES test_item (item_id) ON DELETE CASCADE,
+    parent_id     BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE,
+    retry_of      BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE,
+    launch_id     BIGINT REFERENCES launch (id) ON DELETE CASCADE
 );
 
+CREATE INDEX ti_parent_idx
+    ON test_item (parent_id NULLS LAST);
+CREATE INDEX ti_launch_idx
+    ON test_item (launch_id NULLS LAST);
+CREATE INDEX ti_retry_of_idx
+    ON test_item (retry_of NULLS LAST);
 CREATE INDEX ti_uuid_idx
     ON test_item USING hash (uuid);
--- CREATE INDEX ti_parent_idx
---     ON test_item (parent_id NULLS LAST);
--- CREATE INDEX ti_launch_idx
---     ON test_item (launch_id NULLS LAST);
--- CREATE INDEX ti_retry_of_idx
---     ON test_item (retry_of NULLS LAST);
--- CREATE INDEX test_item_unique_id_idx
---     ON test_item (unique_id);
--- CREATE INDEX item_test_case_id_idx
---     ON test_item (test_case_id);
--- CREATE INDEX test_item_unique_id_launch_id_idx
---     ON test_item (unique_id, launch_id);
--- CREATE INDEX item_test_case_id_launch_id_idx
---     ON test_item (test_case_id, launch_id);
--- CREATE INDEX path_gist_idx
---   ON test_item
---     USING gist (path);
--- CREATE INDEX path_idx
---   ON test_item
---     USING btree (path);
+CREATE INDEX test_item_unique_id_idx
+    ON test_item (unique_id);
+CREATE INDEX item_test_case_id_idx
+    ON test_item (test_case_id);
+CREATE INDEX test_item_unique_id_launch_id_idx
+    ON test_item (unique_id, launch_id);
+CREATE INDEX item_test_case_id_launch_id_idx
+    ON test_item (test_case_id, launch_id);
 
 CREATE TABLE test_item_results (
     result_id BIGINT
-        CONSTRAINT test_item_results_pk PRIMARY KEY,
+        CONSTRAINT test_item_results_pk PRIMARY KEY REFERENCES test_item (item_id) ON DELETE CASCADE UNIQUE,
     status    STATUS_ENUM NOT NULL,
     end_time  TIMESTAMP,
-    duration  DOUBLE PRECISION,
-    FOREIGN KEY (result_id) REFERENCES test_item (item_id) ON DELETE CASCADE
+    duration  DOUBLE PRECISION
 );
+
+CREATE INDEX path_gist_idx
+    ON test_item
+        USING gist (path);
+CREATE INDEX path_idx
+    ON test_item
+        USING btree (path);
 
 CREATE TABLE pattern_template (
     id         BIGSERIAL
@@ -498,14 +493,13 @@ CREATE INDEX pattern_item_item_id_idx
     ON pattern_template_test_item (item_id);
 
 CREATE TABLE parameter (
-    item_id BIGINT,
+    item_id BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE,
     key     VARCHAR NOT NULL,
-    value   VARCHAR NOT NULL,
-    FOREIGN KEY (item_id) REFERENCES test_item (item_id) ON DELETE CASCADE
+    value   VARCHAR NOT NULL
 );
 
--- CREATE INDEX parameter_ti_idx
---   ON parameter (item_id);
+CREATE INDEX parameter_ti_idx
+    ON parameter (item_id);
 
 CREATE TABLE item_attribute (
     id        BIGSERIAL
@@ -514,14 +508,14 @@ CREATE TABLE item_attribute (
     value     VARCHAR NOT NULL,
     item_id   BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE,
     launch_id BIGINT REFERENCES launch (id) ON DELETE CASCADE,
-    system    BOOLEAN DEFAULT FALSE
---     CHECK ((item_id IS NOT NULL AND launch_id IS NULL) OR (item_id IS NULL AND launch_id IS NOT NULL))
+    system    BOOLEAN DEFAULT FALSE,
+    CHECK ((item_id IS NOT NULL AND launch_id IS NULL) OR (item_id IS NULL AND launch_id IS NOT NULL))
 );
 
--- CREATE INDEX item_attr_ti_idx
---   ON item_attribute (item_id NULLS LAST);
--- CREATE INDEX item_attr_launch_idx
---   ON item_attribute (launch_id NULLS LAST);
+CREATE INDEX item_attr_ti_idx
+    ON item_attribute (item_id NULLS LAST);
+CREATE INDEX item_attr_launch_idx
+    ON item_attribute (launch_id NULLS LAST);
 
 CREATE TABLE attachment (
     id           BIGSERIAL
@@ -547,23 +541,20 @@ CREATE TABLE log (
     uuid          VARCHAR(36) NOT NULL UNIQUE,
     log_time      TIMESTAMP   NOT NULL,
     log_message   TEXT        NOT NULL,
-    item_id       BIGINT,
-    launch_id     BIGINT,
+    item_id       BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE,
+    launch_id     BIGINT REFERENCES launch (id) ON DELETE CASCADE,
     last_modified TIMESTAMP   NOT NULL,
     log_level     INTEGER     NOT NULL,
-    attachment_id BIGINT,
-    FOREIGN KEY (item_id) REFERENCES test_item (item_id) ON DELETE CASCADE,
-    FOREIGN KEY (launch_id) REFERENCES launch (id) ON DELETE CASCADE
---     FOREIGN KEY (attachment_id) REFERENCES attribute (id) ON DELETE SET NULL,
---   CHECK ((item_id IS NOT NULL AND launch_id IS NULL) OR (item_id IS NULL AND launch_id IS NOT NULL))
+    attachment_id BIGINT      REFERENCES attachment (id) ON DELETE SET NULL,
+    CHECK ((item_id IS NOT NULL AND launch_id IS NULL) OR (item_id IS NULL AND launch_id IS NOT NULL))
 );
 
--- CREATE INDEX log_ti_idx
---   ON log (item_id);
--- CREATE INDEX log_message_trgm_idx
---   ON log USING GIN(log_message gin_trgm_ops);
--- CREATE INDEX log_uuid_idx
---   ON log USING HASH (uuid);
+CREATE INDEX log_ti_idx
+    ON log (item_id);
+CREATE INDEX log_message_trgm_idx
+    ON log USING gin (log_message gin_trgm_ops);
+CREATE INDEX log_uuid_idx
+    ON log USING hash (uuid);
 
 CREATE TABLE activity (
     id            BIGSERIAL
@@ -623,22 +614,19 @@ CREATE TABLE statistics (
     s_id                BIGSERIAL
         CONSTRAINT statistics_pk PRIMARY KEY,
     s_counter           INT DEFAULT 0,
-    launch_id           BIGINT,
-    item_id             BIGINT,
-    statistics_field_id BIGINT,
-    FOREIGN KEY (launch_id) REFERENCES launch (id) ON DELETE CASCADE,
-    FOREIGN KEY (item_id) REFERENCES test_item (item_id) ON DELETE CASCADE
---     FOREIGN KEY (statistics_field_id) REFERENCES statistics_field (sf_id) ON DELETE CASCADE,
---     CONSTRAINT unique_stats_item UNIQUE (statistics_field_id, item_id),
---     CONSTRAINT unique_stats_launch UNIQUE (statistics_field_id, launch_id),
---     CHECK (statistics.s_counter >= 0 AND ((item_id IS NOT NULL AND launch_id IS NULL) OR (launch_id IS NOT NULL AND item_id IS NULL))
---         )
+    launch_id           BIGINT REFERENCES launch (id) ON DELETE CASCADE,
+    item_id             BIGINT REFERENCES test_item (item_id) ON DELETE CASCADE,
+    statistics_field_id BIGINT REFERENCES statistics_field (sf_id) ON DELETE CASCADE,
+    CONSTRAINT unique_stats_item UNIQUE (statistics_field_id, item_id),
+    CONSTRAINT unique_stats_launch UNIQUE (statistics_field_id, launch_id),
+    CHECK (statistics.s_counter >= 0 AND ((item_id IS NOT NULL AND launch_id IS NULL) OR (launch_id IS NOT NULL AND item_id IS NULL))
+        )
 );
 
--- CREATE INDEX statistics_ti_idx
---     ON statistics (item_id NULLS LAST);
--- CREATE INDEX statistics_launch_idx
---     ON statistics (launch_id NULLS LAST);
+CREATE INDEX statistics_ti_idx
+    ON statistics (item_id NULLS LAST);
+CREATE INDEX statistics_launch_idx
+    ON statistics (launch_id NULLS LAST);
 
 CREATE TABLE issue_type_project (
     project_id    BIGINT REFERENCES project ON DELETE CASCADE,
@@ -650,37 +638,34 @@ CREATE TABLE issue_type_project (
 
 CREATE TABLE issue (
     issue_id          BIGINT
-        CONSTRAINT issue_pk PRIMARY KEY,
+        CONSTRAINT issue_pk PRIMARY KEY REFERENCES test_item_results (result_id) ON DELETE CASCADE,
     issue_type        BIGINT REFERENCES issue_type (id) ON DELETE CASCADE,
     issue_description TEXT,
     auto_analyzed     BOOLEAN DEFAULT FALSE,
     ignore_analyzer   BOOLEAN DEFAULT FALSE
---     FOREIGN KEY (issue_id) REFERENCES test_item_results (result_id) ON DELETE CASCADE
 );
 
--- CREATE INDEX issue_it_idx
---   ON issue (issue_type);
+CREATE INDEX issue_it_idx
+    ON issue (issue_type);
 
 CREATE TABLE ticket (
     id          BIGSERIAL
         CONSTRAINT ticket_pk PRIMARY KEY,
-    ticket_id   VARCHAR(512)             NOT NULL,
+    ticket_id   VARCHAR(64)             NOT NULL,
     submitter   VARCHAR                 NOT NULL,
     submit_date TIMESTAMP DEFAULT now() NOT NULL,
-    bts_url     VARCHAR(1024)           NOT NULL,
-    bts_project VARCHAR(1024)           NOT NULL,
-    url         VARCHAR(1024)           NOT NULL
+    bts_url     VARCHAR(256)            NOT NULL,
+    bts_project VARCHAR(256)            NOT NULL,
+    url         VARCHAR(256)            NOT NULL
 );
 
--- CREATE INDEX ticket_submitter_idx
---   ON ticket (submitter);
+CREATE INDEX ticket_submitter_idx
+    ON ticket (submitter);
 
 CREATE TABLE issue_ticket (
-    issue_id  BIGINT NOT NULL,
-    ticket_id BIGINT NOT NULL,
+    issue_id  BIGINT REFERENCES issue (issue_id) ON DELETE CASCADE NOT NULL,
+    ticket_id BIGINT REFERENCES ticket (id)                        NOT NULL,
     CONSTRAINT issue_ticket_pk PRIMARY KEY (issue_id, ticket_id)
---     FOREIGN KEY (issue_id) REFERENCES issue (issue_id) ON DELETE CASCADE,
---     FOREIGN KEY (ticket_id) REFERENCES ticket (id)
 );
 
 ----------------------------------------------------------------------------------------
@@ -1034,7 +1019,7 @@ BEGIN
     END IF;
 
     IF
-        maxstarttime <= newitemstarttime
+            maxstarttime <= newitemstarttime
     THEN
         UPDATE test_item
         SET retry_of    = newitemid,
@@ -1727,43 +1712,3 @@ CREATE TRIGGER after_widget_update
 EXECUTE PROCEDURE update_share_flag();
 
 COMMIT;
-
-
-CREATE OR REPLACE FUNCTION multi_nextval(use_seqname REGCLASS,
-                                         use_increment INTEGER) RETURNS BIGINT AS
-$$
-DECLARE
-    reply   BIGINT;
-    lock_id BIGINT := (use_seqname::BIGINT - 2147483648)::INTEGER;
-BEGIN
-    PERFORM pg_advisory_lock(lock_id);
-    reply := nextval(use_seqname);
-    PERFORM setval(use_seqname, reply + use_increment - 1, TRUE);
-    PERFORM pg_advisory_unlock(lock_id);
-    RETURN reply;
-END;
-$$ LANGUAGE plpgsql;
-
-
--- migration settings
-
-ALTER TABLE test_item
-    SET (AUTOVACUUM_ENABLED = FALSE);
-
-ALTER TABLE test_item_results
-    SET (AUTOVACUUM_ENABLED = FALSE);
-
-ALTER TABLE item_attribute
-    SET (AUTOVACUUM_ENABLED = FALSE);
-
-ALTER TABLE parameter
-    SET (AUTOVACUUM_ENABLED = FALSE);
-
-ALTER TABLE issue
-    SET (AUTOVACUUM_ENABLED = FALSE);
-
-ALTER TABLE statistics
-    SET (AUTOVACUUM_ENABLED = FALSE);
-
-ALTER TABLE log
-    SET (AUTOVACUUM_ENABLED = FALSE);
