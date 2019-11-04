@@ -1019,7 +1019,7 @@ BEGIN
     END IF;
 
     IF
-            maxstarttime <= newitemstarttime
+        maxstarttime <= newitemstarttime
     THEN
         UPDATE test_item
         SET retry_of    = newitemid,
