@@ -14,6 +14,8 @@ DROP TRIGGER IF EXISTS before_issue_delete
     ON issue;
 DROP TRIGGER IF EXISTS approximate_duration_trigger
     ON launch;
+DROP TRIGGER IF EXISTS after_widget_update
+    ON widget;
 
 DROP FUNCTION IF EXISTS get_last_launch_number();
 DROP FUNCTION IF EXISTS count_approximate_duration();
@@ -27,6 +29,7 @@ DROP FUNCTION IF EXISTS decrease_statistics();
 DROP FUNCTION IF EXISTS merge_launch(LaunchId BIGINT);
 DROP FUNCTION IF EXISTS handle_retries(itemId BIGINT);
 DROP FUNCTION IF EXISTS retries_statistics(cur_launch_id BIGINT);
+DROP FUNCTION IF EXISTS update_share_flag();
 
 DROP EXTENSION IF EXISTS ltree CASCADE;
 DROP EXTENSION IF EXISTS pgcrypto CASCADE;
