@@ -7,3 +7,6 @@ ALTER TABLE ticket
 ALTER TABLE test_item
     ALTER COLUMN unique_id TYPE VARCHAR(1024),
     ALTER COLUMN code_ref TYPE VARCHAR;
+
+CREATE INDEX IF NOT EXISTS log_attach_id_idx
+    ON log (attachment_id);
