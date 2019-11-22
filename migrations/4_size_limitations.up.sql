@@ -10,3 +10,7 @@ ALTER TABLE test_item
 
 CREATE INDEX IF NOT EXISTS log_attach_id_idx
     ON log (attachment_id);
+
+DROP INDEX IF EXISTS activity_project_idx;
+CREATE INDEX IF NOT EXISTS activity_project_idx
+    ON activity (project_id, creation_date);
