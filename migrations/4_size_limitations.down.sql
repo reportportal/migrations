@@ -11,6 +11,5 @@ DROP INDEX IF EXISTS log_attach_id_idx;
 
 DROP INDEX IF EXISTS log_launch_id_idx;
 
-DROP INDEX IF EXISTS activity_project_idx;
-CREATE INDEX IF NOT EXISTS activity_project_idx
-    ON activity (project_id);
+DROP INDEX IF EXISTS activity_creation_date_idx;
+DROP INDEX IF EXISTS activity_object_idx;
