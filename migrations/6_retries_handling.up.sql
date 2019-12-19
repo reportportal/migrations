@@ -3,6 +3,7 @@ CREATE OR REPLACE FUNCTION handle_retries(itemid BIGINT)
 AS
 $$
 DECLARE
+    cur_id                 BIGINT;
     max_start_time         TIMESTAMP;
     max_start_time_item_id BIGINT;
     new_item_start_time    TIMESTAMP;
@@ -55,15 +56,23 @@ BEGIN
         new_item_parent_id := (SELECT item_id FROM test_item WHERE item_id = (SELECT parent_id FROM test_item WHERE item_id = itemid));
         path_value := (SELECT path FROM test_item WHERE item_id = new_item_id) :: TEXT;
 
-        UPDATE test_item
-        SET retry_of    = new_item_id,
-            launch_id   = NULL,
-            has_retries = FALSE,
-            path        = (path_value || '.' || item_id) :: LTREE
-        WHERE unique_id = new_item_unique_id
-          AND name = new_item_name
-          AND parent_id = new_item_parent_id
-          AND item_id != new_item_id;
+        FOR cur_id IN
+            (SELECT item_id
+             FROM test_item
+             WHERE unique_id = new_item_unique_id
+               AND name = new_item_name
+               AND parent_id = new_item_parent_id
+               AND item_id != new_item_id
+             ORDER BY item_id)
+
+            LOOP
+                UPDATE test_item
+                SET retry_of    = new_item_id,
+                    launch_id   = NULL,
+                    has_retries = FALSE,
+                    path        = (path_value || '.' || item_id) :: LTREE
+                WHERE test_item.item_id = cur_id;
+            END LOOP;
 
 
         DELETE FROM issue WHERE issue_id IN (SELECT item_id FROM test_item WHERE retry_of = new_item_id);
