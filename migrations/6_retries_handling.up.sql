@@ -75,8 +75,7 @@ BEGIN
             END LOOP;
 
 
-        DELETE FROM issue WHERE issue_id IN (SELECT item_id FROM test_item WHERE retry_of = new_item_id);
-        DELETE FROM statistics WHERE item_id IN (SELECT item_id FROM test_item WHERE retry_of = new_item_id);
+        PERFORM retries_statistics(new_item_launch_id);
     ELSE
 
         path_value := (SELECT path FROM test_item WHERE item_id = max_start_time_item_id) :: TEXT;
@@ -104,8 +103,6 @@ BEGIN
 END;
 $$
     LANGUAGE plpgsql;
-
-DROP FUNCTION IF EXISTS retries_statistics(cur_launch_id BIGINT);
 
 CREATE OR REPLACE FUNCTION update_executions_statistics()
     RETURNS TRIGGER AS
