@@ -54,8 +54,6 @@ BEGIN
     INSERT INTO attribute (name) VALUES ('job.keepLaunches');
     INSERT INTO attribute (name) VALUES ('job.keepLogs');
     INSERT INTO attribute (name) VALUES ('job.keepScreenshots');
-    INSERT INTO attribute (name) VALUES ('analyzer.minDocFreq');
-    INSERT INTO attribute (name) VALUES ('analyzer.minTermFreq');
     INSERT INTO attribute (name) VALUES ('analyzer.minShouldMatch');
     INSERT INTO attribute (name) VALUES ('analyzer.numberOfLogLines');
     INSERT INTO attribute (name) VALUES ('analyzer.indexingRunning');
