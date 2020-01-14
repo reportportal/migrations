@@ -25,7 +25,7 @@ services:
     environment:
       POSTGRES_USER: rpuser
       POSTGRES_PORT: 5432
-      POSTGRES_PASSWORD: rppass123
+      POSTGRES_PASSWORD: rppass
       POSTGRES_SERVER: postgres
       POSTGRES_DB: reportportal
 
