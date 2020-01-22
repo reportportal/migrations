@@ -11,11 +11,11 @@ node {
     stage('Build') {
         docker.withServer("$DOCKER_HOST") {
             stage('Build Docker Image') {
-                sh 'docker-compose -p reportportal51 build migrations'
+                sh 'docker-compose -p reportportal build migrations'
             }
 
             stage('Run Migrations') {
-                sh "docker-compose -p reportportal51 run --rm migrations up"
+                sh "docker-compose -p reportportal run --rm migrations up"
             }
         }
     }
