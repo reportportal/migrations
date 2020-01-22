@@ -11,7 +11,7 @@ node {
     stage('Build') {
         docker.withServer("$DOCKER_HOST") {
             stage('Build Docker Image') {
-                sh 'docker build -t reportportal-dev/migrations'
+                sh 'docker build -t reportportal-dev/migrations .'
             }
 
             stage('Run Migrations') {
