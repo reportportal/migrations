@@ -4,21 +4,19 @@ node {
 
     load "$JENKINS_HOME/jobvars.env"
 
-        stage('Checkout') {
-            checkout scm
-            sh 'git checkout master'
-            sh 'git pull'
-        }
+    stage('Checkout') {
+        checkout scm
+    }
 
-        stage('Build') {
-            docker.withServer("$DOCKER_HOST") {
-                        stage('Build Docker Image') {
-                            sh 'docker-compose -p reportportal5 build migrations'
-                        }
+    stage('Build') {
+        docker.withServer("$DOCKER_HOST") {
+            stage('Build Docker Image') {
+                sh 'docker-compose -p reportportal51 build migrations'
+            }
 
-                        stage('Run Migrations') {
-                            sh "docker-compose -p reportportal5 run --rm migrations up"
-                        }
+            stage('Run Migrations') {
+                sh "docker-compose -p reportportal51 run --rm migrations up"
             }
         }
+    }
 }
