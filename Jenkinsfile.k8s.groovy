@@ -70,7 +70,10 @@ podTemplate(
                 def configDir = '/tmp/.docker'
                 container('buildkit') {
                     sh "mkdir $configDir"
-                    sh "echo '$dCreds' >> $configDir/config.json"
+                    sh '''
+                        set +x
+                        echo '$dCreds' >> $configDir/config.json"
+                    '''
                     sh """
                         export DOCKER_CONFIG=$configDir/
                         buildctl-daemonless.sh build --frontend dockerfile.v0 --local context=$baseDir --local dockerfile=$baseDir --output type=image,name=gcr.io/or2-msq-epmc-tst-t1iylu/migrations,push=true
