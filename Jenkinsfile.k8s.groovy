@@ -21,6 +21,7 @@ podTemplate(
         volumes: [
                 secretVolume(mountPath: '/etc/.docker', secretName: 'dockerconfigjson-secret'),
                 secretVolume(mountPath: '/etc/gcr-acc', secretName: 'kaniko-secret'),
+                emptyDirVolume(mountPath: '/root/.docker/', memory: false),
         ]
 ) {
 
@@ -60,22 +61,14 @@ podTemplate(
         }
         def utils = load "${ciDir}/jenkins/scripts/util.groovy"
         stage('Build Image') {
-            def dCreds
             container ('docker') {
                 sh "cat /etc/gcr-acc/or2-msq-epmc-tst-t1iylu-c9e5b963b6be.json | docker login -u _json_key --password-stdin gcr.io"
-                dCreds = utils.execStdout('cat /root/.docker/config.json')
             }
             dir('migrations') {
                 def baseDir = utils.execStdout('pwd')
-                def configDir = '/tmp/.docker'
                 container('buildkit') {
-                    sh "mkdir $configDir"
-                    sh '''
-                        set +x
-                        echo '$dCreds' >> $configDir/config.json
-                    '''
                     sh """
-                        export DOCKER_CONFIG=$configDir/
+                        export DOCKER_CONFIG=/root/.docker/
                         buildctl-daemonless.sh build --frontend dockerfile.v0 --local context=$baseDir --local dockerfile=$baseDir --output type=image,name=gcr.io/or2-msq-epmc-tst-t1iylu/migrations,push=true
                     """
                 }
