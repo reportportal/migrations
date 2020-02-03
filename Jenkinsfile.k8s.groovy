@@ -72,7 +72,7 @@ podTemplate(
                     sh "mkdir $configDir"
                     sh '''
                         set +x
-                        echo '$dCreds' >> $configDir/config.json"
+                        echo '$dCreds' >> $configDir/config.json
                     '''
                     sh """
                         export DOCKER_CONFIG=$configDir/
