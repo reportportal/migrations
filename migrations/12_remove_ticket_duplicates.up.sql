@@ -1,3 +1,4 @@
+CREATE INDEX ON ticket(ticket_id);
 CREATE OR REPLACE FUNCTION migrate_tickets() RETURNS VOID AS
 $$
 DECLARE
