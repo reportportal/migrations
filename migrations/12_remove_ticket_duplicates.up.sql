@@ -1,4 +1,4 @@
-CREATE INDEX ticket_id_idx IF NOT EXISTS ON ticket(ticket_id);
+CREATE INDEX IF NOT EXISTS ticket_id_idx ON ticket(ticket_id);
 CREATE OR REPLACE FUNCTION migrate_tickets() RETURNS VOID AS
 $$
 DECLARE
