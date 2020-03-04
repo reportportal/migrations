@@ -4,7 +4,7 @@ ALTER TABLE project
     ADD COLUMN allocated_storage BIGINT NOT NULL DEFAULT 0;
 
 UPDATE project AS prj
-SET allocated_storage = (SELECT sum(attachment.file_size) FROM attachment WHERE project_id = prj.id);
+SET allocated_storage = (SELECT coalesce(sum(attachment.file_size), 0) FROM attachment WHERE project_id = prj.id);
 
 -- increase allocated storage on insert
 
