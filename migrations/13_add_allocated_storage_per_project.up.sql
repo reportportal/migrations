@@ -32,7 +32,7 @@ CREATE OR REPLACE FUNCTION decrease_allocated_size()
 $$
 BEGIN
     UPDATE project
-    SET allocated_storage = CASE WHEN (allocated_storage - new.file_size < 0) THEN 0 ELSE allocated_storage - new.file_size END
+    SET allocated_storage = (CASE WHEN (allocated_storage - old.file_size < 0) THEN 0 ELSE allocated_storage - old.file_size END)
     WHERE id = old.project_id;
     RETURN old;
 END;
