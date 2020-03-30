@@ -9,7 +9,7 @@ ADD "https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.
 COPY entrypoint.sh /entrypoint.sh
 #COPY wait-for-postgres.sh /wait-for-postgres.sh
 RUN chmod +x /entrypoint.sh
-RUN chmod +x /wait-for-it.sh
+RUN chmod +xr /wait-for-it.sh
 
 COPY migrations/ /migrations/
 ENTRYPOINT ["/entrypoint.sh"]
