@@ -22,8 +22,10 @@ node {
             stage('Push to ECR') {
                 docker.withServer("$DOCKER_HOST") {
                     sh 'docker tag reportportal-dev/migrations 334301710522.dkr.ecr.eu-central-1.amazonaws.com/db-scripts:SNAPSHOT-${BUILD_NUMBER}'
-                    sh '$(aws ecr get-login --region eu-central-1 --no-include-email)'
-                    sh 'docker push 334301710522.dkr.ecr.eu-central-1.amazonaws.com/db-scripts:SNAPSHOT-${BUILD_NUMBER}'
+                    withAWS(profile:'default') {
+                        sh '$(aws ecr get-login --region eu-central-1 --no-include-email)'
+                        sh 'docker push 334301710522.dkr.ecr.eu-central-1.amazonaws.com/db-scripts:SNAPSHOT-${BUILD_NUMBER}'
+                    }
                 }
             }
         }
