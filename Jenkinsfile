@@ -18,10 +18,11 @@ node {
                 sh "docker-compose -p reportportal -f $COMPOSE_FILE_RP run --rm migrations up"
             }
             stage('Push to ECR') {
-                def uri = 'https://' + $AWS_URI;
-                def credentials = 'ecr:' + $AWS_REGION + ':aws_credentials';
-                docker.withRegistry(uri, credentials) {
-                    docker.image('$AWS_URI/db-scripts').push('SNAPSHOT-${BUILD_NUMBER}')
+                def image = '$AWS_URI/db-scripts'
+                def url = 'https://$AWS_URI';
+                def credentials = 'ecr:$AWS_REGION:aws_credentials';
+                docker.withRegistry(url, credentials) {
+                    docker.image(image).push('SNAPSHOT-${BUILD_NUMBER}')
                 }
             }
         }
