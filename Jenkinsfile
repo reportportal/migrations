@@ -18,7 +18,7 @@ node {
                 sh "docker-compose -p reportportal -f $COMPOSE_FILE_RP run --rm migrations up"
             }
             stage('Push to ECR') {
-                sh 'docker tag reportportal-dev/db-scripts env.AWS_URI/db-scripts'
+                sh 'docker tag reportportal-dev/db-scripts $AWS_URI/db-scripts'
                 def image = env.AWS_URI + '/db-scripts'
                 def url = 'https://' + env.AWS_URI
                 def credentials = 'ecr:' + env.AWS_REGION + ':aws_credentials'
