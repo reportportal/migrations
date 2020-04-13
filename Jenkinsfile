@@ -19,7 +19,7 @@ node {
             }
             stage('Push to ECR') {
                 def uri = 'https://' + $AWS_URI;
-                def credentials = 'ecr:' + $AWS_URI + ':aws_credentials';
+                def credentials = 'ecr:' + $AWS_REGION + ':aws_credentials';
                 docker.withRegistry(uri, credentials) {
                     docker.image('$AWS_URI/db-scripts').push('SNAPSHOT-184')
                 }
