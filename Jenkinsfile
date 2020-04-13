@@ -11,20 +11,14 @@ node {
     stage('Build') {
         docker.withServer("$DOCKER_HOST") {
             stage('Build Docker Image') {
-                sh 'docker build -t reportportal-dev/migrations .'
+                sh 'docker build -t reportportal-dev/migrations -t 334301710522.dkr.ecr.eu-central-1.amazonaws.com/db-scripts:SNAPSHOT-${BUILD_NUMBER} .'
             }
-
             stage('Run Migrations') {
-                docker.withServer("$DOCKER_HOST") {
-                    sh "docker-compose -p reportportal -f $COMPOSE_FILE_RP run --rm migrations up"
-                }
+                sh "docker-compose -p reportportal -f $COMPOSE_FILE_RP run --rm migrations up"
             }
             stage('Push to ECR') {
-                docker.withServer("$DOCKER_HOST") {
-                    withAWS(credentials: 'aws-credentials', region: 'eu-central-1') {
-                        sh 'docker tag reportportal-dev/migrations 334301710522.dkr.ecr.eu-central-1.amazonaws.com/db-scripts:SNAPSHOT-${BUILD_NUMBER}'
-                        sh 'docker push 334301710522.dkr.ecr.eu-central-1.amazonaws.com/db-scripts:SNAPSHOT-${BUILD_NUMBER}'
-                    }
+                docker.withRegistry('https://34301710522.dkr.ecr.eu-central-1.amazonaws.com', 'ecr:us-central-1:aws-credentials') {
+                    docker.image('334301710522.dkr.ecr.eu-central-1.amazonaws.com/db-scripts').push('SNAPSHOT-${BUILD_NUMBER}')
                 }
             }
         }
