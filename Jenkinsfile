@@ -21,7 +21,7 @@ node {
                 def uri = 'https://' + $AWS_URI;
                 def credentials = 'ecr:' + $AWS_REGION + ':aws_credentials';
                 docker.withRegistry(uri, credentials) {
-                    docker.image('$AWS_URI/db-scripts').push('SNAPSHOT-184')
+                    docker.image('$AWS_URI/db-scripts').push('SNAPSHOT-${BUILD_NUMBER}')
                 }
             }
         }
