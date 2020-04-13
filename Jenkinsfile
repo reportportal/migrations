@@ -8,6 +8,7 @@ node {
         checkout scm
     }
 
+
     stage('Build') {
         docker.withServer("$DOCKER_HOST") {
             stage('Build Docker Image') {
@@ -17,6 +18,8 @@ node {
                 sh "docker-compose -p reportportal -f $COMPOSE_FILE_RP run --rm migrations up"
             }
             stage('Push to ECR') {
+                sh 'rm  ~/.dockercfg || true'
+                sh 'rm ~/.docker/config.json || true'
                 docker.withRegistry('https://34301710522.dkr.ecr.eu-central-1.amazonaws.com', 'ecr:us-central-1:aws-credentials') {
                     docker.image('334301710522.dkr.ecr.eu-central-1.amazonaws.com/db-scripts').push('SNAPSHOT-${BUILD_NUMBER}')
                 }
