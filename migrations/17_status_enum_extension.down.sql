@@ -1,10 +1,10 @@
 UPDATE test_item_results
 SET status = 'PASSED'
-WHERE status = ANY (array ['INFORMATION', 'WARNING']::status_enum[]);
+WHERE status = ANY (array ['INFO', 'WARN']::status_enum[]);
 
 DELETE
 FROM pg_enum
-WHERE (enumlabel = 'INFORMATION' OR enumlabel = 'WARNING')
+WHERE (enumlabel = 'INFO' OR enumlabel = 'WARN')
   AND enumtypid = (
     SELECT oid
     FROM pg_type
