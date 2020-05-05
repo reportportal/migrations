@@ -1,0 +1,2 @@
+ALTER TYPE status_enum ADD VALUE 'INFO';
+ALTER TYPE status_enum ADD VALUE 'WARN';
