@@ -1,4 +1,5 @@
 CREATE OR REPLACE FUNCTION clean_up_views()
+    RETURNS VOID
 AS
 $$
 DECLARE
