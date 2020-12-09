@@ -245,7 +245,7 @@ CREATE OR REPLACE FUNCTION increment_defect_statistics()
 $$
 DECLARE
     DECLARE
-    cur_item_id BIGINT;
+    cur_item_id           BIGINT;
     DECLARE
     defect_field          VARCHAR;
     DECLARE
@@ -455,6 +455,19 @@ DECLARE
 
 BEGIN
 
+    IF exists(SELECT 1
+              FROM test_item
+              WHERE test_item.item_id = new.result_id
+                AND (test_item.has_children
+                  OR (NOT test_item.has_stats OR
+                      (test_item.type != 'TEST' :: TEST_ITEM_TYPE_ENUM AND
+                       test_item.type != 'SCENARIO' :: TEST_ITEM_TYPE_ENUM AND
+                       test_item.type != 'STEP' :: TEST_ITEM_TYPE_ENUM)))
+        )
+    THEN
+        RETURN new;
+    END IF;
+
     cur_item_id := (SELECT item_id
                     FROM test_item
                     WHERE item_id = new.result_id
@@ -464,19 +477,6 @@ BEGIN
               FROM test_item
               WHERE item_id = new.result_id
                 AND (NOT has_stats OR retry_of IS NOT NULL))
-    THEN
-        RETURN new;
-    END IF;
-
-    IF exists(SELECT 1
-              FROM test_item
-              WHERE (test_item.parent_id = new.result_id
-                  AND test_item.has_stats)
-                 OR (test_item.item_id = new.result_id AND (NOT test_item.has_stats OR
-                                                            (test_item.type != 'TEST' :: TEST_ITEM_TYPE_ENUM AND
-                                                             test_item.type != 'SCENARIO' :: TEST_ITEM_TYPE_ENUM AND
-                                                             test_item.type != 'STEP' :: TEST_ITEM_TYPE_ENUM)))
-        )
     THEN
         RETURN new;
     END IF;
@@ -675,7 +675,6 @@ AS
 $$
 DECLARE
     current_retry_id BIGINT;
-    current_item_id  BIGINT;
     new_parent_path  LTREE;
 BEGIN
 
@@ -683,8 +682,6 @@ BEGIN
     THEN
         RETURN 1;
     END IF;
-
-    current_item_id = (SELECT item_id FROM test_item WHERE item_id = retry_parent_id FOR UPDATE);
 
     current_retry_id := (SELECT retry_of FROM test_item WHERE item_id = retry_id FOR UPDATE);
 
