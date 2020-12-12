@@ -115,7 +115,7 @@ BEGIN
                     IF exists(SELECT 1
                               FROM test_item_results
                                        JOIN test_item t ON test_item_results.result_id = t.item_id
-                              WHERE (test_item_results.status != 'PASSED' AND test_item_results.status != 'SKIPPED')
+                              WHERE (test_item_results.status != 'PASSED' AND test_item_results.status != 'SKIPPED' AND test_item_results.status != 'UNTESTED')
                                 AND t.unique_id = first_item_unique_id
                                 AND nlevel(t.path) = i
                                 AND t.has_stats
@@ -126,7 +126,7 @@ BEGIN
                     ELSEIF exists(SELECT 1
                                   FROM test_item_results
                                            JOIN test_item t ON test_item_results.result_id = t.item_id
-                                  WHERE test_item_results.status != 'PASSED'
+                                  WHERE (test_item_results.status != 'PASSED' AND test_item_results.status != 'UNTESTED')
                                     AND t.unique_id = first_item_unique_id
                                     AND nlevel(t.path) = i
                                     AND t.has_stats
@@ -134,8 +134,19 @@ BEGIN
                                     AND t.launch_id = launchid)
                     THEN
                         UPDATE test_item_results SET status = 'SKIPPED' WHERE test_item_results.result_id = parent_item_id;
-                    ELSE
+                    ELSEIF exists(SELECT 1
+                                  FROM test_item_results
+                                           JOIN test_item t ON test_item_results.result_id = t.item_id
+                                  WHERE test_item_results.status != 'UNTESTED'
+                                    AND t.unique_id = first_item_unique_id
+                                    AND nlevel(t.path) = i
+                                    AND t.has_stats
+                                    AND t.has_children
+                                    AND t.launch_id = launchid)
+                    THEN
                         UPDATE test_item_results SET status = 'PASSED' WHERE test_item_results.result_id = parent_item_id;
+                    ELSE
+                        UPDATE test_item_results SET status = 'UNTESTED' WHERE test_item_results.result_id = parent_item_id;
                     END IF;
                 END IF;
 

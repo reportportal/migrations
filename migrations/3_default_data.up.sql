@@ -37,18 +37,19 @@ BEGIN
                                                       (2, 'statistics$executions$passed'),
                                                       (3, 'statistics$executions$skipped'),
                                                       (4, 'statistics$executions$failed'),
-                                                      (5, 'statistics$defects$automation_bug$total'),
-                                                      (6, 'statistics$defects$automation_bug$ab001'),
-                                                      (7, 'statistics$defects$product_bug$total'),
-                                                      (8, 'statistics$defects$product_bug$pb001'),
-                                                      (9, 'statistics$defects$system_issue$total'),
-                                                      (10, 'statistics$defects$system_issue$si001'),
-                                                      (11, 'statistics$defects$to_investigate$total'),
-                                                      (12, 'statistics$defects$to_investigate$ti001'),
-                                                      (13, 'statistics$defects$no_defect$total'),
-                                                      (14, 'statistics$defects$no_defect$nd001');
+                                                      (5, 'statistics$executions$untested'),
+                                                      (6, 'statistics$defects$automation_bug$total'),
+                                                      (7, 'statistics$defects$automation_bug$ab001'),
+                                                      (8, 'statistics$defects$product_bug$total'),
+                                                      (9, 'statistics$defects$product_bug$pb001'),
+                                                      (10, 'statistics$defects$system_issue$total'),
+                                                      (11, 'statistics$defects$system_issue$si001'),
+                                                      (12, 'statistics$defects$to_investigate$total'),
+                                                      (13, 'statistics$defects$to_investigate$ti001'),
+                                                      (14, 'statistics$defects$no_defect$total'),
+                                                      (15, 'statistics$defects$no_defect$nd001');
 
-    ALTER SEQUENCE statistics_field_sf_id_seq RESTART WITH 15;
+    ALTER SEQUENCE statistics_field_sf_id_seq RESTART WITH 16;
 
     INSERT INTO attribute (name) VALUES ('job.interruptJobTime');
     INSERT INTO attribute (name) VALUES ('job.keepLaunches');

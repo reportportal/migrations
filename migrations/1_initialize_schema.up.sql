@@ -1,6 +1,6 @@
 CREATE TYPE PROJECT_ROLE_ENUM AS ENUM ('OPERATOR', 'CUSTOMER', 'MEMBER', 'PROJECT_MANAGER');
 
-CREATE TYPE STATUS_ENUM AS ENUM ('CANCELLED', 'FAILED', 'INTERRUPTED', 'IN_PROGRESS', 'PASSED', 'RESETED', 'SKIPPED', 'STOPPED');
+CREATE TYPE STATUS_ENUM AS ENUM ('CANCELLED', 'FAILED', 'INTERRUPTED', 'IN_PROGRESS', 'PASSED', 'RESETED', 'SKIPPED', 'STOPPED', 'UNTESTED');
 
 CREATE TYPE LAUNCH_MODE_ENUM AS ENUM ('DEFAULT', 'DEBUG');
 
@@ -821,7 +821,7 @@ BEGIN
                 IF exists(SELECT 1
                           FROM test_item_results
                                    JOIN test_item t ON test_item_results.result_id = t.item_id
-                          WHERE (test_item_results.status != 'PASSED' AND test_item_results.status != 'SKIPPED')
+                          WHERE (test_item_results.status != 'PASSED' AND test_item_results.status != 'SKIPPED' AND test_item_results.status != 'UNTESTED')
                             AND t.unique_id = firstitemid
                             AND nlevel(t.path) = i
                             AND t.has_stats
@@ -832,7 +832,7 @@ BEGIN
                 ELSEIF exists(SELECT 1
                               FROM test_item_results
                                        JOIN test_item t ON test_item_results.result_id = t.item_id
-                              WHERE test_item_results.status != 'PASSED'
+                              WHERE (test_item_results.status != 'PASSED' AND test_item_results.status != 'UNTESTED')
                                 AND t.unique_id = firstitemid
                                 AND nlevel(t.path) = i
                                 AND t.has_stats
@@ -840,8 +840,19 @@ BEGIN
                               LIMIT 1)
                 THEN
                     UPDATE test_item_results SET status = 'SKIPPED' WHERE test_item_results.result_id = parentitemid;
-                ELSE
+                ELSEIF exists(SELECT 1
+                              FROM test_item_results
+                                       JOIN test_item t ON test_item_results.result_id = t.item_id
+                              WHERE test_item_results.status != 'UNTESTED'
+                                AND t.unique_id = firstitemid
+                                AND nlevel(t.path) = i
+                                AND t.has_stats
+                                AND t.launch_id = launchid
+                              LIMIT 1)
+                THEN
                     UPDATE test_item_results SET status = 'PASSED' WHERE test_item_results.result_id = parentitemid;
+                ELSE
+                    UPDATE test_item_results SET status = 'UNTESTED' WHERE test_item_results.result_id = parentitemid;
                 END IF;
 
                 OPEN mergingtestitemcursor(targettestitemfield.unique_id, i, launchid);

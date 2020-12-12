@@ -1,6 +1,6 @@
 ALTER TYPE status_enum RENAME TO status_enum_old;
 
-CREATE TYPE status_enum AS ENUM ('CANCELLED', 'FAILED', 'INTERRUPTED', 'IN_PROGRESS', 'PASSED', 'RESETED', 'SKIPPED', 'STOPPED', 'INFO', 'WARN');
+CREATE TYPE status_enum AS ENUM ('CANCELLED', 'FAILED', 'INTERRUPTED', 'IN_PROGRESS', 'PASSED', 'RESETED', 'SKIPPED', 'STOPPED', 'UNTESTED', 'INFO', 'WARN');
 
 ALTER TABLE launch
     ALTER COLUMN status TYPE status_enum USING status::text::status_enum;
