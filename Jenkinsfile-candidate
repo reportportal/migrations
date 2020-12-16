@@ -1,0 +1,33 @@
+#!groovy
+
+node {
+
+    load "$JENKINS_HOME/jobvars.env"
+
+    stage('Checkout') {
+        checkout scm
+    }
+
+
+    stage('Build') {
+        docker.withServer("$DOCKER_HOST") {
+
+            withEnv(["AWS_URI=${AWS_URI}", "AWS_REGION=${AWS_REGION}", "VERSION=${VERSION}"]) {
+
+                stage('Build Docker Image') {
+                    sh 'docker build -t ${AWS_URI}/migrations .'
+                }
+
+                stage('Push to ECR') {
+                    def image = env.AWS_URI + '/migrations'
+                    def url = 'https://' + env.AWS_URI
+                    def credentials = 'ecr:' + env.AWS_REGION + ':aws_credentials'
+                    docker.withRegistry(url, credentials) {
+                        docker.image(image).push('${VERSION}-RC-${BUILD_NUMBER}')
+                    }
+                }
+            }
+        }
+    }
+
+}
