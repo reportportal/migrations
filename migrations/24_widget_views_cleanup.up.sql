@@ -7,13 +7,15 @@ DECLARE
 BEGIN
     drop_query := (SELECT 'DROP MATERIALIZED VIEW ' || string_agg(matviewname, ', ')
                    FROM pg_matviews
-                   WHERE matviewname LIKE 'widget_%'
-                      OR matviewname LIKE 'hct_%' AND matviewname
+                   WHERE (matviewname LIKE 'widget_%'
+                       OR matviewname LIKE 'hct_%')
+                     AND matviewname
                        NOT IN
-                                                      (SELECT widget_options -> 'options' ->> 'viewName'
-                                                       FROM widget
-                                                       WHERE widget_type IN ('componentHealthCheckTable', 'cumulative')
-                                                         AND widget_options -> 'options' ->> 'viewName' NOTNULL));
+                         (SELECT widget_options -> 'options' ->> 'viewName'
+                          FROM widget
+                          WHERE widget_type IN ('componentHealthCheckTable', 'cumulative')
+                            AND widget_options -> 'options' ->> 'viewName' NOTNULL));
+    drop_query:= (SELECT CASE WHEN drop_query IS NOT NULL THEN drop_query ELSE 'select 1' end);
     EXECUTE drop_query;
 END;
 $$
