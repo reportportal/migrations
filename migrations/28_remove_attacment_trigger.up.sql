@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS shedlock (
     PRIMARY KEY (name)
 );
 
-CREATE TABLE IF NOT EXISTS attachment_tombstone AS
-    TABLE attachment
-    WITH NO DATA;
+CREATE TABLE IF NOT EXISTS attachment_tombstone (
+    file_id      TEXT NOT NULL,
+    thumbnail_id TEXT
+);
