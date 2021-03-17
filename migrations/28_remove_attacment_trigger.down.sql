@@ -36,3 +36,7 @@ CREATE TRIGGER after_attachment_removed
     ON attachment
     FOR EACH ROW
 EXECUTE PROCEDURE decrease_allocated_size();
+
+
+DROP TABLE IF EXISTS shedlock;
+DROP TABLE IF EXISTS attachment_tombstone;
