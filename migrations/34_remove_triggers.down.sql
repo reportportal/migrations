@@ -1,8 +1,3 @@
--- add allocated storage fields to all projects
-
-ALTER TABLE project
-    ADD COLUMN allocated_storage BIGINT NOT NULL DEFAULT 0;
-
 UPDATE project AS prj
 SET allocated_storage = (SELECT COALESCE(SUM(attachment.file_size), 0) FROM attachment WHERE project_id = prj.id);
 
