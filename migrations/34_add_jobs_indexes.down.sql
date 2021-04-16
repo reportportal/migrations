@@ -1,0 +1,2 @@
+DROP INDEX IF EXISTS log_project_id_log_time_idx;
+DROP INDEX IF EXISTS attachment_project_id_creation_time_idx;
