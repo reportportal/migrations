@@ -1,0 +1,1 @@
+CALL fill_log_project_id();
