@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS update_job_attributes_in_bounds();
