@@ -1,2 +1,1 @@
-ALTER TABLE log ALTER COLUMN project_id SET NOT NULL;
 ALTER TABLE attachment ALTER COLUMN creation_date SET NOT NULL;
