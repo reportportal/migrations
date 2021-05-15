@@ -1,4 +1,0 @@
-ALTER TABLE log
-    ALTER COLUMN project_id DROP NOT NULL;
-ALTER TABLE attachment
-    ALTER COLUMN creation_date DROP NOT NULL;
