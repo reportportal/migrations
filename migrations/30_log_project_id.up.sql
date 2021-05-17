@@ -5,7 +5,7 @@ CREATE TABLE item_project (item_id BIGINT NOT NULL, project_id BIGINT NOT NULL);
 INSERT INTO item_project(item_id, project_id) SELECT ti.item_id, launch.project_id FROM launch JOIN test_item ti ON launch.id = ti.launch_id;
 INSERT INTO item_project(item_id, project_id) SELECT parent.item_id, launch.project_id FROM launch JOIN test_item ti ON launch.id = ti.launch_id
     JOIN test_item parent ON ti.item_id = parent.parent_id;
-CREATE UNIQUE INDEX item_idx ON item_project(item_id);
+CREATE INDEX item_idx ON item_project(item_id);
 
 DROP INDEX log_message_trgm_idx;
 UPDATE log SET project_id  = (SELECT project_id FROM item_project WHERE item_project.item_id=log.item_id LIMIT 1);
