@@ -1,0 +1,1 @@
+UPDATE log SET project_id = NULL WHERE project_id IN (SELECT launch.project_id FROM launch WHERE id = log.launch_id);

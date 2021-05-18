@@ -1,0 +1,1 @@
+ALTER TABLE log DROP COLUMN project_id;
