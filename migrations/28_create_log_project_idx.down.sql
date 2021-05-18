@@ -1,0 +1,1 @@
+DROP INDEX log_project_idx;

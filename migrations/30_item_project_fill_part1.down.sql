@@ -1,0 +1,1 @@
+DELETE FROM item_project WHERE (item_id, project_id) IN (SELECT ti.item_id, launch.project_id FROM launch JOIN test_item ti ON launch.id = ti.launch_id);
