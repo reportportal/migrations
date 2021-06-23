@@ -1,0 +1,1 @@
+-- Not needed. Necessary triggers will be created by started api of previous version.
