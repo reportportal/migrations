@@ -1,0 +1,1 @@
+INSERT INTO attribute (name) VALUES ('analyzer.allMessagesShouldMatch');
