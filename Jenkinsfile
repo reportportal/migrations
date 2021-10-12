@@ -22,7 +22,7 @@ node {
                     sh "docker-compose -p reportportal -f $COMPOSE_FILE_RP run --rm migrations up"
                 }
 
-                stage('Push to registy') {
+                stage('Push to ECR') {
                     sh 'docker tag reportportal-dev/db-scripts ${AWS_URI}/migrations'
                     def image = env.AWS_URI + '/migrations'
                     def url = 'https://' + env.AWS_URI
