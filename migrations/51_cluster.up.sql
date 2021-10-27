@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS clusters
 (
     id        BIGINT PRIMARY KEY,
-    launch_id BIGINT REFERENCES launch (id) ON DELETE CASCADE,
+    launch_id BIGINT REFERENCES launch (id),
     message   TEXT NOT NULL
 );
 
