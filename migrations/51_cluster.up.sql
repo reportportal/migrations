@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS clusters
 (
     id        BIGINT PRIMARY KEY,
-    launch_id BIGINT,
+    launch_id BIGINT NOT NULL,
     message   TEXT NOT NULL
 );
 
