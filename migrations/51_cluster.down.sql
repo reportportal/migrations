@@ -1,0 +1,3 @@
+ALTER TABLE log DROP COLUMN cluster_id;
+
+DROP TABLE IF EXISTS clusters;
