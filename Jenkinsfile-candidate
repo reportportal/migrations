@@ -26,6 +26,15 @@ node {
                         docker.image(image).push('${VERSION}-RC-${BUILD_NUMBER}')
                     }
                 }
+
+                stage('Cleanup') {
+                    docker.withServer("$DOCKER_HOST") {
+                        withEnv(["AWS_URI=${AWS_URI}", "VERSION=${VERSION}"]) {
+                            sh 'docker rmi ${AWS_URI}/migrations:${VERSION}-RC-${BUILD_NUMBER}'
+                            sh 'docker rmi ${AWS_URI}/migrations:latest'
+                        }
+                    }
+                }
             }
         }
     }
