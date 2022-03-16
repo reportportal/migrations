@@ -1,6 +1,6 @@
 FROM alpine:latest
 
-ENV SSLMODE="disable"
+ENV POSTGRES_SSLMODE="disable"
 
 RUN apk --no-cache add curl bash && \
     curl -L https://github.com/golang-migrate/migrate/releases/download/v4.8.0/migrate.linux-amd64.tar.gz | tar xvz &&  \
