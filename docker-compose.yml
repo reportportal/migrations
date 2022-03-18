@@ -23,6 +23,7 @@ services:
     depends_on:
       - postgres
     environment:
+      POSTGRES_SSLMODE: disable #require
       POSTGRES_USER: rpuser
       POSTGRES_PORT: 5432
       POSTGRES_PASSWORD: rppass
