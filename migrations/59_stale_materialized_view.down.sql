@@ -1,0 +1,1 @@
+DROP TABLE stale_materialized_view;
