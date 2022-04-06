@@ -1,1 +1,1 @@
-CALL fill_attachment_creation_date();
+SELECT fill_attachment_creation_date();
