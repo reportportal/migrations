@@ -4,7 +4,7 @@ CREATE TABLE organization
     name text NOT NULL
 );
 
-CREATE TABLE ogranization_attribute
+CREATE TABLE organization_attribute
 (
     id bigserial PRIMARY KEY,
     key varchar(256) NOT NULL,
