@@ -1,5 +1,5 @@
 ALTER TABLE sender_case
-    ADD rule_name TEXT;
+    ADD rule_name VARCHAR;
 
 UPDATE sender_case SET rule_name = 'rule #' || id;
 
