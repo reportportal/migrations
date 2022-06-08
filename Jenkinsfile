@@ -18,17 +18,13 @@ node {
                     sh 'docker build -t reportportal-dev/db-scripts -t ${AWS_URI}/migrations .'
                 }
 
-                stage('Run Migrations') {
-                    sh "docker-compose -p reportportal -f $COMPOSE_FILE_RP run --rm migrations up"
-                }
-
                 stage('Push to ECR') {
                     sh 'docker tag reportportal-dev/db-scripts ${AWS_URI}/migrations'
-                    def image = env.AWS_URI + '/migrations'
+                    def image = env.AWS_URI + '/migrations' + ':SNAPSHOT-' + env.BUILD_NUMBER
                     def url = 'https://' + env.AWS_URI
                     def credentials = 'ecr:' + env.AWS_REGION + ':aws_credentials'
                     docker.withRegistry(url, credentials) {
-                        docker.image(image).push('SNAPSHOT-${BUILD_NUMBER}')
+                        docker.image(image).push()
                     }
                 }
 
@@ -36,7 +32,6 @@ node {
                     docker.withServer("$DOCKER_HOST") {
                         withEnv(["AWS_URI=${AWS_URI}"]) {
                             sh 'docker rmi ${AWS_URI}/migrations:SNAPSHOT-${BUILD_NUMBER}'
-                            sh 'docker rmi ${AWS_URI}/migrations:latest'
                         }
                     }
                 }
