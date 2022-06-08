@@ -27,7 +27,7 @@ node {
 
             stage('Cleanup') {
                 withEnv(["AWS_URI=${AWS_URI}"]) {
-                    sh 'docker image prune -fa'
+                    sh 'docker rmi ${AWS_URI}/migrations:SNAPSHOT-${BUILD_NUMBER}'
                 }
             }
         }
