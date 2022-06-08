@@ -13,11 +13,10 @@ node {
         withEnv(["AWS_URI=${AWS_URI}", "AWS_REGION=${AWS_REGION}"]) {
 
             stage('Build Docker Image') {
-                sh 'docker build -t reportportal-dev/db-scripts -t ${AWS_URI}/migrations:SNAPSHOT-${BUILD_NUMBER} .'
+                sh 'docker build -t ${AWS_URI}/migrations:SNAPSHOT-${BUILD_NUMBER} .'
             }
 
             stage('Push to ECR') {
-                sh 'docker tag reportportal-dev/db-scripts ${AWS_URI}/migrations'
                 def image = env.AWS_URI + '/migrations' + ':SNAPSHOT-' + env.BUILD_NUMBER
                 def url = 'https://' + env.AWS_URI
                 def credentials = 'ecr:' + env.AWS_REGION + ':aws_credentials'
