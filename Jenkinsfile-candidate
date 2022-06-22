@@ -22,12 +22,14 @@ node {
         checkout scm
     }
 
-    stage('Build && Push to ECR') {
+    stage('Build & Push to ECR') {
         withEnv(["AWS_URI=${AWS_URI}", "AWS_REGION=${AWS_REGION}", "TAG=${VERSION}"]) {
             def image = env.AWS_URI + '/migrations:' + env.TAG + '-RC-' + env.BUILD_NUMBER
             def url = 'https://' + env.AWS_URI
             def credentials = 'ecr:' + env.AWS_REGION + ':aws_credentials'
-            sh './gradlew buildDocker -P dockerTag=$AWS_URI/migrations:$VERSION-RC-$BUILD_NUMBER'
+
+            sh 'docker build -t $AWS_URI/migrations:$VERSION-RC-$BUILD_NUMBER .'
+
             docker.withRegistry(url, credentials) {
                 docker.image(image).push()
             }
