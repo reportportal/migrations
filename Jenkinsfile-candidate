@@ -1,4 +1,18 @@
 #!groovy
+properties([
+    parameters ([
+        string(
+            name: "VERSION",
+            defaultValue: "",
+            description: "Release candidate version tag"
+        ),
+        string(
+            name: "BRANCH",
+            defaultValue: "",
+            description: "Specify the GitHub branch from which the image will be built"
+        )
+    ])
+])
 
 node {
 
@@ -8,35 +22,23 @@ node {
         checkout scm
     }
 
+    stage('Build & Push to ECR') {
+        withEnv(["AWS_URI=${AWS_URI}", "AWS_REGION=${AWS_REGION}", "TAG=${VERSION}"]) {
+            def image = env.AWS_URI + '/migrations:' + env.TAG + '-RC-' + env.BUILD_NUMBER
+            def url = 'https://' + env.AWS_URI
+            def credentials = 'ecr:' + env.AWS_REGION + ':aws_credentials'
 
-    stage('Build') {
-        docker.withServer("$DOCKER_HOST") {
+            sh 'docker build -t $AWS_URI/migrations:$VERSION-RC-$BUILD_NUMBER .'
 
-            withEnv(["AWS_URI=${AWS_URI}", "AWS_REGION=${AWS_REGION}", "VERSION=${VERSION}"]) {
-
-                stage('Build Docker Image') {
-                    sh 'docker build -t ${AWS_URI}/migrations .'
-                }
-
-                stage('Push to ECR') {
-                    def image = env.AWS_URI + '/migrations'
-                    def url = 'https://' + env.AWS_URI
-                    def credentials = 'ecr:' + env.AWS_REGION + ':aws_credentials'
-                    docker.withRegistry(url, credentials) {
-                        docker.image(image).push('${VERSION}-RC-${BUILD_NUMBER}')
-                    }
-                }
-
-                stage('Cleanup') {
-                    docker.withServer("$DOCKER_HOST") {
-                        withEnv(["AWS_URI=${AWS_URI}", "VERSION=${VERSION}"]) {
-                            sh 'docker rmi ${AWS_URI}/migrations:${VERSION}-RC-${BUILD_NUMBER}'
-                            sh 'docker rmi ${AWS_URI}/migrations:latest'
-                        }
-                    }
-                }
+            docker.withRegistry(url, credentials) {
+                docker.image(image).push()
             }
         }
     }
 
+    stage('Cleanup') {
+        withEnv(["AWS_URI=${AWS_URI}"]) {
+            sh 'docker rmi $AWS_URI/migrations:$VERSION-RC-$BUILD_NUMBER'
+        }
+    }
 }
