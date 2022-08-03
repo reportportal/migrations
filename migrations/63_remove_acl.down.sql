@@ -44,3 +44,21 @@ CREATE TABLE acl_entry (
 
 ALTER TABLE base_entity ADD COLUMN shared BOOLEAN DEFAULT FALSE;
 ALTER TABLE base_entity RENAME TO shareable_entity;
+
+CREATE OR REPLACE FUNCTION update_share_flag()
+    RETURNS TRIGGER AS
+$$
+BEGIN
+    UPDATE dashboard_widget
+    SET share = (SELECT shared FROM shareable_entity WHERE shareable_entity.id = new.id)
+    WHERE widget_id = new.id;
+    RETURN new;
+END;
+$$
+    LANGUAGE plpgsql;
+
+CREATE TRIGGER after_widget_update
+    AFTER UPDATE
+    ON widget
+    FOR EACH ROW
+EXECUTE PROCEDURE update_share_flag();

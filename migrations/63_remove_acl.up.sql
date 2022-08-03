@@ -6,3 +6,5 @@ DROP TABLE IF EXISTS acl_sid;
 
 ALTER TABLE shareable_entity DROP COLUMN shared;
 ALTER TABLE shareable_entity RENAME TO base_entity;
+
+DROP FUNCTION IF EXISTS update_share_flag();
