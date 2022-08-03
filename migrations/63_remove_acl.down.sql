@@ -42,8 +42,8 @@ CREATE TABLE acl_entry (
     CONSTRAINT foreign_fk_5 FOREIGN KEY (sid) REFERENCES acl_sid (id) ON DELETE CASCADE
 );
 
-ALTER TABLE base_entity ADD COLUMN shared BOOLEAN DEFAULT FALSE;
-ALTER TABLE base_entity RENAME TO shareable_entity;
+ALTER TABLE owned_entity ADD COLUMN shared BOOLEAN DEFAULT FALSE;
+ALTER TABLE owned_entity RENAME TO shareable_entity;
 
 CREATE OR REPLACE FUNCTION update_share_flag()
     RETURNS TRIGGER AS
