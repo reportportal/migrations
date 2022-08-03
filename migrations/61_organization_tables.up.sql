@@ -26,8 +26,7 @@ CREATE TABLE organization_user
 );
 
 ALTER TABLE users
-    ADD COLUMN organization_id BIGINT
-    FOREIGN KEY (organization_id) REFERENCES organization (id);
+    ADD COLUMN organization_id BIGINT;
 
 ALTER TABLE project
     DROP COLUMN organization;
