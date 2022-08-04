@@ -25,8 +25,4 @@ CREATE TABLE organization_user
     CONSTRAINT organization_user_pk PRIMARY KEY (user_id, organization_id)
 );
 
-ALTER TABLE users
-    ADD COLUMN organization_id BIGINT;
-
-ALTER TABLE project
-    DROP COLUMN organization;
+ALTER TABLE project ADD COLUMN organization_id BIGINT;
