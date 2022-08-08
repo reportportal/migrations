@@ -43,6 +43,7 @@ CREATE TABLE acl_entry (
 );
 
 ALTER TABLE owned_entity ADD COLUMN shared BOOLEAN DEFAULT FALSE;
+ALTER TABLE dashboard_widget ADD COLUMN share BOOLEAN DEFAULT FALSE;
 ALTER TABLE owned_entity RENAME TO shareable_entity;
 
 CREATE OR REPLACE FUNCTION update_share_flag()
