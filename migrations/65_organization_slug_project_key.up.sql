@@ -12,3 +12,7 @@ SET slug = REPLACE(LOWER(name), ' ', '-');
 
 UPDATE project
 SET key = name;
+
+CREATE INDEX IF NOT EXISTS project_key_idx ON project(key);
+
+CREATE INDEX IF NOT EXISTS organization_slug_idx ON organization(slug);
