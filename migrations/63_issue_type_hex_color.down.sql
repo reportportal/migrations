@@ -12,8 +12,8 @@ WHERE id = 3;
 
 UPDATE issue_type
 SET hex_color = '#777777'
-WHERE issue_name = 4;
+WHERE id = 4;
 
 UPDATE issue_type
 SET hex_color = '#0274d1'
-WHERE issue_name = 5;
+WHERE id = 5;
