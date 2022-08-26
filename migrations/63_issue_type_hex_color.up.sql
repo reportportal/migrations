@@ -1,19 +1,19 @@
 UPDATE issue_type
-SET hex_color = '#D32F2F'
-WHERE issue_name = 'Product Bug';
+SET hex_color = '#00829b'
+WHERE id = 1;
 
 UPDATE issue_type
-SET hex_color = '#FFC208'
-WHERE issue_name = 'Automation Bug';
+SET hex_color = '#ffc208'
+WHERE id = 2;
 
 UPDATE issue_type
-SET hex_color = '#3E7BE6'
-WHERE issue_name = 'System Issue';
+SET hex_color = '#d32f2f'
+WHERE id = 3;
 
 UPDATE issue_type
-SET hex_color = '#76839B'
-WHERE issue_name = 'No Defect';
+SET hex_color = '#76839b'
+WHERE issue_name = 4;
 
 UPDATE issue_type
-SET hex_color = '#00829B'
-WHERE issue_name = 'To Investigate';
+SET hex_color = '#3e7be6'
+WHERE issue_name = 5;
