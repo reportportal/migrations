@@ -1,0 +1,3 @@
+DROP TYPE LOGICAL_OPERATOR_ENUM;
+
+ALTER TABLE sender_case DROP COLUMN attributes_operator;
