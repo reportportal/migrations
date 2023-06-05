@@ -1,0 +1,2 @@
+ALTER TABLE owned_entity ADD FOREIGN KEY (owner) REFERENCES users (login) ON DELETE CASCADE;
+ALTER TABLE owned_entity ALTER COLUMN owner SET NOT NULL;
