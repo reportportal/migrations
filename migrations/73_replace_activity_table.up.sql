@@ -9,7 +9,7 @@ create table activity
     object_id bigint null,
     object_name varchar(128) null,
     object_type varchar(24) not null,
-    project_id bigint null,
+    project_id bigint references project (id) on delete cascade null,
     details jsonb null,
     subject_id bigint null,
     subject_name varchar(128) null,

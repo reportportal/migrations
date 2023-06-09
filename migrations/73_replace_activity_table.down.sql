@@ -5,7 +5,7 @@ create table activity
     id bigserial constraint activity_pk primary key,
     user_id bigint,
     username varchar,
-    project_id bigint,
+    project_id bigint references project (id) on delete cascade null,
     entity varchar(128) not null,
     action varchar(128) not null,
     details jsonb null,
