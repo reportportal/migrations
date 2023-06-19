@@ -5,6 +5,7 @@ CREATE TABLE activity
     id bigserial CONSTRAINT activity_pk PRIMARY KEY,
     created_at timestamp NOT NULL,
     action varchar(24) NOT NULL,
+    event_name varchar(32) NOT NULL,
     priority varchar(12) NOT NULL,
     object_id bigint NULL,
     object_name varchar(128) NOT NULL,
