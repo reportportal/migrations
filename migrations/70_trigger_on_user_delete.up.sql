@@ -4,6 +4,11 @@ BEGIN
     UPDATE owned_entity
     SET owner = 'deleted_user'
     WHERE owner = OLD.login;
+
+    UPDATE integration
+    SET creator = 'deleted_user'
+    WHERE creator = OLD.login;
+
     RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;
