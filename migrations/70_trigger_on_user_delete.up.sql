@@ -9,6 +9,14 @@ BEGIN
     SET creator = 'deleted_user'
     WHERE creator = OLD.login;
 
+    UPDATE activity
+    SET subject_name = 'deleted_user'
+    WHERE subject_name = OLD.login;
+
+    UPDATE activity
+    SET object_name = 'deleted_user'
+    WHERE object_name = OLD.full_name;
+
     RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;
