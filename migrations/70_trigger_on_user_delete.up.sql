@@ -15,7 +15,7 @@ BEGIN
 
     UPDATE activity
     SET object_name = 'deleted_user'
-    WHERE object_name = OLD.full_name;
+    WHERE object_name = OLD.full_name AND subject_name != 'deleted_user';
 
     RETURN NULL;
 END;
