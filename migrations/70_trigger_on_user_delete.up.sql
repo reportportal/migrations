@@ -15,7 +15,7 @@ BEGIN
 
     UPDATE activity
     SET object_name = 'deleted_user'
-    WHERE object_name = OLD.full_name AND subject_name != 'deleted_user';
+    WHERE object_name = OLD.login AND event_name IN ('assignUser', 'unassignUser', 'createUser', 'changeRole');
 
     UPDATE dashboard_widget
     SET widget_owner = 'deleted_user'
