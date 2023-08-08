@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: rppass
       POSTGRES_DB: reportportal
     volumes:
-      - reportportal-database:/var/lib/postgresql/data
+      - ./data/postgres:/var/lib/postgresql/data
     restart: on-failure
   # If you need to access the DB locally. Could be a security risk to expose DB.
     ports:
@@ -18,10 +18,35 @@ services:
 #      max-size: "50M"
 #      max-file: "1"
 
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.1
+    volumes:
+      - ./data/elasticsearch:/usr/share/elasticsearch/data
+    environment:
+      - "ES_JAVA_OPTS=-Dlog4j2.formatMsgNoLookups=true"
+      - "bootstrap.memory_lock=true"
+      - "discovery.type=single-node"
+      - "logger.level=INFO"
+      - "xpack.security.enabled=true"
+      - "ELASTIC_PASSWORD=elastic1q2w3e"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    ports:
+      - "9200:9200"
+    healthcheck:
+      test: [ "CMD", "curl","-s" ,"-f", "http://elastic:elastic1q2w3e@localhost:9200/_cat/health" ]
+    restart: always
+
   migrations:
     build: .
     depends_on:
       - postgres
+      - elasticsearch
     environment:
       POSTGRES_SSLMODE: disable #require
       POSTGRES_USER: rpuser
@@ -29,6 +54,8 @@ services:
       POSTGRES_PASSWORD: rppass
       POSTGRES_SERVER: postgres
       POSTGRES_DB: reportportal
+      ES_HOST: elasticsearch
+      ES_PORT: 9200
+      ES_USER: elastic
+      ES_PASSWORD: elastic1q2w3e
 
-volumes:
-  reportportal-database:
