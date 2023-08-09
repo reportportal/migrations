@@ -1,17 +1,5 @@
 #!/bin/bash
 
-# # Elasticsearch URL
-# ES_HOST="localhost"
-
-# # Elasticsearch port
-# ES_PORT="9200"
-
-# # Elasticsearch user
-# ES_USER="elastic"
-
-# # Elasticsearch user password
-# ES_PASSWORD="elastic1q2w3e"
-
 # Index template name
 TEMPLATE_NAME="logs"
 
@@ -45,26 +33,40 @@ TEMPLATE_DATA='
 }
 '
 
-# Check if the template exists
-response=$(curl -s -o /dev/null -w "%{http_code}" --location --head "$ES_HOST:$ES_PORT/_index_template/$TEMPLATE_NAME" -u $ES_USER:$ES_PASSWORD)
+# Create the template
+function create_template() {
 
-case $response in
-404)
-    # Create the template
-    curl -X PUT "$ES_HOST:$ES_PORT/_index_template/$TEMPLATE_NAME" -H "Content-Type: application/json" -d "$TEMPLATE_DATA" -u $ES_USER:$ES_PASSWORD
-    echo "Template '$TEMPLATE_NAME' created."
-  ;;
-200)
-  echo "Template '$TEMPLATE_NAME' already exists."
-  ;;
-401)
-  echo  "Unable to authenticate user '$ES_USER' for REST request."
-  ;;
-000)
-  echo "Can't connect to serviver on '$ES_HOST:$ES_PORT'."
-  ;;
-*)
-  echo "$response"
-  echo "Something went wrong."
-  ;;
-esac
+  response=$(curl -k -s -o /dev/null -w "%{http_code}" --location --head "$OS_PROTOCOL://$OS_HOST:$OS_PORT/_index_template/$TEMPLATE_NAME" -u $OS_USER:$OS_PASSWORD)
+
+  case $response in
+  404)
+    result=$(curl -k -s -o /dev/null -w "%{http_code}" -X PUT "$OS_PROTOCOL://$OS_HOST:$OS_PORT/_index_template/$TEMPLATE_NAME" -H "Content-Type: application/json" -d "$TEMPLATE_DATA" -u $OS_USER:$OS_PASSWORD)
+    case "$result" in 
+    200)
+      echo "Template '$TEMPLATE_NAME' created."
+      ;;
+    *)
+      echo "$result Something went wrong."
+      ;;
+    esac ;;
+  200)
+    echo "Template '$TEMPLATE_NAME' already exists."
+    ;;
+  401)
+    echo "$response Unable to authenticate user '$OS_USER' for REST request."
+    ;;
+  503)
+    echo "$response Service Unavailable. Retrying in 3 seconds..."
+    sleep 3
+    create_template
+    ;;
+  000)
+    echo "Connectio error to '$OS_PROTOCOL://$OS_HOST:$OS_PORT'."
+    ;;
+  *)
+    echo "$response Something went wrong."
+    ;;
+  esac
+}
+
+create_template

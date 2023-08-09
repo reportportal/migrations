@@ -1,5 +1,23 @@
 version: '2'
 services:
+  migrations:
+    build: .
+    depends_on:
+      - postgres
+      - opensearch
+    environment:
+      POSTGRES_SSLMODE: disable #require
+      POSTGRES_USER: rpuser
+      POSTGRES_PORT: 5432
+      POSTGRES_PASSWORD: rppass
+      POSTGRES_SERVER: postgres
+      POSTGRES_DB: reportportal
+      OS_HOST: opensearch
+      OS_PORT: 9200
+      OS_PROTOCOL: http # If security plugin is enabled, change to https
+      OS_USER: # If security plugin is enabled use 'admin' as username
+      OS_PASSWORD: # If security plugin is enabled use 'admin' as password
+
   postgres:
     image: postgres:12-alpine
     environment:
@@ -18,44 +36,40 @@ services:
 #      max-size: "50M"
 #      max-file: "1"
 
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.1
+  opensearch:
+    image: opensearchproject/opensearch:latest
+    environment:
+      - discovery.type=single-node # Disable network discovery for single-node cluster
+      - bootstrap.memory_lock=true # Disable JVM heap memory swapping
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m" # Set min and max JVM heap sizes to at least 50% of system RAM
+      - "DISABLE_INSTALL_DEMO_CONFIG=true" # Prevents execution of bundled demo script which installs demo certificates and security configurations to OpenSearch
+      - "DISABLE_SECURITY_PLUGIN=true" # Disables Security plugin
     volumes:
-      - ./data/elasticsearch:/usr/share/elasticsearch/data
-    environment:
-      - "ES_JAVA_OPTS=-Dlog4j2.formatMsgNoLookups=true"
-      - "bootstrap.memory_lock=true"
-      - "discovery.type=single-node"
-      - "logger.level=INFO"
-      - "xpack.security.enabled=true"
-      - "ELASTIC_PASSWORD=elastic1q2w3e"
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65536
-        hard: 65536
+      - ./data/opensearch:/usr/share/opensearch/data # Creates volume called opensearch and mounts it to the container
     ports:
-      - "9200:9200"
-    healthcheck:
-      test: [ "CMD", "curl","-s" ,"-f", "http://elastic:elastic1q2w3e@localhost:9200/_cat/health" ]
-    restart: always
+      - 9200:9200 # REST API
+      - 9600:9600 # Performance Analyzer
 
-  migrations:
-    build: .
-    depends_on:
-      - postgres
-      - elasticsearch
-    environment:
-      POSTGRES_SSLMODE: disable #require
-      POSTGRES_USER: rpuser
-      POSTGRES_PORT: 5432
-      POSTGRES_PASSWORD: rppass
-      POSTGRES_SERVER: postgres
-      POSTGRES_DB: reportportal
-      ES_HOST: elasticsearch
-      ES_PORT: 9200
-      ES_USER: elastic
-      ES_PASSWORD: elastic1q2w3e
-
+  # elasticsearch:
+  #   image: docker.elastic.co/elasticsearch/elasticsearch:7.10.1
+  #   volumes:
+  #     - ./data/elasticsearch:/usr/share/elasticsearch/data
+  #   environment:
+  #     - "ES_JAVA_OPTS=-Dlog4j2.formatMsgNoLookups=true"
+  #     - "bootstrap.memory_lock=true"
+  #     - "discovery.type=single-node"
+  #     - "logger.level=INFO"
+  #     - "xpack.security.enabled=true"
+  #     - "ELASTIC_PASSWORD=elastic1q2w3e"
+  #   ulimits:
+  #     memlock:
+  #       soft: -1
+  #       hard: -1
+  #     nofile:
+  #       soft: 65536
+  #       hard: 65536
+  #   ports:
+  #     - "9200:9200"
+  #   healthcheck:
+  #     test: [ "CMD", "curl","-s" ,"-f", "http://elastic:elastic1q2w3e@localhost:9200/_cat/health" ]
+  #   restart: always
