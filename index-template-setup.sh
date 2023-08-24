@@ -61,7 +61,7 @@ function create_template() {
     create_template
     ;;
   000)
-    echo "Connectio error to '$OS_PROTOCOL://$OS_HOST:$OS_PORT'."
+    echo "Connection error to '$OS_PROTOCOL://$OS_HOST:$OS_PORT'."
     ;;
   *)
     echo "$response Something went wrong."
