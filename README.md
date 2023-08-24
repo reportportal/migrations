@@ -6,21 +6,26 @@ In this repository, you will find the migration scripts for ReportPortal.
 These scripts are utilized to update the database schema and generate an index
 template for OpenSearch.
 
-### Usage
+## Usage
 
-#### Update to latest revision
+### Enabling OpenSearch support
+
+If you want to use OpenSearch instead of Elasticsearch, you need to set
+the OS_HOST, OS_PORT and OS_PROTOCOL environment variables.
+
+### Update to latest revision
 
 ```sh
 docker-compose run --rm migrations
 ```
 
-#### Downgrade to previous revision
+### Downgrade to previous revision
 
 ```sh
 docker-compose run --rm migrations down
 ```
 
-#### Downgrade to N revisions back
+### Downgrade to N revisions back
 
 ```sh
 docker-compose run --rm migrations down N
