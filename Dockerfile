@@ -1,4 +1,4 @@
-FROM alpine:latest
+FROM --platform=$BUILDPLATFORM alpine:latest
 
 ENV POSTGRES_SSLMODE="disable"
 
@@ -9,7 +9,8 @@ RUN apk --no-cache add curl bash && \
 
 ADD "https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh" /wait-for-it.sh
 COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh && chmod +xr /wait-for-it.sh
+COPY index-template-setup.sh /index-template-setup.sh
+RUN chmod +x /entrypoint.sh && chmod +xr /wait-for-it.sh && chmod +x /index-template-setup.sh
 
 COPY migrations/ /migrations/
 ENTRYPOINT ["/entrypoint.sh"]
