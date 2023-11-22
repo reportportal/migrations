@@ -1,3 +1,3 @@
-CREATE INDEX path_idx IF NOT EXISTS
+CREATE INDEX IF NOT EXISTS path_idx
     ON test_item
         USING btree (path);
