@@ -1,0 +1,5 @@
+DROP TABLE IF EXISTS organization_user;
+
+DROP TYPE IF EXISTS ORGANIZATION_ROLE_ENUM;
+
+ALTER TABLE project DROP COLUMN organization_id;
