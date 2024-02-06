@@ -19,4 +19,8 @@ CREATE TABLE IF NOT EXISTS organization_user
     CONSTRAINT organization_user_pk PRIMARY KEY (user_id, organization_id)
 );
 
+ALTER TABLE project ADD COLUMN "organization_id" BIGINT;
+ALTER TABLE project ADD COLUMN "slug" TEXT UNIQUE;
+ALTER TABLE project ADD COLUMN "key" TEXT UNIQUE;
 
+CREATE INDEX IF NOT EXISTS project_key_idx ON project(key);
