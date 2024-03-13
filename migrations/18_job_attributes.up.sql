@@ -1,5 +1,5 @@
 UPDATE project_attribute
-SET value = extract(epoch FROM value::interval)
+SET value = extract(epoch FROM value::interval)::BIGINT
 WHERE attribute_id IN (SELECT id
                        FROM attribute
                        WHERE attribute.name IN ('job.interruptJobTime',
