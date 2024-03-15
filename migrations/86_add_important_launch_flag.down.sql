@@ -1,0 +1,1 @@
+ALTER TABLE launch DROP COLUMN IF EXISTS important;
