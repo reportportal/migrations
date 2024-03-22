@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - develop
+      - feature/orgs
     paths-ignore:
       - '.github/**'
       - README.md
@@ -31,7 +32,7 @@ jobs:
     uses: reportportal/.github/.github/workflows/build-docker-image.yaml@main
     with:
       aws-region: ${{ vars.AWS_REGION }}
-      image-tag: 'develop-${{ github.run_number }}'
+      image-tag: 'migration-orgs-${{ github.run_number }}'
       version: '${{ github.ref_name }}-${{ needs.variables-setup.outputs.sha_short }}'
       date: ${{ needs.variables-setup.outputs.date }}
     secrets: inherit
