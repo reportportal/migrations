@@ -10,6 +10,7 @@ CREATE TYPE PROJECT_ROLE_ENUM AS ENUM ('OPERATOR', 'CUSTOMER', 'MEMBER', 'PROJEC
 ALTER TABLE public.project_user
     ALTER COLUMN project_role TYPE PROJECT_ROLE_ENUM
         USING (project_role::text::PROJECT_ROLE_ENUM);
+DROP TYPE PROJECT_ROLE_ENUM_OLD;
 
 -- Populate project 'key', 'slug' and 'organization_id'
 WITH org_id AS (INSERT INTO public.organization (name, slug, organization_type)
