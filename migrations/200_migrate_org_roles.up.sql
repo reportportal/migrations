@@ -4,11 +4,14 @@ UPDATE public.project_user SET "project_role_backup" = "project_role";
 
 
 -- Extend project roles
-ALTER TYPE "project_role_enum" ADD VALUE IF NOT EXISTS 'EDITOR';
-ALTER TYPE "project_role_enum" ADD VALUE IF NOT EXISTS 'VIEWER';
+ALTER TYPE project_role_enum RENAME TO PROJECT_ROLE_ENUM_OLD;
+CREATE TYPE PROJECT_ROLE_ENUM AS ENUM ('OPERATOR', 'CUSTOMER', 'MEMBER', 'PROJECT_MANAGER', 'EDITOR', 'VIEWER');
 
+ALTER TABLE public.project_user
+    ALTER COLUMN project_role TYPE PROJECT_ROLE_ENUM
+        USING (project_role::text::PROJECT_ROLE_ENUM);
 
--- Populate project 'key', 'slug' and 'organization_id'                                                               --
+-- Populate project 'key', 'slug' and 'organization_id'
 WITH org_id AS (INSERT INTO public.organization (name, slug, organization_type)
 VALUES ('My organization', 'my-organization', 'INTERNAL') RETURNING id)
 UPDATE public.project AS prj
@@ -48,6 +51,7 @@ CREATE TYPE PROJECT_ROLE_ENUM_NEW AS ENUM ('EDITOR', 'VIEWER');
 ALTER TABLE public.project_user
 ALTER COLUMN project_role TYPE PROJECT_ROLE_ENUM_NEW
     USING (project_role::text::PROJECT_ROLE_ENUM_NEW);
+ALTER TABLE public.project_user ALTER COLUMN project_role SET NOT NULL;
 
 DROP TYPE PROJECT_ROLE_ENUM;
 ALTER TYPE PROJECT_ROLE_ENUM_NEW RENAME TO PROJECT_ROLE_ENUM;
