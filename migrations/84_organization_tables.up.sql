@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS organization_user
 );
 
 ALTER TABLE project ADD COLUMN "organization_id" BIGINT;
-ALTER TABLE project ADD COLUMN "slug" TEXT UNIQUE;
+ALTER TABLE project ADD COLUMN "slug" TEXT;
 ALTER TABLE project ADD COLUMN "key" TEXT UNIQUE;
 
 ALTER TABLE project DROP CONSTRAINT project_name_key;
