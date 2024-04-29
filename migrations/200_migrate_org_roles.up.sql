@@ -27,7 +27,7 @@ UPDATE project SET "slug" = "key";
 
 
 -- Migrate User invitations
-ALTER TABLE public.user_creation_bid ADD COLUMN organization_id bigserial;
+ALTER TABLE public.user_creation_bid ADD COLUMN organization_id BIGINT;
 ALTER TABLE public.user_creation_bid ADD COLUMN organization_role ORGANIZATION_ROLE_ENUM;
 
 UPDATE public.user_creation_bid SET organization_role = 'MEMBER'::public."organization_role_enum";
