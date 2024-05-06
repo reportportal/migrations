@@ -8,3 +8,5 @@ ALTER TABLE sender_case
 
 ALTER TABLE sender_case
     DROP COLUMN IF EXISTS rule_type;
+
+DELETE FROM attribute WHERE name = 'notifications.email.enabled'
