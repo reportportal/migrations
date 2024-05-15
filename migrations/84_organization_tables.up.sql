@@ -1,9 +1,11 @@
 CREATE TABLE organization
 (
     id bigserial PRIMARY KEY,
-    creation_date TIMESTAMP DEFAULT now() NOT NULL,
+    created_at TIMESTAMP DEFAULT now() NOT NULL,
+    updated_at TIMESTAMP DEFAULT now() NOT NULL,
     name TEXT NOT NULL UNIQUE,
     organization_type text NOT NULL,
+    external_id TEXT UNIQUE,
     slug TEXT NOT NULL UNIQUE
 );
 
