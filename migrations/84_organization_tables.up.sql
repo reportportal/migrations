@@ -15,7 +15,7 @@ CREATE TYPE ORGANIZATION_ROLE_ENUM AS ENUM ('MANAGER', 'MEMBER');
 
 CREATE TABLE IF NOT EXISTS organization_user
 (
-    user_id BIGSERIAL REFERENCES users (id) ON DELETE CASCADE NOT NULL,
+    user_id BIGINT REFERENCES users (id) ON DELETE CASCADE NOT NULL,
     organization_id BIGINT REFERENCES organization (id) ON DELETE CASCADE NOT NULL,
     organization_role ORGANIZATION_ROLE_ENUM NOT NULL,
     CONSTRAINT organization_user_pk PRIMARY KEY (user_id, organization_id)
