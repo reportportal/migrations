@@ -1,0 +1,1 @@
+ALTER TABLE project ADD COLUMN "updated_at" TIMESTAMP DEFAULT now() NOT NULL;
