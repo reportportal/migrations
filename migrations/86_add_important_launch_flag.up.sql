@@ -1,0 +1,1 @@
+ALTER TABLE launch ADD important BOOLEAN DEFAULT(FALSE);
