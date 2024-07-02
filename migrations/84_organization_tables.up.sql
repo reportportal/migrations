@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS organization_user
     user_id BIGINT REFERENCES users (id) ON DELETE CASCADE NOT NULL,
     organization_id BIGINT REFERENCES organization (id) ON DELETE CASCADE NOT NULL,
     organization_role ORGANIZATION_ROLE_ENUM NOT NULL,
+    assigned_at TIMESTAMP DEFAULT now() NOT NULL,
     CONSTRAINT organization_user_pk PRIMARY KEY (user_id, organization_id)
 );
 
