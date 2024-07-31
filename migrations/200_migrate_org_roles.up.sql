@@ -21,9 +21,9 @@ WITH org_id AS (INSERT INTO public.organization (name, slug, organization_type)
 VALUES ('My organization', 'my-organization', 'INTERNAL') RETURNING id)
 UPDATE public.project AS prj
 SET "organization_id" = (SELECT id FROM org_id),
-    "key" = slugify(name);
+    "key" = slugify(name, true);
 
-UPDATE project SET "slug" = "key";
+UPDATE project SET "slug" = slugify("key", false);
 
 
 -- Migrate User invitations
