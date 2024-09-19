@@ -1,4 +1,4 @@
-FROM --platform=${BUILDPLATFORM} alpine:latest
+FROM alpine:latest
 ARG TARGETOS
 ARG TARGETARCH
 ARG GO_MIGRATE_VERSION="v4.17.1"
