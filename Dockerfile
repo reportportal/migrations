@@ -1,7 +1,7 @@
 FROM alpine:latest
 ARG TARGETOS
 ARG TARGETARCH
-ARG GO_MIGRATE_VERSION="v4.17.1"
+ARG GO_MIGRATE_VERSION="v4.18.1"
 ENV POSTGRES_SSLMODE="disable"
 RUN apk --no-cache add curl bash && \
     curl -L https://github.com/golang-migrate/migrate/releases/download/${GO_MIGRATE_VERSION}/migrate.${TARGETOS}-${TARGETARCH}.tar.gz | tar xvz &&  \
