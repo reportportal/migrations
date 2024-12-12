@@ -12,6 +12,7 @@ CREATE UNIQUE INDEX unique_rule_name_per_project_rule_type
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM attribute WHERE name = 'notifications.email.enabled') THEN
+    PERFORM setval('attribute_id_seq', (SELECT MAX(id) FROM attribute));
         WITH new_attr AS (
             INSERT INTO attribute (name)
             VALUES ('notifications.email.enabled')
