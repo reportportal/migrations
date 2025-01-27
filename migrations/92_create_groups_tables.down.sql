@@ -1,3 +1,3 @@
-DROP TABLE IF EXISTS group_projects;
-DROP TABLE IF EXISTS group_users;
+DROP TABLE IF EXISTS groups_projects;
+DROP TABLE IF EXISTS groups_users;
 DROP TABLE IF EXISTS groups;

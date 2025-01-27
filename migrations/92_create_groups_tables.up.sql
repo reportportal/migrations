@@ -19,9 +19,6 @@ CREATE TABLE groups_users (
     UNIQUE (group_id, user_id)
 );
 
--- CREATE INDEX idx_groups_users_user_id ON group_users(user_id);
--- CREATE INDEX idx_groups_users_group_id ON group_users(group_id);
-
 CREATE TABLE groups_projects (
     id BIGSERIAL PRIMARY KEY,
     group_id BIGINT NOT NULL,
@@ -33,6 +30,3 @@ CREATE TABLE groups_projects (
     FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
     UNIQUE (group_id, project_id)
 );
-
--- CREATE INDEX idx_groups_projects_group_id ON group_projects(group_id);
--- CREATE INDEX idx_groups_projects_project_id ON group_projects(project_id);
