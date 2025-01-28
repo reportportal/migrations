@@ -9,24 +9,22 @@ CREATE TABLE groups (
 );
 
 CREATE TABLE groups_users (
-    id BIGSERIAL PRIMARY KEY,
     group_id BIGINT NOT NULL,
     user_id BIGINT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (group_id, user_id),
     FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    UNIQUE (group_id, user_id)
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE groups_projects (
-    id BIGSERIAL PRIMARY KEY,
     group_id BIGINT NOT NULL,
     project_id BIGINT NOT NULL,
     project_role VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (group_id, project_id),
     FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
-    FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
-    UNIQUE (group_id, project_id)
+    FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE
 );
