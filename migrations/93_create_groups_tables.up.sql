@@ -11,7 +11,6 @@ CREATE TABLE groups (
 CREATE TABLE groups_users (
     group_id BIGINT NOT NULL,
     user_id BIGINT NOT NULL,
-    group_role VARCHAR(255) NOT NULL,
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP DEFAULT now() NOT NULL,
     PRIMARY KEY (group_id, user_id),
