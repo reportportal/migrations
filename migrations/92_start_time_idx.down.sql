@@ -1,0 +1,1 @@
+DROP INDEX IF EXISTS test_item_start_time_idx;
