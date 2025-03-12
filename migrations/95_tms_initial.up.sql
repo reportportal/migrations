@@ -17,7 +17,10 @@ CREATE TABLE tms_product_version
 CREATE TABLE tms_dataset
 (
     id BIGSERIAL CONSTRAINT tms_dataset_pk PRIMARY KEY,
-    name varchar(255)
+    name varchar(255),
+    project_id bigint NOT NULL
+        CONSTRAINT tms_dataset_fk_project
+            REFERENCES project
 );
 
 CREATE TABLE tms_dataset_attribute
