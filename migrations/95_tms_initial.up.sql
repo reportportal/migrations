@@ -14,11 +14,26 @@ CREATE TABLE tms_product_version
             REFERENCES project
 );
 
+CREATE TABLE tms_dataset
+(
+    id BIGSERIAL CONSTRAINT tms_dataset_pk PRIMARY KEY,
+    name varchar(255)
+);
+
+CREATE TABLE tms_dataset_attribute
+(
+    id BIGSERIAL CONSTRAINT tms_dataset_attribute_pk PRIMARY KEY,
+    key varchar(255),
+    value varchar(255),
+    dataset_id bigint NOT NULL
+        CONSTRAINT tms_dataset_attribute_fk_tms_dataset
+            REFERENCES tms_dataset
+);
+
 CREATE TABLE tms_environment
 (
     id BIGSERIAL CONSTRAINT tms_environment_pk PRIMARY KEY,
     name varchar(255),
-    test_data varchar(255),
     project_id bigint NOT NULL
         CONSTRAINT tms_environment_fk_project
             REFERENCES project
@@ -75,7 +90,21 @@ CREATE TABLE tms_test_case
     description   varchar(255),
     test_folder_id bigint NOT NULL
         CONSTRAINT tms_test_case_fk_test_folder
-            REFERENCES tms_test_folder
+            REFERENCES tms_test_folder,
+    dataset_id bigint NOT NULL
+        CONSTRAINT tms_test_case_fk_dataset
+        REFERENCES tms_dataset
+);
+
+CREATE TABLE tms_test_plan_test_case
+(
+    test_plan_id bigint
+        CONSTRAINT tms_test_plan_test_case_fk_test_plan
+            REFERENCES tms_test_plan,
+    test_case_id bigint
+        CONSTRAINT tms_test_plan_test_case_fk_test_case
+            REFERENCES tms_test_case,
+    PRIMARY KEY (test_plan_id, test_case_id)
 );
 
 CREATE TABLE tms_test_case_version
