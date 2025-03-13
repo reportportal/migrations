@@ -1,1 +1,1 @@
-ALTER TABLE groups ADD COLUMN uuid UUID NOT NULL DEFAULT gen_random_uuid();
+ALTER TABLE groups ADD COLUMN uuid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid();
