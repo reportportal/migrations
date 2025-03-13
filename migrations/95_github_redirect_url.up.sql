@@ -1,0 +1,1 @@
+UPDATE oauth_registration SET redirect_uri_template = '{baseUrl}/uat/sso/login/{registrationId}' where id = 'github'
