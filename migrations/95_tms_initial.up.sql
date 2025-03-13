@@ -39,7 +39,10 @@ CREATE TABLE tms_environment
     name varchar(255),
     project_id bigint NOT NULL
         CONSTRAINT tms_environment_fk_project
-            REFERENCES project
+            REFERENCES project,
+    dataset_id bigint
+        CONSTRAINT tms_environment_fk_tms_dataset
+        REFERENCES tms_dataset
 );
 
 CREATE TABLE tms_test_plan
@@ -94,7 +97,7 @@ CREATE TABLE tms_test_case
     test_folder_id bigint NOT NULL
         CONSTRAINT tms_test_case_fk_test_folder
             REFERENCES tms_test_folder,
-    dataset_id bigint NOT NULL
+    dataset_id bigint
         CONSTRAINT tms_test_case_fk_dataset
         REFERENCES tms_dataset
 );
