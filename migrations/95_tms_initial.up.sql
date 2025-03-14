@@ -23,9 +23,9 @@ CREATE TABLE tms_dataset
             REFERENCES project
 );
 
-CREATE TABLE tms_dataset_attribute
+CREATE TABLE tms_dataset_data
 (
-    id BIGSERIAL CONSTRAINT tms_dataset_attribute_pk PRIMARY KEY,
+    id BIGSERIAL CONSTRAINT tms_dataset_data_pk PRIMARY KEY,
     key varchar(255),
     value varchar(255),
     dataset_id bigint NOT NULL
@@ -68,9 +68,11 @@ CREATE TABLE tms_milestone
     start_date TIMESTAMP,
     end_date TIMESTAMP,
     type varchar(255),
+    -- TODO many to many ?
     product_version_id bigint NOT NULL
         CONSTRAINT tms_milestone_fk_product_version
             REFERENCES tms_product_version,
+    -- TODO many to many ?
     test_plan_id bigint
         CONSTRAINT tms_milestone_fk_test_plan
             REFERENCES tms_test_plan
@@ -89,6 +91,17 @@ CREATE TABLE tms_test_folder
             REFERENCES project
 );
 
+CREATE TABLE tms_test_plan_test_folder
+(
+    test_plan_id bigint
+        CONSTRAINT tms_test_plan_test_folder_fk_test_plan
+            REFERENCES tms_test_plan,
+    test_folder_id bigint
+        CONSTRAINT tms_test_plan_test_folder_fk_test_folder
+            REFERENCES tms_test_folder,
+    PRIMARY KEY (test_plan_id, test_folder_id)
+);
+
 CREATE TABLE tms_test_case
 (
     id            BIGSERIAL CONSTRAINT tms_test_case_pk PRIMARY KEY,
@@ -100,17 +113,6 @@ CREATE TABLE tms_test_case
     dataset_id bigint
         CONSTRAINT tms_test_case_fk_dataset
         REFERENCES tms_dataset
-);
-
-CREATE TABLE tms_test_plan_test_case
-(
-    test_plan_id bigint
-        CONSTRAINT tms_test_plan_test_case_fk_test_plan
-            REFERENCES tms_test_plan,
-    test_case_id bigint
-        CONSTRAINT tms_test_plan_test_case_fk_test_case
-            REFERENCES tms_test_case,
-    PRIMARY KEY (test_plan_id, test_case_id)
 );
 
 CREATE TABLE tms_test_case_version
