@@ -26,6 +26,6 @@ ALTER TABLE project ADD COLUMN "organization_id" BIGINT;
 ALTER TABLE project ADD COLUMN "slug" TEXT;
 ALTER TABLE project ADD COLUMN "key" TEXT UNIQUE;
 
-ALTER TABLE project DROP CONSTRAINT project_name_key;
+ALTER TABLE project DROP CONSTRAINT IF EXISTS project_name_key;
 
 CREATE INDEX IF NOT EXISTS project_key_idx ON project(key);
