@@ -14,6 +14,8 @@ CREATE TABLE tms_product_version
             REFERENCES project
 );
 
+CREATE TYPE tms_dataset_type AS ENUM ('ENVIRONMENTAL', 'PARAMETRIZED');
+
 CREATE TABLE tms_dataset
 (
     id BIGSERIAL CONSTRAINT tms_dataset_pk PRIMARY KEY,
@@ -39,10 +41,20 @@ CREATE TABLE tms_environment
     name varchar(255),
     project_id bigint NOT NULL
         CONSTRAINT tms_environment_fk_project
-            REFERENCES project,
-    dataset_id bigint
-        CONSTRAINT tms_environment_fk_tms_dataset
-        REFERENCES tms_dataset
+            REFERENCES project
+);
+
+CREATE TABLE tms_environment_dataset
+(
+    id BIGSERIAL CONSTRAINT tms_environment_dataset_pk PRIMARY KEY,
+    environment_id BIGINT NOT NULL
+        CONSTRAINT tms_environment_dataset_fk_environment
+            REFERENCES tms_environment,
+    dataset_id BIGINT NOT NULL
+        CONSTRAINT tms_environment_dataset_fk_dataset
+            REFERENCES tms_dataset,
+    dataset_type tms_dataset_type NOT NULL,
+    CONSTRAINT tms_environment_dataset_unique UNIQUE (environment_id, dataset_id)
 );
 
 CREATE TABLE tms_test_plan
@@ -112,7 +124,7 @@ CREATE TABLE tms_test_case
             REFERENCES tms_test_folder,
     dataset_id bigint
         CONSTRAINT tms_test_case_fk_dataset
-        REFERENCES tms_dataset
+            REFERENCES tms_dataset
 );
 
 CREATE TABLE tms_test_case_version
