@@ -14,14 +14,47 @@ CREATE TABLE tms_product_version
             REFERENCES project
 );
 
+CREATE TYPE tms_dataset_type AS ENUM ('ENVIRONMENTAL', 'PARAMETRIZED');
+
+CREATE TABLE tms_dataset
+(
+    id BIGSERIAL CONSTRAINT tms_dataset_pk PRIMARY KEY,
+    name varchar(255),
+    project_id bigint NOT NULL
+        CONSTRAINT tms_dataset_fk_project
+            REFERENCES project
+);
+
+CREATE TABLE tms_dataset_data
+(
+    id BIGSERIAL CONSTRAINT tms_dataset_data_pk PRIMARY KEY,
+    key varchar(255),
+    value varchar(255),
+    dataset_id bigint NOT NULL
+        CONSTRAINT tms_dataset_attribute_fk_tms_dataset
+            REFERENCES tms_dataset
+);
+
 CREATE TABLE tms_environment
 (
     id BIGSERIAL CONSTRAINT tms_environment_pk PRIMARY KEY,
     name varchar(255),
-    test_data varchar(255),
     project_id bigint NOT NULL
         CONSTRAINT tms_environment_fk_project
             REFERENCES project
+);
+
+CREATE TABLE tms_environment_dataset
+(
+    id BIGSERIAL CONSTRAINT tms_environment_dataset_pk PRIMARY KEY,
+    environment_id BIGINT NOT NULL
+        CONSTRAINT tms_environment_dataset_fk_environment
+            REFERENCES tms_environment,
+    dataset_id BIGINT NOT NULL
+        CONSTRAINT tms_environment_dataset_fk_dataset
+            REFERENCES tms_dataset,
+    dataset_type tms_dataset_type NOT NULL,
+    CONSTRAINT tms_environment_dataset_unique UNIQUE (environment_id, dataset_id)
 );
 
 CREATE TABLE tms_test_plan
@@ -47,9 +80,11 @@ CREATE TABLE tms_milestone
     start_date TIMESTAMP,
     end_date TIMESTAMP,
     type varchar(255),
+    -- TODO many to many ?
     product_version_id bigint NOT NULL
         CONSTRAINT tms_milestone_fk_product_version
             REFERENCES tms_product_version,
+    -- TODO many to many ?
     test_plan_id bigint
         CONSTRAINT tms_milestone_fk_test_plan
             REFERENCES tms_test_plan
@@ -68,6 +103,17 @@ CREATE TABLE tms_test_folder
             REFERENCES project
 );
 
+CREATE TABLE tms_test_plan_test_folder
+(
+    test_plan_id bigint
+        CONSTRAINT tms_test_plan_test_folder_fk_test_plan
+            REFERENCES tms_test_plan,
+    test_folder_id bigint
+        CONSTRAINT tms_test_plan_test_folder_fk_test_folder
+            REFERENCES tms_test_folder,
+    PRIMARY KEY (test_plan_id, test_folder_id)
+);
+
 CREATE TABLE tms_test_case
 (
     id            BIGSERIAL CONSTRAINT tms_test_case_pk PRIMARY KEY,
@@ -75,7 +121,10 @@ CREATE TABLE tms_test_case
     description   varchar(255),
     test_folder_id bigint NOT NULL
         CONSTRAINT tms_test_case_fk_test_folder
-            REFERENCES tms_test_folder
+            REFERENCES tms_test_folder,
+    dataset_id bigint
+        CONSTRAINT tms_test_case_fk_dataset
+            REFERENCES tms_dataset
 );
 
 CREATE TABLE tms_test_case_version
