@@ -1,1 +1,0 @@
-ALTER TYPE integration_group_enum ADD VALUE 'REMOTE';
