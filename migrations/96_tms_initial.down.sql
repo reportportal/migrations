@@ -15,5 +15,4 @@ DROP TABLE IF EXISTS tms_environment;
 DROP TABLE IF EXISTS tms_product_version;
 DROP TABLE IF EXISTS tms_dataset_data;
 DROP TABLE IF EXISTS tms_dataset;
-DROP TYPE IF EXISTS tms_dataset_type;
 DROP TABLE IF EXISTS tms_attribute;

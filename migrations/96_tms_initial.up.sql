@@ -14,8 +14,6 @@ CREATE TABLE tms_product_version
             REFERENCES project
 );
 
-CREATE TYPE tms_dataset_type AS ENUM ('ENVIRONMENTAL', 'PARAMETRIZED');
-
 CREATE TABLE tms_dataset
 (
     id BIGSERIAL CONSTRAINT tms_dataset_pk PRIMARY KEY,
@@ -53,7 +51,7 @@ CREATE TABLE tms_environment_dataset
     dataset_id BIGINT NOT NULL
         CONSTRAINT tms_environment_dataset_fk_dataset
             REFERENCES tms_dataset,
-    dataset_type tms_dataset_type NOT NULL,
+    dataset_type varchar(255) NOT NULL,
     CONSTRAINT tms_environment_dataset_unique UNIQUE (environment_id, dataset_id)
 );
 
