@@ -65,10 +65,10 @@ CREATE TABLE tms_test_plan
     project_id bigint NOT NULL
         CONSTRAINT tms_test_plan_fk_project
             REFERENCES project,
-    environment_id bigint NOT NULL
+    environment_id bigint
         CONSTRAINT tms_test_plan_fk_environment
             REFERENCES tms_environment,
-    product_version_id bigint NOT NULL
+    product_version_id bigint
         CONSTRAINT tms_test_plan_fk_product_version
             REFERENCES tms_product_version
 );
