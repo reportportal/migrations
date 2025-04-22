@@ -33,6 +33,7 @@ jobs:
     with:
       aws-region: ${{ vars.AWS_REGION }}
       image-tag: 'migration-orgs-${{ github.run_number }}'
+      additional-tag: 'orgs-latest'
       version: '${{ github.ref_name }}-${{ needs.variables-setup.outputs.sha_short }}'
       date: ${{ needs.variables-setup.outputs.date }}
     secrets: inherit
