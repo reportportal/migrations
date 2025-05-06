@@ -1,0 +1,1 @@
+UPDATE oauth_registration SET redirect_uri_template = '{baseUrl}/{action}/oauth2/code/{registrationId}' where id = 'github'
