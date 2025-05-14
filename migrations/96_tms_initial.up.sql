@@ -210,3 +210,11 @@ CREATE TABLE tms_test_plan_attribute
     value        varchar(255),
     PRIMARY KEY (attribute_id, test_plan_id)
 );
+
+CREATE TYPE LAUNCH_TYPE_ENUM AS ENUM ('AUTOMATION', 'MANUAL');
+ALTER TABLE launch
+    ADD COLUMN launch_type LAUNCH_TYPE_ENUM;
+ALTER TABLE launch
+    ALTER COLUMN launch_type SET DEFAULT 'AUTOMATION';
+UPDATE launch
+SET retention_policy = 'AUTOMATION';
