@@ -17,3 +17,5 @@ DROP TABLE IF EXISTS tms_dataset_data;
 DROP TABLE IF EXISTS tms_dataset;
 DROP TYPE IF EXISTS tms_dataset_type;
 DROP TABLE IF EXISTS tms_attribute;
+ALTER TABLE launch DROP COLUMN IF EXISTS launch_type;
+DROP TYPE IF EXISTS LAUNCH_TYPE_ENUM;
