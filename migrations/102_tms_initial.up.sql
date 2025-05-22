@@ -217,4 +217,4 @@ ALTER TABLE launch
 ALTER TABLE launch
     ALTER COLUMN launch_type SET DEFAULT 'AUTOMATION';
 UPDATE launch
-SET retention_policy = 'AUTOMATION';
+SET launch_type = 'AUTOMATION';
