@@ -1,0 +1,1 @@
+ALTER TABLE organization DROP CONSTRAINT IF EXISTS fk_organization_user;
