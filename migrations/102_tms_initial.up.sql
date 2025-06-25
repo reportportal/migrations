@@ -119,6 +119,7 @@ CREATE TABLE tms_test_case
     id            BIGSERIAL CONSTRAINT tms_test_case_pk PRIMARY KEY,
     name          varchar(255),
     description   varchar(255),
+    priority      varchar(255),
     test_folder_id bigint NOT NULL
         CONSTRAINT tms_test_case_fk_test_folder
             REFERENCES tms_test_folder,
