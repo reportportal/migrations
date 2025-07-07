@@ -1,1 +1,1 @@
-ALTER TABLE users DROP CONSTRAINT users_external_id_unique;
+ALTER TABLE users DROP CONSTRAINT users_external_id_key;
