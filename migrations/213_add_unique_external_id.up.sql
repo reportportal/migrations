@@ -1,0 +1,1 @@
+ALTER TABLE users ADD CONSTRAINT users_external_id_unique UNIQUE (external_id);
