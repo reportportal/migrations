@@ -1,1 +1,1 @@
-ALTER TABLE users ADD CONSTRAINT IF NOT EXISTS users_external_id_key UNIQUE (external_id);
+ALTER TABLE users ADD CONSTRAINT users_external_id_key UNIQUE (external_id);
