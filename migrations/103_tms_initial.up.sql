@@ -128,6 +128,10 @@ CREATE TABLE tms_test_case
             REFERENCES tms_dataset
 );
 
+CREATE INDEX idx_tms_test_case_fulltext ON tms_test_case USING gin (
+    to_tsvector('simple', coalesce(name, '') || ' ' || coalesce(description, '') || ' ' || coalesce(priority, ''))
+);
+
 CREATE TABLE tms_test_case_version
 (
     id           BIGSERIAL CONSTRAINT tms_test_case_version_pk PRIMARY KEY,
