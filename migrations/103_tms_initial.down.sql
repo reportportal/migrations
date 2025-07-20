@@ -1,3 +1,8 @@
+
+DROP INDEX IF EXISTS idx_tms_test_case_search_vector;
+DROP INDEX IF EXISTS idx_tms_test_folder_project_id;
+DROP TRIGGER IF EXISTS tms_test_case_search_vector_trigger ON tms_test_case;
+DROP FUNCTION IF EXISTS update_tms_test_case_search_vector();
 DROP TABLE IF EXISTS tms_test_plan_attribute;
 DROP TABLE IF EXISTS tms_test_case_attribute;
 DROP TABLE IF EXISTS tms_manual_scenario_attribute;
