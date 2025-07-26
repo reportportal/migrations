@@ -1,4 +1,16 @@
 
+DROP INDEX IF EXISTS idx_tms_test_folder_test_item_test_folder_id;
+DROP INDEX IF EXISTS idx_tms_test_folder_test_item_test_item_id;
+DROP TABLE IF EXISTS tms_test_folder_test_item;
+
+DROP INDEX IF EXISTS idx_tms_step_test_item_step_id;
+DROP INDEX IF EXISTS idx_tms_step_test_item_test_item_id;
+DROP TABLE IF EXISTS tms_step_test_item;
+
+DROP INDEX IF EXISTS idx_tms_test_case_test_item_test_case_id;
+DROP INDEX IF EXISTS idx_tms_test_case_test_item_test_item_id;
+DROP TABLE IF EXISTS tms_test_case_test_item;
+
 DROP INDEX IF EXISTS idx_tms_test_case_search_vector;
 DROP INDEX IF EXISTS idx_tms_test_folder_project_id;
 DROP TRIGGER IF EXISTS tms_test_case_search_vector_trigger ON tms_test_case;

@@ -77,7 +77,10 @@ CREATE TABLE tms_test_plan
             REFERENCES tms_environment,
     product_version_id bigint
         CONSTRAINT tms_test_plan_fk_product_version
-            REFERENCES tms_product_version
+            REFERENCES tms_product_version,
+    launch_id          bigint UNIQUE
+        CONSTRAINT tms_test_plan_fk_launch
+            REFERENCES launch
 );
 
 CREATE TABLE tms_milestone
@@ -125,6 +128,20 @@ CREATE TABLE tms_test_plan_test_folder
     PRIMARY KEY (test_plan_id, test_folder_id)
 );
 
+CREATE TABLE tms_test_folder_test_item
+(
+    test_folder_id bigint NOT NULL
+        CONSTRAINT tms_test_folder_test_item_fk_test_folder
+            REFERENCES tms_test_folder,
+    test_item_id   bigint NOT NULL
+        CONSTRAINT tms_test_folder_test_item_fk_test_item
+            REFERENCES test_item,
+    PRIMARY KEY (test_folder_id, test_item_id)
+);
+
+CREATE INDEX idx_tms_test_folder_test_item_test_folder_id ON tms_test_folder_test_item (test_folder_id);
+CREATE INDEX idx_tms_test_folder_test_item_test_item_id ON tms_test_folder_test_item (test_item_id);
+
 CREATE TABLE tms_test_case
 (
     id             BIGSERIAL
@@ -141,9 +158,8 @@ CREATE TABLE tms_test_case
             REFERENCES tms_dataset
 );
 
-
 CREATE FUNCTION update_tms_test_case_search_vector()
-RETURNS TRIGGER AS $$
+    RETURNS TRIGGER AS $$
 BEGIN
     NEW.search_vector
 := to_tsvector('simple',
@@ -160,8 +176,21 @@ CREATE TRIGGER tms_test_case_search_vector_trigger
 UPDATE ON tms_test_case
     FOR EACH ROW EXECUTE FUNCTION update_tms_test_case_search_vector();
 
-
 CREATE INDEX idx_tms_test_case_search_vector ON tms_test_case USING gin (search_vector);
+
+CREATE TABLE tms_test_case_test_item
+(
+    test_case_id bigint NOT NULL
+        CONSTRAINT tms_test_case_test_item_fk_test_case
+            REFERENCES tms_test_case,
+    test_item_id bigint NOT NULL
+        CONSTRAINT tms_test_case_test_item_fk_test_item
+            REFERENCES test_item,
+    PRIMARY KEY (test_case_id, test_item_id)
+);
+
+CREATE INDEX idx_tms_test_case_test_item_test_case_id ON tms_test_case_test_item (test_case_id);
+CREATE INDEX idx_tms_test_case_test_item_test_item_id ON tms_test_case_test_item (test_item_id);
 
 CREATE TABLE tms_test_case_version
 (
@@ -198,6 +227,20 @@ CREATE TABLE tms_step
         CONSTRAINT tms_step_fk_manual_scenario
             REFERENCES tms_manual_scenario
 );
+
+CREATE TABLE tms_step_test_item
+(
+    step_id      bigint NOT NULL
+        CONSTRAINT tms_step_test_item_fk_step
+            REFERENCES tms_step,
+    test_item_id bigint NOT NULL
+        CONSTRAINT tms_step_test_item_fk_test_item
+            REFERENCES test_item,
+    PRIMARY KEY (step_id, test_item_id)
+);
+
+CREATE INDEX idx_tms_step_test_item_step_id ON tms_step_test_item (step_id);
+CREATE INDEX idx_tms_step_test_item_test_item_id ON tms_step_test_item (test_item_id);
 
 CREATE TABLE tms_attachment
 (
