@@ -150,6 +150,7 @@ CREATE TABLE tms_test_case
     description    varchar(255),
     priority       varchar(255),
     search_vector  tsvector,
+    external_id    varchar(255),
     test_folder_id bigint NOT NULL
         CONSTRAINT tms_test_case_fk_test_folder
             REFERENCES tms_test_folder,
