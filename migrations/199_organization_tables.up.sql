@@ -6,7 +6,8 @@ CREATE TABLE organization
     name TEXT NOT NULL UNIQUE,
     organization_type TEXT NOT NULL,
     external_id TEXT UNIQUE,
-    slug TEXT NOT NULL UNIQUE
+    slug TEXT NOT NULL UNIQUE,
+    owner_id BIGINT UNIQUE REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS organization_slug_idx ON organization(slug);
