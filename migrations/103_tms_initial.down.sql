@@ -1,4 +1,3 @@
-
 DROP INDEX IF EXISTS idx_tms_test_folder_test_item_test_folder_id;
 DROP INDEX IF EXISTS idx_tms_test_folder_test_item_test_item_id;
 DROP TABLE IF EXISTS tms_test_folder_test_item;
@@ -20,7 +19,17 @@ DROP TABLE IF EXISTS tms_test_case_attribute;
 DROP TABLE IF EXISTS tms_manual_scenario_attribute;
 DROP TABLE IF EXISTS tms_attachment;
 DROP TABLE IF EXISTS tms_step;
+
+DROP TABLE IF EXISTS tms_steps_manual_scenario;
+DROP TABLE IF EXISTS tms_text_manual_scenario;
+
+DROP INDEX IF EXISTS idx_tms_manual_scenario_type;
 DROP TABLE IF EXISTS tms_manual_scenario;
+
+DROP TYPE IF EXISTS tms_manual_scenario_type;
+
+DROP INDEX IF EXISTS idx_tms_test_case_version_default;
+
 DROP TABLE IF EXISTS tms_test_case_version;
 DROP TABLE IF EXISTS tms_test_case;
 DROP TABLE IF EXISTS tms_test_plan_test_folder;
