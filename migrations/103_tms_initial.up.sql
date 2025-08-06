@@ -201,10 +201,16 @@ CREATE TABLE tms_test_case_version
     name         varchar(255),
     is_default   boolean,
     is_draft     boolean,
-    test_case_id bigint
+    test_case_id bigint NOT NULL
         CONSTRAINT tms_test_case_version_fk_test_case
             REFERENCES tms_test_case
 );
+
+CREATE UNIQUE INDEX idx_tms_test_case_version_default
+    ON tms_test_case_version (test_case_id)
+    WHERE is_default = true;
+
+CREATE TYPE tms_manual_scenario_type AS ENUM ('TEXT', 'STEPS');
 
 CREATE TABLE tms_manual_scenario
 (
@@ -216,18 +222,39 @@ CREATE TABLE tms_manual_scenario
     test_case_version_id      bigint
         UNIQUE
         CONSTRAINT tms_manual_scenario_fk_test_case_version
-            REFERENCES tms_test_case_version
+            REFERENCES tms_test_case_version,
+    type                      tms_manual_scenario_type NOT NULL
 );
+
+CREATE TABLE tms_text_manual_scenario
+(
+    manual_scenario_id bigint NOT NULL
+        CONSTRAINT tms_text_manual_scenario_pk PRIMARY KEY
+        CONSTRAINT tms_text_manual_scenario_fk_manual_scenario
+            REFERENCES tms_manual_scenario,
+    instructions       varchar(255),
+    expected_result    varchar(255)
+);
+
+CREATE TABLE tms_steps_manual_scenario
+(
+    manual_scenario_id bigint NOT NULL
+        CONSTRAINT tms_steps_manual_scenario_pk PRIMARY KEY
+        CONSTRAINT tms_steps_manual_scenario_fk_manual_scenario
+            REFERENCES tms_manual_scenario
+);
+
+CREATE INDEX idx_tms_manual_scenario_type ON tms_manual_scenario (type);
 
 CREATE TABLE tms_step
 (
-    id                 BIGSERIAL
+    id                       BIGSERIAL
         CONSTRAINT tms_step_pk PRIMARY KEY,
-    instructions       varchar(255),
-    expected_result    varchar(255),
-    manual_scenario_id bigint
-        CONSTRAINT tms_step_fk_manual_scenario
-            REFERENCES tms_manual_scenario
+    instructions             varchar(255),
+    expected_result          varchar(255),
+    steps_manual_scenario_id bigint
+        CONSTRAINT tms_step_fk_steps_manual_scenario
+            REFERENCES tms_steps_manual_scenario
 );
 
 CREATE TABLE tms_step_test_item
@@ -257,7 +284,10 @@ CREATE TABLE tms_attachment
             REFERENCES tms_environment,
     step_id        bigint
         CONSTRAINT tms_attachment_fk_step
-            REFERENCES tms_step
+            REFERENCES tms_step,
+    text_manual_scenario_id        bigint
+        CONSTRAINT tms_attachment_fk_text_manual_scenario
+            REFERENCES tms_text_manual_scenario
 );
 
 CREATE TABLE tms_manual_scenario_attribute
