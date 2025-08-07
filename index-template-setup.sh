@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Uses for creating an index template in OpenSearch for cases 
+# when ReportPortal stores logs in a data stream.
+
 # Index template name
 TEMPLATE_NAME="logs"
 
