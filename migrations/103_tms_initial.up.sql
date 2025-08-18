@@ -146,6 +146,8 @@ CREATE TABLE tms_test_case
 (
     id             BIGSERIAL
         CONSTRAINT tms_test_case_pk PRIMARY KEY,
+    created_at     TIMESTAMP DEFAULT now() NOT NULL,
+    updated_at     TIMESTAMP DEFAULT now() NOT NULL,
     name           varchar(255),
     description    varchar(255),
     priority       varchar(255),
