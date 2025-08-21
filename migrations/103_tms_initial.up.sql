@@ -162,6 +162,17 @@ CREATE TABLE tms_test_case
     CONSTRAINT tms_test_case_name_folder_unique UNIQUE (name, test_folder_id)
 );
 
+CREATE TABLE tms_test_plan_test_case
+(
+    test_plan_id   bigint
+        CONSTRAINT tms_test_plan_test_case_fk_test_plan
+            REFERENCES tms_test_plan,
+    test_case_id bigint
+        CONSTRAINT tms_test_plan_test_case_fk_test_case
+            REFERENCES tms_test_case,
+    PRIMARY KEY (test_plan_id, test_case_id)
+);
+
 CREATE FUNCTION update_tms_test_case_search_vector()
     RETURNS TRIGGER AS $$
 BEGIN
