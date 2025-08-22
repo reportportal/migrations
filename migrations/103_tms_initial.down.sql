@@ -31,9 +31,10 @@ DROP TYPE IF EXISTS tms_manual_scenario_type;
 DROP INDEX IF EXISTS idx_tms_test_case_version_default;
 
 DROP TABLE IF EXISTS tms_test_case_version;
+DROP INDEX IF EXISTS idx_tms_test_plan_test_case_test_plan_id;
+DROP INDEX IF EXISTS idx_tms_test_plan_test_case_test_case_id;
 DROP TABLE IF EXISTS tms_test_plan_test_case;
 DROP TABLE IF EXISTS tms_test_case;
-DROP TABLE IF EXISTS tms_test_plan_test_folder;
 DROP TABLE IF EXISTS tms_test_folder;
 DROP TABLE IF EXISTS tms_milestone;
 DROP TABLE IF EXISTS tms_test_plan;

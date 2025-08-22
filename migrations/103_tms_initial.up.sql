@@ -117,17 +117,6 @@ CREATE TABLE tms_test_folder
 
 CREATE INDEX idx_tms_test_folder_project_id ON tms_test_folder (project_id, id);
 
-CREATE TABLE tms_test_plan_test_folder
-(
-    test_plan_id   bigint
-        CONSTRAINT tms_test_plan_test_folder_fk_test_plan
-            REFERENCES tms_test_plan,
-    test_folder_id bigint
-        CONSTRAINT tms_test_plan_test_folder_fk_test_folder
-            REFERENCES tms_test_folder,
-    PRIMARY KEY (test_plan_id, test_folder_id)
-);
-
 CREATE TABLE tms_test_folder_test_item
 (
     test_folder_id bigint NOT NULL
@@ -172,6 +161,9 @@ CREATE TABLE tms_test_plan_test_case
             REFERENCES tms_test_case,
     PRIMARY KEY (test_plan_id, test_case_id)
 );
+
+CREATE INDEX idx_tms_test_plan_test_case_test_plan_id ON tms_test_plan_test_case (test_plan_id);
+CREATE INDEX idx_tms_test_plan_test_case_test_case_id ON tms_test_plan_test_case (test_case_id);
 
 CREATE FUNCTION update_tms_test_case_search_vector()
     RETURNS TRIGGER AS $$
