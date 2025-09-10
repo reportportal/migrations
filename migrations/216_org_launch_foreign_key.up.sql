@@ -16,8 +16,9 @@ ALTER TABLE launch
 ALTER TABLE launch
     ADD CONSTRAINT fk_launch_organization
         FOREIGN KEY (organization_id)
-            REFERENCES organization(id);
+            REFERENCES organization (id)
+            ON DELETE CASCADE;
 
 -- Step 5: Add index for performance optimization
 CREATE INDEX IF NOT EXISTS idx_launch_organization_id
-    ON launch(organization_id);
+    ON launch (organization_id);
