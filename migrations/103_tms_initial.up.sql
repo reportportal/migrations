@@ -69,6 +69,7 @@ CREATE TABLE tms_test_plan
         CONSTRAINT tms_test_plan_pk PRIMARY KEY,
     name               varchar(255),
     description        varchar(255),
+    search_vector      tsvector,
     project_id         bigint NOT NULL
         CONSTRAINT tms_test_plan_fk_project
             REFERENCES project,
@@ -82,6 +83,22 @@ CREATE TABLE tms_test_plan
         CONSTRAINT tms_test_plan_fk_launch
             REFERENCES launch
 );
+
+CREATE FUNCTION update_tms_test_plan_search_vector()
+    RETURNS TRIGGER AS $$
+BEGIN
+    NEW.search_vector := to_tsvector('simple',
+        COALESCE(NEW.name, '') || ' ' ||
+        COALESCE(NEW.description, ''));
+RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER tms_test_plan_search_vector_trigger
+    BEFORE INSERT OR UPDATE ON tms_test_plan
+                         FOR EACH ROW EXECUTE FUNCTION update_tms_test_plan_search_vector();
+
+CREATE INDEX idx_tms_test_plan_search_vector ON tms_test_plan USING gin (search_vector);
 
 CREATE TABLE tms_milestone
 (
@@ -168,20 +185,17 @@ CREATE INDEX idx_tms_test_plan_test_case_test_case_id ON tms_test_plan_test_case
 CREATE FUNCTION update_tms_test_case_search_vector()
     RETURNS TRIGGER AS $$
 BEGIN
-    NEW.search_vector
-:= to_tsvector('simple',
+    NEW.search_vector := to_tsvector('simple',
         COALESCE(NEW.name, '') || ' ' ||
         COALESCE(NEW.description, '') || ' ' ||
         COALESCE(NEW.priority, ''));
 RETURN NEW;
 END;
-$$
-LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 
 CREATE TRIGGER tms_test_case_search_vector_trigger
-    BEFORE INSERT OR
-UPDATE ON tms_test_case
-    FOR EACH ROW EXECUTE FUNCTION update_tms_test_case_search_vector();
+    BEFORE INSERT OR UPDATE ON tms_test_case
+                         FOR EACH ROW EXECUTE FUNCTION update_tms_test_case_search_vector();
 
 CREATE INDEX idx_tms_test_case_search_vector ON tms_test_case USING gin (search_vector);
 
