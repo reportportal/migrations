@@ -237,13 +237,25 @@ CREATE TABLE tms_manual_scenario
         CONSTRAINT tms_manual_scenario_pk PRIMARY KEY,
     execution_estimation_time integer,
     link_to_requirements      varchar(255),
-    preconditions             varchar(255),
     test_case_version_id      bigint
         UNIQUE
         CONSTRAINT tms_manual_scenario_fk_test_case_version
             REFERENCES tms_test_case_version,
     type                      tms_manual_scenario_type NOT NULL
 );
+
+CREATE TABLE tms_manual_scenario_preconditions
+(
+    id                 BIGSERIAL
+        CONSTRAINT tms_manual_scenario_preconditions_pk PRIMARY KEY,
+    manual_scenario_id bigint NOT NULL UNIQUE
+        CONSTRAINT tms_manual_scenario_preconditions_fk_manual_scenario
+            REFERENCES tms_manual_scenario,
+    value              varchar(255)
+);
+
+CREATE UNIQUE INDEX idx_tms_manual_scenario_preconditions_scenario_unique
+    ON tms_manual_scenario_preconditions(manual_scenario_id);
 
 CREATE TABLE tms_text_manual_scenario
 (
@@ -292,22 +304,67 @@ CREATE INDEX idx_tms_step_test_item_test_item_id ON tms_step_test_item (test_ite
 
 CREATE TABLE tms_attachment
 (
-    id             BIGSERIAL
+    id           BIGSERIAL
         CONSTRAINT tms_attachment_pk PRIMARY KEY,
-    file_name      varchar(255),
-    file_type      varchar(255),
-    file_size      bigint,
-    path_to_file   varchar(255),
-    environment_id bigint
+    file_name    varchar(255) NOT NULL,
+    file_type    varchar(255),
+    file_size    bigint,
+    path_to_file varchar(255) NOT NULL,
+    created_at   TIMESTAMP,
+    expires_at   TIMESTAMP,
+    environment_id                   bigint
         CONSTRAINT tms_attachment_fk_environment
-            REFERENCES tms_environment,
-    step_id        bigint
-        CONSTRAINT tms_attachment_fk_step
-            REFERENCES tms_step,
-    text_manual_scenario_id        bigint
-        CONSTRAINT tms_attachment_fk_text_manual_scenario
-            REFERENCES tms_text_manual_scenario
+            REFERENCES tms_environment
 );
+
+CREATE INDEX idx_tms_attachment_expires_at ON tms_attachment(expires_at) WHERE expires_at IS NOT NULL;
+CREATE INDEX idx_tms_attachment_path ON tms_attachment(path_to_file);
+
+CREATE TABLE tms_step_attachment
+(
+    step_id       bigint NOT NULL
+        CONSTRAINT tms_step_attachment_fk_step
+            REFERENCES tms_step,
+    attachment_id bigint NOT NULL
+        CONSTRAINT tms_step_attachment_fk_attachment
+            REFERENCES tms_attachment,
+    created_at    TIMESTAMP DEFAULT now() NOT NULL,
+    PRIMARY KEY (step_id, attachment_id)
+);
+
+CREATE INDEX idx_tms_step_attachment_step_id ON tms_step_attachment(step_id);
+CREATE INDEX idx_tms_step_attachment_attachment_id ON tms_step_attachment(attachment_id);
+
+CREATE TABLE tms_text_manual_scenario_attachment
+(
+    text_manual_scenario_id bigint NOT NULL
+        CONSTRAINT tms_text_manual_scenario_attachment_fk_scenario
+            REFERENCES tms_text_manual_scenario,
+    attachment_id           bigint NOT NULL
+        CONSTRAINT tms_text_manual_scenario_attachment_fk_attachment
+            REFERENCES tms_attachment,
+    created_at              TIMESTAMP DEFAULT now() NOT NULL,
+    PRIMARY KEY (text_manual_scenario_id, attachment_id)
+);
+
+CREATE INDEX idx_tms_text_manual_scenario_attachment_scenario_id ON tms_text_manual_scenario_attachment(text_manual_scenario_id);
+CREATE INDEX idx_tms_text_manual_scenario_attachment_attachment_id ON tms_text_manual_scenario_attachment(attachment_id);
+
+CREATE TABLE tms_manual_scenario_preconditions_attachment
+(
+    preconditions_id bigint NOT NULL
+        CONSTRAINT tms_manual_scenario_preconditions_attachment_fk_preconditions
+            REFERENCES tms_manual_scenario_preconditions,
+    attachment_id    bigint NOT NULL
+        CONSTRAINT tms_manual_scenario_preconditions_attachment_fk_attachment
+            REFERENCES tms_attachment,
+    created_at       TIMESTAMP DEFAULT now() NOT NULL,
+    PRIMARY KEY (preconditions_id, attachment_id)
+);
+
+CREATE INDEX idx_preconditions_attachment_preconditions_id ON tms_manual_scenario_preconditions_attachment(preconditions_id);
+CREATE INDEX idx_preconditions_attachment_attachment_id ON tms_manual_scenario_preconditions_attachment(attachment_id);
+
 
 CREATE TABLE tms_manual_scenario_attribute
 (

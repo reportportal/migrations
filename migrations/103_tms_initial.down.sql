@@ -1,3 +1,19 @@
+DROP INDEX IF EXISTS idx_tms_manual_scenario_preconditions_attachment_attachment_id;
+DROP INDEX IF EXISTS idx_tms_manual_scenario_preconditions_attachment_preconditions_id;
+DROP TABLE IF EXISTS tms_manual_scenario_preconditions_attachment;
+
+DROP INDEX IF EXISTS idx_preconditions_attachment_attachment_id;
+DROP INDEX IF EXISTS idx_preconditions_attachment_preconditions_id;
+DROP TABLE IF EXISTS tms_text_manual_scenario_attachment;
+
+DROP INDEX IF EXISTS idx_tms_step_attachment_attachment_id;
+DROP INDEX IF EXISTS idx_tms_step_attachment_step_id;
+DROP TABLE IF EXISTS tms_step_attachment;
+
+DROP INDEX IF EXISTS idx_tms_attachment_path;
+DROP INDEX IF EXISTS idx_tms_attachment_expires_at;
+DROP TABLE IF EXISTS tms_attachment;
+
 DROP INDEX IF EXISTS idx_tms_test_folder_test_item_test_folder_id;
 DROP INDEX IF EXISTS idx_tms_test_folder_test_item_test_item_id;
 DROP TABLE IF EXISTS tms_test_folder_test_item;
@@ -17,14 +33,20 @@ DROP TRIGGER IF EXISTS tms_test_case_search_vector_trigger ON tms_test_case;
 DROP TRIGGER IF EXISTS tms_test_plan_search_vector_trigger ON tms_test_plan;
 DROP FUNCTION IF EXISTS update_tms_test_case_search_vector();
 DROP FUNCTION IF EXISTS update_tms_test_plan_search_vector();
+
 DROP TABLE IF EXISTS tms_test_plan_attribute;
 DROP TABLE IF EXISTS tms_test_case_attribute;
 DROP TABLE IF EXISTS tms_manual_scenario_attribute;
-DROP TABLE IF EXISTS tms_attachment;
+
+
 DROP TABLE IF EXISTS tms_step;
 
 DROP TABLE IF EXISTS tms_steps_manual_scenario;
 DROP TABLE IF EXISTS tms_text_manual_scenario;
+
+
+DROP INDEX IF EXISTS idx_tms_manual_scenario_preconditions_scenario_unique;
+DROP TABLE IF EXISTS tms_manual_scenario_preconditions;
 
 DROP INDEX IF EXISTS idx_tms_manual_scenario_type;
 DROP TABLE IF EXISTS tms_manual_scenario;
@@ -32,8 +54,8 @@ DROP TABLE IF EXISTS tms_manual_scenario;
 DROP TYPE IF EXISTS tms_manual_scenario_type;
 
 DROP INDEX IF EXISTS idx_tms_test_case_version_default;
-
 DROP TABLE IF EXISTS tms_test_case_version;
+
 DROP INDEX IF EXISTS idx_tms_test_plan_test_case_test_plan_id;
 DROP INDEX IF EXISTS idx_tms_test_plan_test_case_test_case_id;
 DROP TABLE IF EXISTS tms_test_plan_test_case;
@@ -48,5 +70,6 @@ DROP TABLE IF EXISTS tms_dataset_data;
 DROP TABLE IF EXISTS tms_dataset;
 DROP TYPE IF EXISTS tms_dataset_type;
 DROP TABLE IF EXISTS tms_attribute;
+
 ALTER TABLE launch DROP COLUMN IF EXISTS launch_type;
 DROP TYPE IF EXISTS LAUNCH_TYPE_ENUM;
