@@ -47,14 +47,5 @@ SELECT
 FROM project p
 CROSS JOIN default_log_types dlt;
 
--- Add foreign key column to log table
-ALTER TABLE log ADD COLUMN log_type_id INTEGER REFERENCES log_type(id) ON DELETE SET NULL;
-
--- Create index to improve UPDATE performance
+-- Create index for fast JOINs between log and log_type tables
 CREATE INDEX idx_log_level_project_id ON log(log_level, project_id);
-
--- Link existing logs to their log types
-UPDATE log l
-SET log_type_id = lt.id 
-FROM log_type lt 
-WHERE l.log_level = lt.level AND l.project_id = lt.project_id;
