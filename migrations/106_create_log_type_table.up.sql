@@ -16,11 +16,6 @@ CREATE TABLE log_type (
     CONSTRAINT log_type_project_id_level_unique UNIQUE (project_id, level)
 );
 
--- Create indexes
-CREATE INDEX idx_log_type_project_id ON log_type(project_id);
-CREATE INDEX idx_log_type_project_level ON log_type(project_id, level);
-
-
 -- Insert default log types for each existing project
 WITH default_log_types AS (
     SELECT * FROM (VALUES
@@ -48,4 +43,4 @@ FROM project p
 CROSS JOIN default_log_types dlt;
 
 -- Create index for fast JOINs between log and log_type tables
-CREATE INDEX idx_log_level_project_id ON log(log_level, project_id);
+CREATE INDEX idx_log_project_level ON log(project_id, log_level);
