@@ -4,6 +4,8 @@ DROP TABLE IF EXISTS tms_manual_scenario_preconditions_attachment;
 
 DROP INDEX IF EXISTS idx_preconditions_attachment_attachment_id;
 DROP INDEX IF EXISTS idx_preconditions_attachment_preconditions_id;
+DROP INDEX IF EXISTS idx_tms_text_manual_scenario_attachment_scenario_id;
+DROP INDEX IF EXISTS idx_tms_text_manual_scenario_attachment_attachment_id;
 DROP TABLE IF EXISTS tms_text_manual_scenario_attachment;
 
 DROP INDEX IF EXISTS idx_tms_step_attachment_attachment_id;
@@ -28,22 +30,25 @@ DROP TABLE IF EXISTS tms_test_case_test_item;
 
 DROP INDEX IF EXISTS idx_tms_test_case_search_vector;
 DROP INDEX IF EXISTS idx_tms_test_plan_search_vector;
+DROP INDEX IF EXISTS idx_tms_attribute_search_vector;
 DROP INDEX IF EXISTS idx_tms_test_folder_project_id;
+
 DROP TRIGGER IF EXISTS tms_test_case_search_vector_trigger ON tms_test_case;
 DROP TRIGGER IF EXISTS tms_test_plan_search_vector_trigger ON tms_test_plan;
+DROP TRIGGER IF EXISTS tms_attribute_search_vector_trigger ON tms_attribute;
+
 DROP FUNCTION IF EXISTS update_tms_test_case_search_vector();
 DROP FUNCTION IF EXISTS update_tms_test_plan_search_vector();
+DROP FUNCTION IF EXISTS update_tms_attribute_search_vector();
 
 DROP TABLE IF EXISTS tms_test_plan_attribute;
 DROP TABLE IF EXISTS tms_test_case_attribute;
 DROP TABLE IF EXISTS tms_manual_scenario_attribute;
 
-
 DROP TABLE IF EXISTS tms_step;
 
 DROP TABLE IF EXISTS tms_steps_manual_scenario;
 DROP TABLE IF EXISTS tms_text_manual_scenario;
-
 
 DROP INDEX IF EXISTS idx_tms_manual_scenario_preconditions_scenario_unique;
 DROP TABLE IF EXISTS tms_manual_scenario_preconditions;
@@ -73,5 +78,3 @@ DROP TABLE IF EXISTS tms_attribute;
 
 ALTER TABLE launch DROP COLUMN IF EXISTS launch_type;
 DROP TYPE IF EXISTS LAUNCH_TYPE_ENUM;
-
-ALTER TYPE filter_condition_enum DROP VALUE IF EXISTS 'FULL_TEXT_SEARCH';

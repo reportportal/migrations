@@ -2,8 +2,23 @@ CREATE TABLE tms_attribute
 (
     id  BIGSERIAL
         CONSTRAINT tms_attribute_pk PRIMARY KEY,
-    key varchar(255) NOT NULL UNIQUE
+    key varchar(255) NOT NULL UNIQUE,
+    search_vector tsvector
 );
+
+CREATE FUNCTION update_tms_attribute_search_vector()
+    RETURNS TRIGGER AS $$
+BEGIN
+    NEW.search_vector := to_tsvector('simple', COALESCE(NEW.key, ''));
+RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER tms_attribute_search_vector_trigger
+    BEFORE INSERT OR UPDATE ON tms_attribute
+                         FOR EACH ROW EXECUTE FUNCTION update_tms_attribute_search_vector();
+
+CREATE INDEX idx_tms_attribute_search_vector ON tms_attribute USING gin (search_vector);
 
 CREATE TABLE tms_product_version
 (
@@ -364,7 +379,6 @@ CREATE TABLE tms_manual_scenario_preconditions_attachment
 
 CREATE INDEX idx_preconditions_attachment_preconditions_id ON tms_manual_scenario_preconditions_attachment(preconditions_id);
 CREATE INDEX idx_preconditions_attachment_attachment_id ON tms_manual_scenario_preconditions_attachment(attachment_id);
-
 
 CREATE TABLE tms_manual_scenario_attribute
 (
