@@ -409,3 +409,5 @@ ALTER TABLE launch
     ALTER COLUMN launch_type SET DEFAULT 'AUTOMATION';
 UPDATE launch
 SET launch_type = 'AUTOMATION';
+
+ALTER TYPE filter_condition_enum ADD VALUE IF NOT EXISTS 'FULL_TEXT_SEARCH';
