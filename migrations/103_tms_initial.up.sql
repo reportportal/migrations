@@ -84,7 +84,6 @@ CREATE TABLE tms_test_plan
         CONSTRAINT tms_test_plan_pk PRIMARY KEY,
     name               varchar(255),
     description        varchar(255),
-    search_vector      tsvector,
     project_id         bigint NOT NULL
         CONSTRAINT tms_test_plan_fk_project
             REFERENCES project,
@@ -93,10 +92,18 @@ CREATE TABLE tms_test_plan
             REFERENCES tms_environment,
     product_version_id bigint
         CONSTRAINT tms_test_plan_fk_product_version
-            REFERENCES tms_product_version,
-    launch_id          bigint UNIQUE
-        CONSTRAINT tms_test_plan_fk_launch
-            REFERENCES launch
+            REFERENCES tms_product_version
+);
+
+CREATE TABLE tms_test_plan_launch
+(
+    test_plan_id   bigint
+        CONSTRAINT tms_test_plan_launch_fk_test_plan
+            REFERENCES tms_test_plan,
+    launch_id bigint
+        CONSTRAINT tms_test_plan_launch_fk_launch
+            REFERENCES launch,
+    PRIMARY KEY (test_plan_id, launch_id)
 );
 
 CREATE FUNCTION update_tms_test_plan_search_vector()
