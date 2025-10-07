@@ -67,6 +67,7 @@ DROP TABLE IF EXISTS tms_test_plan_test_case;
 DROP TABLE IF EXISTS tms_test_case;
 DROP TABLE IF EXISTS tms_test_folder;
 DROP TABLE IF EXISTS tms_milestone;
+DROP TABLE IF EXISTS tms_test_plan_launch;
 DROP TABLE IF EXISTS tms_test_plan;
 DROP TABLE IF EXISTS tms_environment_dataset;
 DROP TABLE IF EXISTS tms_environment;
