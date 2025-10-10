@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS organization_settings
 (
     id              BIGSERIAL PRIMARY KEY,
-    organization_id BIGINT       NOT NULL,
+    organization_id BIGINT       NOT NULL REFERENCES organization (id) ON DELETE CASCADE,
     setting_key     VARCHAR(255) NOT NULL,
     setting_value   text         NOT NULL,
     UNIQUE (organization_id, setting_key)
@@ -35,7 +35,3 @@ FROM project p
 WHERE pa.attribute_id = 4
 GROUP BY p.organization_id
 ON CONFLICT DO NOTHING
-
-
-
-
