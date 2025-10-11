@@ -64,10 +64,12 @@ DROP TABLE IF EXISTS tms_test_case_version;
 DROP INDEX IF EXISTS idx_tms_test_plan_test_case_test_plan_id;
 DROP INDEX IF EXISTS idx_tms_test_plan_test_case_test_case_id;
 DROP TABLE IF EXISTS tms_test_plan_test_case;
+DROP INDEX IF EXISTS idx_tms_test_case_launch_test_case_id;
+DROP INDEX IF EXISTS idx_tms_test_case_launch_launch_id;
+DROP TABLE IF EXISTS tms_test_case_launch;
 DROP TABLE IF EXISTS tms_test_case;
 DROP TABLE IF EXISTS tms_test_folder;
 DROP TABLE IF EXISTS tms_milestone;
-DROP TABLE IF EXISTS tms_test_plan_launch;
 DROP TABLE IF EXISTS tms_test_plan;
 DROP TABLE IF EXISTS tms_environment_dataset;
 DROP TABLE IF EXISTS tms_environment;
@@ -79,3 +81,4 @@ DROP TABLE IF EXISTS tms_attribute;
 
 ALTER TABLE launch DROP COLUMN IF EXISTS launch_type;
 DROP TYPE IF EXISTS LAUNCH_TYPE_ENUM;
+ALTER TABLE launch DROP COLUMN IF EXISTS test_plan_id;
