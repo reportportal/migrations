@@ -85,7 +85,7 @@ CREATE TABLE tms_test_plan
     name               varchar(255),
     description        varchar(255),
     search_vector      tsvector,
-    project_id         bigint NOT NULL,
+    project_id         bigint NOT NULL
         CONSTRAINT tms_test_plan_fk_project
             REFERENCES project,
     environment_id     bigint
@@ -436,8 +436,6 @@ UPDATE launch
 SET launch_type = 'AUTOMATION';
 
 ALTER TABLE launch
-    ADD COLUMN test_plan_id bigint
-        CONSTRAINT launch_fk_test_plan
-            REFERENCES tms_test_plan;
+    ADD COLUMN test_plan_id bigint;
 
 ALTER TYPE filter_condition_enum ADD VALUE IF NOT EXISTS 'FULL_TEXT_SEARCH';
