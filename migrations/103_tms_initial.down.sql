@@ -28,6 +28,13 @@ DROP INDEX IF EXISTS idx_tms_test_case_test_item_test_case_id;
 DROP INDEX IF EXISTS idx_tms_test_case_test_item_test_item_id;
 DROP TABLE IF EXISTS tms_test_case_test_item;
 
+DROP INDEX IF EXISTS idx_tms_test_case_execution_snapshot;
+DROP INDEX IF EXISTS idx_tms_test_case_execution_case_item;
+DROP INDEX IF EXISTS idx_tms_test_case_execution_version_id;
+DROP INDEX IF EXISTS idx_tms_test_case_execution_test_item_id;
+DROP INDEX IF EXISTS idx_tms_test_case_execution_test_case_id;
+DROP TABLE IF EXISTS tms_test_case_execution;
+
 DROP INDEX IF EXISTS idx_tms_test_case_search_vector;
 DROP INDEX IF EXISTS idx_tms_test_plan_search_vector;
 DROP INDEX IF EXISTS idx_tms_attribute_search_vector;
@@ -64,9 +71,11 @@ DROP TABLE IF EXISTS tms_test_case_version;
 DROP INDEX IF EXISTS idx_tms_test_plan_test_case_test_plan_id;
 DROP INDEX IF EXISTS idx_tms_test_plan_test_case_test_case_id;
 DROP TABLE IF EXISTS tms_test_plan_test_case;
+
 DROP INDEX IF EXISTS idx_tms_test_case_launch_test_case_id;
 DROP INDEX IF EXISTS idx_tms_test_case_launch_launch_id;
 DROP TABLE IF EXISTS tms_test_case_launch;
+
 DROP TABLE IF EXISTS tms_test_case;
 DROP TABLE IF EXISTS tms_test_folder;
 DROP TABLE IF EXISTS tms_milestone;
@@ -76,9 +85,11 @@ DROP TABLE IF EXISTS tms_environment;
 DROP TABLE IF EXISTS tms_product_version;
 DROP TABLE IF EXISTS tms_dataset_data;
 DROP TABLE IF EXISTS tms_dataset;
+
 DROP TYPE IF EXISTS tms_dataset_type;
+
 DROP TABLE IF EXISTS tms_attribute;
 
+ALTER TABLE launch DROP COLUMN IF EXISTS test_plan_id;
 ALTER TABLE launch DROP COLUMN IF EXISTS launch_type;
 DROP TYPE IF EXISTS LAUNCH_TYPE_ENUM;
-ALTER TABLE launch DROP COLUMN IF EXISTS test_plan_id;
