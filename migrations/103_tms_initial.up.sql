@@ -427,6 +427,28 @@ CREATE TABLE tms_test_plan_attribute
     PRIMARY KEY (attribute_id, test_plan_id)
 );
 
+CREATE TABLE tms_test_case_execution
+(
+    id                    BIGSERIAL
+        CONSTRAINT tms_test_case_execution_pk PRIMARY KEY,
+    test_item_id          bigint UNIQUE
+        CONSTRAINT tms_test_case_execution_fk_test_item
+            REFERENCES test_item,
+    test_case_id          bigint NOT NULL
+        CONSTRAINT tms_test_case_execution_fk_test_case
+            REFERENCES tms_test_case,
+    test_case_version_id  bigint
+        CONSTRAINT tms_test_case_execution_fk_test_case_version
+            REFERENCES tms_test_case_version,
+    test_case_snapshot    jsonb NOT NULL
+);
+
+CREATE INDEX idx_tms_test_case_execution_test_case_id ON tms_test_case_execution (test_case_id);
+CREATE INDEX idx_tms_test_case_execution_test_item_id ON tms_test_case_execution (test_item_id);
+CREATE INDEX idx_tms_test_case_execution_version_id ON tms_test_case_execution (test_case_version_id);
+CREATE INDEX idx_tms_test_case_execution_case_item ON tms_test_case_execution (test_case_id, test_item_id);
+CREATE INDEX idx_tms_test_case_execution_snapshot ON tms_test_case_execution USING gin (test_case_snapshot);
+
 CREATE TYPE LAUNCH_TYPE_ENUM AS ENUM ('AUTOMATION', 'MANUAL');
 ALTER TABLE launch
     ADD COLUMN launch_type LAUNCH_TYPE_ENUM;
