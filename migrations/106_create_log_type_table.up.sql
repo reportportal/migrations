@@ -12,9 +12,10 @@ CREATE TABLE log_type (
     is_system         BOOLEAN DEFAULT false,
     created_at        TIMESTAMP DEFAULT now() NOT NULL,
     updated_at        TIMESTAMP DEFAULT now() NOT NULL,
-    CONSTRAINT log_type_project_id_name_unique UNIQUE (project_id, name),
     CONSTRAINT log_type_project_id_level_unique UNIQUE (project_id, level)
 );
+
+CREATE INDEX log_type_name_lower_idx ON log_type (project_id, LOWER(name));
 
 -- Insert default log types for each existing project
 WITH default_log_types AS (
