@@ -196,20 +196,6 @@ CREATE TABLE tms_test_plan_test_case
 CREATE INDEX idx_tms_test_plan_test_case_test_plan_id ON tms_test_plan_test_case (test_plan_id);
 CREATE INDEX idx_tms_test_plan_test_case_test_case_id ON tms_test_plan_test_case (test_case_id);
 
-CREATE TABLE tms_test_case_launch
-(
-    test_case_id   bigint
-        CONSTRAINT tms_test_case_launch_fk_test_case
-            REFERENCES tms_test_case,
-    launch_id bigint
-        CONSTRAINT tms_test_case_launch_fk_launch
-            REFERENCES launch,
-    PRIMARY KEY (test_case_id, launch_id)
-);
-
-CREATE INDEX idx_tms_test_case_launch_test_case_id ON tms_test_case_launch (test_case_id);
-CREATE INDEX idx_tms_test_case_launch_launch_id ON tms_test_case_launch (launch_id);
-
 CREATE FUNCTION update_tms_test_case_search_vector()
     RETURNS TRIGGER AS $$
 BEGIN
@@ -439,6 +425,9 @@ CREATE TABLE tms_test_case_execution
     test_case_id          bigint NOT NULL
         CONSTRAINT tms_test_case_execution_fk_test_case
             REFERENCES tms_test_case,
+    launch_id             bigint NOT NULL
+        CONSTRAINT tms_test_case_execution_fk_launch
+            REFERENCES launch ON DELETE CASCADE,
     test_case_version_id  bigint
         CONSTRAINT tms_test_case_execution_fk_test_case_version
             REFERENCES tms_test_case_version,
@@ -447,8 +436,9 @@ CREATE TABLE tms_test_case_execution
 
 CREATE INDEX idx_tms_test_case_execution_test_case_id ON tms_test_case_execution (test_case_id);
 CREATE INDEX idx_tms_test_case_execution_test_item_id ON tms_test_case_execution (test_item_id);
+CREATE INDEX idx_tms_test_case_execution_launch_id ON tms_test_case_execution (launch_id);
 CREATE INDEX idx_tms_test_case_execution_version_id ON tms_test_case_execution (test_case_version_id);
-CREATE INDEX idx_tms_test_case_execution_case_item ON tms_test_case_execution (test_case_id, test_item_id);
+CREATE INDEX idx_tms_test_case_execution_launch_case ON tms_test_case_execution (launch_id, test_case_id);
 CREATE INDEX idx_tms_test_case_execution_snapshot ON tms_test_case_execution USING gin (test_case_snapshot);
 
 CREATE TYPE LAUNCH_TYPE_ENUM AS ENUM ('AUTOMATION', 'MANUAL');
