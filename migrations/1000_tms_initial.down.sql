@@ -25,11 +25,6 @@ DROP INDEX IF EXISTS idx_tms_step_test_item_step_id;
 DROP INDEX IF EXISTS idx_tms_step_test_item_test_item_id;
 DROP TABLE IF EXISTS tms_step_test_item;
 
-DROP INDEX IF EXISTS idx_tms_test_case_test_item_test_case_id;
-DROP INDEX IF EXISTS idx_tms_test_case_test_item_test_item_id;
-DROP TABLE IF EXISTS tms_test_case_test_item;
-
--- Drop tms_test_case_execution (note: tms_test_case_launch was removed from schema)
 DROP INDEX IF EXISTS idx_tms_test_case_execution_snapshot;
 DROP INDEX IF EXISTS idx_tms_test_case_execution_launch_case;
 DROP INDEX IF EXISTS idx_tms_test_case_execution_launch_id;
