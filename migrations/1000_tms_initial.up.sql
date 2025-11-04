@@ -213,20 +213,6 @@ CREATE TRIGGER tms_test_case_search_vector_trigger
 
 CREATE INDEX idx_tms_test_case_search_vector ON tms_test_case USING gin (search_vector);
 
-CREATE TABLE tms_test_case_test_item
-(
-    test_case_id bigint NOT NULL
-        CONSTRAINT tms_test_case_test_item_fk_test_case
-            REFERENCES tms_test_case,
-    test_item_id bigint NOT NULL
-        CONSTRAINT tms_test_case_test_item_fk_test_item
-            REFERENCES test_item,
-    PRIMARY KEY (test_case_id, test_item_id)
-);
-
-CREATE INDEX idx_tms_test_case_test_item_test_case_id ON tms_test_case_test_item (test_case_id);
-CREATE INDEX idx_tms_test_case_test_item_test_item_id ON tms_test_case_test_item (test_item_id);
-
 CREATE TABLE tms_test_case_version
 (
     id           BIGSERIAL
