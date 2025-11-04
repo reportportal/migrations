@@ -422,15 +422,9 @@ CREATE TABLE tms_test_case_execution
     test_item_id          bigint UNIQUE
         CONSTRAINT tms_test_case_execution_fk_test_item
             REFERENCES test_item,
-    test_case_id          bigint NOT NULL
-        CONSTRAINT tms_test_case_execution_fk_test_case
-            REFERENCES tms_test_case,
-    launch_id             bigint NOT NULL
-        CONSTRAINT tms_test_case_execution_fk_launch
-            REFERENCES launch ON DELETE CASCADE,
-    test_case_version_id  bigint
-        CONSTRAINT tms_test_case_execution_fk_test_case_version
-            REFERENCES tms_test_case_version,
+    test_case_id          bigint NOT NULL,
+    launch_id             bigint NOT NULL,
+    test_case_version_id  bigint NOT NULL,
     test_case_snapshot    jsonb NOT NULL
 );
 
