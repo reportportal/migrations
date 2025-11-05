@@ -421,6 +421,21 @@ CREATE INDEX idx_tms_test_case_execution_version_id ON tms_test_case_execution (
 CREATE INDEX idx_tms_test_case_execution_launch_case ON tms_test_case_execution (launch_id, test_case_id);
 CREATE INDEX idx_tms_test_case_execution_snapshot ON tms_test_case_execution USING gin (test_case_snapshot);
 
+CREATE TABLE tms_manual_launch_attribute
+(
+    attribute_id BIGINT NOT NULL
+        CONSTRAINT tms_manual_launch_attribute_fk_attribute
+        REFERENCES tms_attribute(id),
+    launch_id BIGINT NOT NULL
+        CONSTRAINT tms_manual_launch_attribute_fk_launch
+        REFERENCES launch(id),
+    value VARCHAR(255),
+    PRIMARY KEY (attribute_id, launch_id)
+);
+
+CREATE INDEX idx_tms_manual_launch_attribute_attribute_id ON tms_manual_launch_attribute(attribute_id);
+CREATE INDEX idx_tms_manual_launch_attribute_launch_id ON tms_manual_launch_attribute(launch_id);
+
 CREATE TYPE LAUNCH_TYPE_ENUM AS ENUM ('AUTOMATION', 'MANUAL');
 ALTER TABLE launch
     ADD COLUMN launch_type LAUNCH_TYPE_ENUM;
