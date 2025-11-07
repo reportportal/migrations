@@ -13,6 +13,13 @@ DROP INDEX IF EXISTS idx_tms_step_attachment_attachment_id;
 DROP INDEX IF EXISTS idx_tms_step_attachment_step_id;
 DROP TABLE IF EXISTS tms_step_attachment;
 
+DROP INDEX IF EXISTS idx_tms_execution_comment_attachment_attachment_id;
+DROP INDEX IF EXISTS idx_tms_execution_comment_attachment_comment_id;
+DROP TABLE IF EXISTS tms_test_case_execution_comment_attachment;
+
+DROP INDEX IF EXISTS idx_tms_test_case_execution_comment_execution_id;
+DROP TABLE IF EXISTS tms_test_case_execution_comment;
+
 DROP INDEX IF EXISTS idx_tms_attachment_path;
 DROP INDEX IF EXISTS idx_tms_attachment_expires_at;
 DROP TABLE IF EXISTS tms_attachment;
