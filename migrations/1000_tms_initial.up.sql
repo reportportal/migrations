@@ -421,6 +421,33 @@ CREATE INDEX idx_tms_test_case_execution_version_id ON tms_test_case_execution (
 CREATE INDEX idx_tms_test_case_execution_launch_case ON tms_test_case_execution (launch_id, test_case_id);
 CREATE INDEX idx_tms_test_case_execution_snapshot ON tms_test_case_execution USING gin (test_case_snapshot);
 
+CREATE TABLE tms_test_case_execution_comment
+(
+    id           BIGSERIAL
+        CONSTRAINT tms_test_case_execution_comment_pk PRIMARY KEY,
+    execution_id bigint NOT NULL UNIQUE
+        CONSTRAINT tms_test_case_execution_comment_fk_execution
+            REFERENCES tms_test_case_execution,
+    comment      text
+);
+
+CREATE INDEX idx_tms_test_case_execution_comment_execution_id ON tms_test_case_execution_comment (execution_id);
+
+CREATE TABLE tms_test_case_execution_comment_attachment
+(
+    execution_comment_id bigint NOT NULL
+        CONSTRAINT tms_test_case_execution_comment_attachment_fk_comment
+            REFERENCES tms_test_case_execution_comment,
+    attachment_id        bigint NOT NULL
+        CONSTRAINT tms_test_case_execution_comment_attachment_fk_attachment
+            REFERENCES tms_attachment,
+    created_at           TIMESTAMP DEFAULT now() NOT NULL,
+    PRIMARY KEY (execution_comment_id, attachment_id)
+);
+
+CREATE INDEX idx_tms_execution_comment_attachment_comment_id ON tms_test_case_execution_comment_attachment(execution_comment_id);
+CREATE INDEX idx_tms_execution_comment_attachment_attachment_id ON tms_test_case_execution_comment_attachment(attachment_id);
+
 CREATE TABLE tms_manual_launch_attribute
 (
     attribute_id BIGINT NOT NULL
