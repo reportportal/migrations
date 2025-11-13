@@ -84,6 +84,8 @@ CREATE TABLE tms_test_plan
         CONSTRAINT tms_test_plan_pk PRIMARY KEY,
     name               varchar(255),
     description        varchar(255),
+    created_at         TIMESTAMP DEFAULT now() NOT NULL,
+    updated_at         TIMESTAMP DEFAULT now() NOT NULL,
     search_vector      tsvector,
     project_id         bigint NOT NULL
         CONSTRAINT tms_test_plan_fk_project
