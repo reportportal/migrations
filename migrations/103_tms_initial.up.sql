@@ -136,7 +136,7 @@ CREATE TABLE tms_test_folder
 (
     id          BIGSERIAL
         CONSTRAINT tms_test_folder_pk PRIMARY KEY,
-    name        varchar(255),
+    name        varchar(255) NOT NULL,
     description varchar(255),
     parent_id   bigint
         CONSTRAINT tms_test_folder_fk_parent
