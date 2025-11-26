@@ -1,4 +1,9 @@
--- Drop junction tables first
+DROP INDEX IF EXISTS idx_tms_step_execution_tms_step;
+DROP INDEX IF EXISTS idx_tms_step_execution_launch;
+DROP INDEX IF EXISTS idx_tms_step_execution_test_item;
+DROP INDEX IF EXISTS idx_tms_step_execution_test_case;
+DROP TABLE IF EXISTS tms_step_execution;
+
 DROP INDEX IF EXISTS idx_tms_manual_scenario_preconditions_attachment_attachment_id;
 DROP INDEX IF EXISTS idx_tms_manual_scenario_preconditions_attachment_preconditions_id;
 DROP TABLE IF EXISTS tms_manual_scenario_preconditions_attachment;
@@ -27,10 +32,6 @@ DROP TABLE IF EXISTS tms_attachment;
 DROP INDEX IF EXISTS idx_tms_test_folder_test_item_test_folder_id;
 DROP INDEX IF EXISTS idx_tms_test_folder_test_item_test_item_id;
 DROP TABLE IF EXISTS tms_test_folder_test_item;
-
-DROP INDEX IF EXISTS idx_tms_step_test_item_step_id;
-DROP INDEX IF EXISTS idx_tms_step_test_item_test_item_id;
-DROP TABLE IF EXISTS tms_step_test_item;
 
 DROP INDEX IF EXISTS idx_tms_test_case_execution_snapshot;
 DROP INDEX IF EXISTS idx_tms_test_case_execution_launch_case;
