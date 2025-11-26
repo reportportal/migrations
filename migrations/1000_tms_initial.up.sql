@@ -150,13 +150,12 @@ CREATE INDEX idx_tms_test_folder_project_id ON tms_test_folder (project_id, id);
 
 CREATE TABLE tms_test_folder_test_item
 (
-    test_folder_id bigint NOT NULL
-        CONSTRAINT tms_test_folder_test_item_fk_test_folder
-            REFERENCES tms_test_folder,
+    id BIGSERIAL PRIMARY KEY,
+    test_folder_id bigint NOT NULL,
+    launch_id      bigint NOT NULL,
     test_item_id   bigint NOT NULL
         CONSTRAINT tms_test_folder_test_item_fk_test_item
-            REFERENCES test_item,
-    PRIMARY KEY (test_folder_id, test_item_id)
+            REFERENCES test_item
 );
 
 CREATE INDEX idx_tms_test_folder_test_item_test_folder_id ON tms_test_folder_test_item (test_folder_id);
@@ -288,19 +287,21 @@ CREATE TABLE tms_step
             REFERENCES tms_steps_manual_scenario
 );
 
-CREATE TABLE tms_step_test_item
+CREATE TABLE tms_step_execution
 (
-    step_id      bigint NOT NULL
-        CONSTRAINT tms_step_test_item_fk_step
-            REFERENCES tms_step,
-    test_item_id bigint NOT NULL
-        CONSTRAINT tms_step_test_item_fk_test_item
+    id BIGSERIAL PRIMARY KEY,
+    test_case_execution_id bigint NOT NULL,
+    test_item_id   bigint NOT NULL
+        CONSTRAINT tms_step_execution_test_item_fk_test_item
             REFERENCES test_item,
-    PRIMARY KEY (step_id, test_item_id)
+    launch_id      bigint NOT NULL,
+    tms_step_id     bigint NOT NULL
 );
 
-CREATE INDEX idx_tms_step_test_item_step_id ON tms_step_test_item (step_id);
-CREATE INDEX idx_tms_step_test_item_test_item_id ON tms_step_test_item (test_item_id);
+CREATE INDEX idx_tms_step_execution_test_case ON tms_step_execution(test_case_execution_id);
+CREATE INDEX idx_tms_step_execution_test_item ON tms_step_execution(test_item_id);
+CREATE INDEX idx_tms_step_execution_launch ON tms_step_execution(launch_id);
+CREATE INDEX idx_tms_step_execution_tms_step ON tms_step_execution(tms_step_id);
 
 CREATE TABLE tms_attachment
 (
