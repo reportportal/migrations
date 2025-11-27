@@ -151,6 +151,8 @@ CREATE INDEX idx_tms_test_folder_project_id ON tms_test_folder (project_id, id);
 CREATE TABLE tms_test_folder_test_item
 (
     id BIGSERIAL PRIMARY KEY,
+    name        varchar(255),
+    description varchar(255),
     test_folder_id bigint NOT NULL,
     launch_id      bigint NOT NULL,
     test_item_id   bigint NOT NULL
