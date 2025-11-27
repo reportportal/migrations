@@ -429,7 +429,8 @@ CREATE TABLE tms_test_case_execution_comment
     execution_id bigint NOT NULL UNIQUE
         CONSTRAINT tms_test_case_execution_comment_fk_execution
             REFERENCES tms_test_case_execution,
-    comment      text
+    comment      text,
+    bts_ticket_id bigint
 );
 
 CREATE INDEX idx_tms_test_case_execution_comment_execution_id ON tms_test_case_execution_comment (execution_id);
