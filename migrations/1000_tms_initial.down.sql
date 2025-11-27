@@ -41,10 +41,6 @@ DROP INDEX IF EXISTS idx_tms_test_case_execution_test_item_id;
 DROP INDEX IF EXISTS idx_tms_test_case_execution_test_case_id;
 DROP TABLE IF EXISTS tms_test_case_execution;
 
-DROP INDEX IF EXISTS idx_tms_manual_launch_attribute_launch_id;
-DROP INDEX IF EXISTS idx_tms_manual_launch_attribute_attribute_id;
-DROP TABLE IF EXISTS tms_manual_launch_attribute;
-
 -- Drop search vectors and indexes
 DROP INDEX IF EXISTS idx_tms_test_case_search_vector;
 DROP INDEX IF EXISTS idx_tms_test_plan_search_vector;

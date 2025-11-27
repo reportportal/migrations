@@ -450,21 +450,6 @@ CREATE TABLE tms_test_case_execution_comment_attachment
 CREATE INDEX idx_tms_execution_comment_attachment_comment_id ON tms_test_case_execution_comment_attachment(execution_comment_id);
 CREATE INDEX idx_tms_execution_comment_attachment_attachment_id ON tms_test_case_execution_comment_attachment(attachment_id);
 
-CREATE TABLE tms_manual_launch_attribute
-(
-    attribute_id BIGINT NOT NULL
-        CONSTRAINT tms_manual_launch_attribute_fk_attribute
-        REFERENCES tms_attribute(id),
-    launch_id BIGINT NOT NULL
-        CONSTRAINT tms_manual_launch_attribute_fk_launch
-        REFERENCES launch(id),
-    value VARCHAR(255),
-    PRIMARY KEY (attribute_id, launch_id)
-);
-
-CREATE INDEX idx_tms_manual_launch_attribute_attribute_id ON tms_manual_launch_attribute(attribute_id);
-CREATE INDEX idx_tms_manual_launch_attribute_launch_id ON tms_manual_launch_attribute(launch_id);
-
 CREATE TYPE LAUNCH_TYPE_ENUM AS ENUM ('AUTOMATION', 'MANUAL');
 ALTER TABLE launch
     ADD COLUMN launch_type LAUNCH_TYPE_ENUM;
