@@ -464,3 +464,5 @@ ALTER TABLE launch
     ADD COLUMN test_plan_id bigint;
 
 ALTER TYPE filter_condition_enum ADD VALUE IF NOT EXISTS 'FULL_TEXT_SEARCH';
+
+ALTER TYPE status_enum ADD VALUE IF NOT EXISTS 'TO_RUN';
