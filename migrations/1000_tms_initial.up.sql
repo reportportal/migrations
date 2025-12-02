@@ -297,7 +297,7 @@ CREATE TABLE tms_step_execution
         CONSTRAINT tms_step_execution_test_item_fk_test_item
             REFERENCES test_item,
     launch_id      bigint NOT NULL,
-    tms_step_id     bigint NOT NULL
+    tms_step_id     bigint
 );
 
 CREATE INDEX idx_tms_step_execution_test_case ON tms_step_execution(test_case_execution_id);
