@@ -411,6 +411,7 @@ CREATE TABLE tms_test_case_execution
     test_item_id          bigint UNIQUE
         CONSTRAINT tms_test_case_execution_fk_test_item
             REFERENCES test_item,
+    priority              varchar(255),
     test_case_id          bigint NOT NULL,
     launch_id             bigint NOT NULL,
     test_case_version_id  bigint NOT NULL,
