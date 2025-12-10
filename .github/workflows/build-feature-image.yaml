@@ -37,6 +37,7 @@ jobs:
           echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
     outputs:
       tag: ${{ steps.vars.outputs.tag }}
+      platforms: ${{ steps.vars.outputs.platforms }}
       date: ${{ steps.vars.outputs.date }}
 
   call-docker-build:
