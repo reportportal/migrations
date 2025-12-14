@@ -1,3 +1,17 @@
+-- ============================================================================
+-- CREATE ENUMS
+-- ============================================================================
+
+CREATE TYPE tms_dataset_type AS ENUM ('ENVIRONMENTAL', 'PARAMETRIZED');
+CREATE TYPE tms_milestone_status AS ENUM ('SCHEDULED', 'TESTING', 'COMPLETED');
+CREATE TYPE tms_milestone_type AS ENUM ('RELEASE', 'SPRINT', 'PLAN', 'FEATURE', 'OTHER');
+CREATE TYPE tms_manual_scenario_type AS ENUM ('TEXT', 'STEPS');
+CREATE TYPE LAUNCH_TYPE_ENUM AS ENUM ('AUTOMATION', 'MANUAL');
+
+-- ============================================================================
+-- ATTRIBUTES
+-- ============================================================================
+
 CREATE TABLE tms_attribute
 (
     id  BIGSERIAL
@@ -20,6 +34,10 @@ CREATE TRIGGER tms_attribute_search_vector_trigger
 
 CREATE INDEX idx_tms_attribute_search_vector ON tms_attribute USING gin (search_vector);
 
+-- ============================================================================
+-- PRODUCT VERSION
+-- ============================================================================
+
 CREATE TABLE tms_product_version
 (
     id            BIGSERIAL
@@ -31,7 +49,9 @@ CREATE TABLE tms_product_version
             REFERENCES project
 );
 
-CREATE TYPE tms_dataset_type AS ENUM ('ENVIRONMENTAL', 'PARAMETRIZED');
+-- ============================================================================
+-- DATASET
+-- ============================================================================
 
 CREATE TABLE tms_dataset
 (
@@ -53,6 +73,10 @@ CREATE TABLE tms_dataset_data
         CONSTRAINT tms_dataset_attribute_fk_tms_dataset
             REFERENCES tms_dataset
 );
+
+-- ============================================================================
+-- ENVIRONMENT
+-- ============================================================================
 
 CREATE TABLE tms_environment
 (
@@ -78,6 +102,34 @@ CREATE TABLE tms_environment_dataset
     CONSTRAINT tms_environment_dataset_unique UNIQUE (environment_id, dataset_id)
 );
 
+-- ============================================================================
+-- MILESTONE
+-- ============================================================================
+
+CREATE TABLE tms_milestone
+(
+    id                 BIGSERIAL
+        CONSTRAINT tms_milestone_pk PRIMARY KEY,
+    name               varchar(255),
+    project_id         bigint               NOT NULL
+        CONSTRAINT tms_milestone_fk_project
+            REFERENCES project,
+    start_date         TIMESTAMP,
+    end_date           TIMESTAMP,
+    type               tms_milestone_type   NOT NULL,
+    status             tms_milestone_status NOT NULL,
+    product_version_id bigint
+        CONSTRAINT tms_milestone_fk_product_version
+            REFERENCES tms_product_version
+);
+
+CREATE INDEX idx_tms_milestone_project_id ON tms_milestone (project_id);
+CREATE INDEX idx_tms_milestone_product_version_id ON tms_milestone (product_version_id);
+
+-- ============================================================================
+-- TEST PLAN
+-- ============================================================================
+
 CREATE TABLE tms_test_plan
 (
     id                 BIGSERIAL
@@ -95,7 +147,10 @@ CREATE TABLE tms_test_plan
             REFERENCES tms_environment,
     product_version_id bigint
         CONSTRAINT tms_test_plan_fk_product_version
-            REFERENCES tms_product_version
+            REFERENCES tms_product_version,
+    milestone_id       bigint
+        CONSTRAINT tms_test_plan_fk_milestone
+            REFERENCES tms_milestone
 );
 
 CREATE FUNCTION update_tms_test_plan_search_vector()
@@ -113,24 +168,12 @@ CREATE TRIGGER tms_test_plan_search_vector_trigger
                          FOR EACH ROW EXECUTE FUNCTION update_tms_test_plan_search_vector();
 
 CREATE INDEX idx_tms_test_plan_search_vector ON tms_test_plan USING gin (search_vector);
+CREATE INDEX idx_tms_test_plan_project_id ON tms_test_plan (project_id);
+CREATE INDEX idx_tms_test_plan_milestone_id ON tms_test_plan (milestone_id);
 
-CREATE TABLE tms_milestone
-(
-    id                 BIGSERIAL
-        CONSTRAINT tms_milestone_pk PRIMARY KEY,
-    name               varchar(255),
-    start_date         TIMESTAMP,
-    end_date           TIMESTAMP,
-    type               varchar(255),
-    -- TODO many to many ?
-    product_version_id bigint NOT NULL
-        CONSTRAINT tms_milestone_fk_product_version
-            REFERENCES tms_product_version,
-    -- TODO many to many ?
-    test_plan_id       bigint
-        CONSTRAINT tms_milestone_fk_test_plan
-            REFERENCES tms_test_plan
-);
+-- ============================================================================
+-- TEST FOLDER
+-- ============================================================================
 
 CREATE TABLE tms_test_folder
 (
@@ -163,6 +206,10 @@ CREATE TABLE tms_test_folder_test_item
 CREATE INDEX idx_tms_test_folder_test_item_test_folder_id ON tms_test_folder_test_item (test_folder_id);
 CREATE INDEX idx_tms_test_folder_test_item_test_item_id ON tms_test_folder_test_item (test_item_id);
 
+-- ============================================================================
+-- TEST CASE
+-- ============================================================================
+
 CREATE TABLE tms_test_case
 (
     id             BIGSERIAL
@@ -183,20 +230,6 @@ CREATE TABLE tms_test_case
     CONSTRAINT tms_test_case_name_folder_unique UNIQUE (name, test_folder_id)
 );
 
-CREATE TABLE tms_test_plan_test_case
-(
-    test_plan_id   bigint
-        CONSTRAINT tms_test_plan_test_case_fk_test_plan
-            REFERENCES tms_test_plan,
-    test_case_id bigint
-        CONSTRAINT tms_test_plan_test_case_fk_test_case
-            REFERENCES tms_test_case,
-    PRIMARY KEY (test_plan_id, test_case_id)
-);
-
-CREATE INDEX idx_tms_test_plan_test_case_test_plan_id ON tms_test_plan_test_case (test_plan_id);
-CREATE INDEX idx_tms_test_plan_test_case_test_case_id ON tms_test_plan_test_case (test_case_id);
-
 CREATE FUNCTION update_tms_test_case_search_vector()
     RETURNS TRIGGER AS $$
 BEGIN
@@ -214,6 +247,28 @@ CREATE TRIGGER tms_test_case_search_vector_trigger
 
 CREATE INDEX idx_tms_test_case_search_vector ON tms_test_case USING gin (search_vector);
 
+-- ============================================================================
+-- TEST PLAN - TEST CASE (Many-to-Many)
+-- ============================================================================
+
+CREATE TABLE tms_test_plan_test_case
+(
+    test_plan_id bigint
+        CONSTRAINT tms_test_plan_test_case_fk_test_plan
+            REFERENCES tms_test_plan,
+    test_case_id bigint
+        CONSTRAINT tms_test_plan_test_case_fk_test_case
+            REFERENCES tms_test_case,
+    PRIMARY KEY (test_plan_id, test_case_id)
+);
+
+CREATE INDEX idx_tms_test_plan_test_case_test_plan_id ON tms_test_plan_test_case (test_plan_id);
+CREATE INDEX idx_tms_test_plan_test_case_test_case_id ON tms_test_plan_test_case (test_case_id);
+
+-- ============================================================================
+-- TEST CASE VERSION
+-- ============================================================================
+
 CREATE TABLE tms_test_case_version
 (
     id           BIGSERIAL
@@ -230,7 +285,9 @@ CREATE UNIQUE INDEX idx_tms_test_case_version_default
     ON tms_test_case_version (test_case_id)
     WHERE is_default = true;
 
-CREATE TYPE tms_manual_scenario_type AS ENUM ('TEXT', 'STEPS');
+-- ============================================================================
+-- MANUAL SCENARIO
+-- ============================================================================
 
 CREATE TABLE tms_manual_scenario
 (
@@ -244,6 +301,8 @@ CREATE TABLE tms_manual_scenario
             REFERENCES tms_test_case_version,
     type                      tms_manual_scenario_type NOT NULL
 );
+
+CREATE INDEX idx_tms_manual_scenario_type ON tms_manual_scenario (type);
 
 CREATE TABLE tms_manual_scenario_preconditions
 (
@@ -276,7 +335,9 @@ CREATE TABLE tms_steps_manual_scenario
             REFERENCES tms_manual_scenario
 );
 
-CREATE INDEX idx_tms_manual_scenario_type ON tms_manual_scenario (type);
+-- ============================================================================
+-- STEP
+-- ============================================================================
 
 CREATE TABLE tms_step
 (
@@ -304,6 +365,10 @@ CREATE INDEX idx_tms_step_execution_test_case ON tms_step_execution(test_case_ex
 CREATE INDEX idx_tms_step_execution_test_item ON tms_step_execution(test_item_id);
 CREATE INDEX idx_tms_step_execution_launch ON tms_step_execution(launch_id);
 CREATE INDEX idx_tms_step_execution_tms_step ON tms_step_execution(tms_step_id);
+
+-- ============================================================================
+-- ATTACHMENT
+-- ============================================================================
 
 CREATE TABLE tms_attachment
 (
@@ -358,7 +423,7 @@ CREATE TABLE tms_manual_scenario_preconditions_attachment
     preconditions_id bigint NOT NULL
         CONSTRAINT tms_manual_scenario_preconditions_attachment_fk_preconditions
             REFERENCES tms_manual_scenario_preconditions,
-    attachment_id    bigint NOT NULL
+    attachment_id    bigint                  NOT NULL
         CONSTRAINT tms_manual_scenario_preconditions_attachment_fk_attachment
             REFERENCES tms_attachment,
     created_at       TIMESTAMP DEFAULT now() NOT NULL,
@@ -367,6 +432,10 @@ CREATE TABLE tms_manual_scenario_preconditions_attachment
 
 CREATE INDEX idx_preconditions_attachment_preconditions_id ON tms_manual_scenario_preconditions_attachment(preconditions_id);
 CREATE INDEX idx_preconditions_attachment_attachment_id ON tms_manual_scenario_preconditions_attachment(attachment_id);
+
+-- ============================================================================
+-- ATTRIBUTES (Many-to-Many relationships)
+-- ============================================================================
 
 CREATE TABLE tms_manual_scenario_attribute
 (
@@ -403,6 +472,10 @@ CREATE TABLE tms_test_plan_attribute
     value        varchar(255),
     PRIMARY KEY (attribute_id, test_plan_id)
 );
+
+-- ============================================================================
+-- TEST CASE EXECUTION
+-- ============================================================================
 
 CREATE TABLE tms_test_case_execution
 (
@@ -453,17 +526,31 @@ CREATE TABLE tms_test_case_execution_comment_attachment
 CREATE INDEX idx_tms_execution_comment_attachment_comment_id ON tms_test_case_execution_comment_attachment(execution_comment_id);
 CREATE INDEX idx_tms_execution_comment_attachment_attachment_id ON tms_test_case_execution_comment_attachment(attachment_id);
 
-CREATE TYPE LAUNCH_TYPE_ENUM AS ENUM ('AUTOMATION', 'MANUAL');
+-- ============================================================================
+-- LAUNCH TABLE MODIFICATIONS
+-- ============================================================================
+
 ALTER TABLE launch
-    ADD COLUMN launch_type LAUNCH_TYPE_ENUM;
+    ADD COLUMN IF NOT EXISTS launch_type LAUNCH_TYPE_ENUM;
+
 ALTER TABLE launch
     ALTER COLUMN launch_type SET DEFAULT 'AUTOMATION';
+
 UPDATE launch
-SET launch_type = 'AUTOMATION';
+SET launch_type = 'AUTOMATION'
+WHERE launch_type IS NULL;
 
 ALTER TABLE launch
-    ADD COLUMN test_plan_id bigint;
+    ADD COLUMN IF NOT EXISTS test_plan_id bigint;
+
+-- ============================================================================
+-- FILTER CONDITION ENUM UPDATE
+-- ============================================================================
 
 ALTER TYPE filter_condition_enum ADD VALUE IF NOT EXISTS 'FULL_TEXT_SEARCH';
+
+-- ============================================================================
+-- STATUS ENUM UPDATE
+-- ============================================================================
 
 ALTER TYPE status_enum ADD VALUE IF NOT EXISTS 'TO_RUN';
