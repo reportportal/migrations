@@ -345,6 +345,7 @@ CREATE TABLE tms_step
         CONSTRAINT tms_step_pk PRIMARY KEY,
     instructions             varchar(255),
     expected_result          varchar(255),
+    number                   INTEGER NOT NULL DEFAULT 0,
     steps_manual_scenario_id bigint
         CONSTRAINT tms_step_fk_steps_manual_scenario
             REFERENCES tms_steps_manual_scenario
