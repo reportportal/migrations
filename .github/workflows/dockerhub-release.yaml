@@ -3,6 +3,7 @@ name: Retag RC Docker image
 on:
   pull_request_review:
     types: [submitted]
+  workflow_dispatch:
 
 env:
   AWS_REGION: ${{ vars.AWS_REGION }}               # set this to your preferred AWS region, e.g. us-west-1
