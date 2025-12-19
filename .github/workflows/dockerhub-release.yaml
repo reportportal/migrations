@@ -1,10 +1,8 @@
 name: Retag RC Docker image
 
 on:
-  push:
-    branches: [ master ]
   pull_request_review:
-    types: [ submitted ]
+    types: [submitted]
 
 env:
   AWS_REGION: ${{ vars.AWS_REGION }}               # set this to your preferred AWS region, e.g. us-west-1
@@ -19,10 +17,7 @@ jobs:
     name: Retag and push image
     runs-on: ubuntu-latest
     environment: rc
-    if: |
-      (github.event_name == 'push' && github.ref == 'refs/heads/master') ||
-      (github.event_name == 'pull_request_review' && 
-       (github.event.pull_request.base.ref == 'master' || github.event.pull_request.base.ref == 'main'))
+    if: github.event.pull_request.base.ref == 'master' || github.event.pull_request.base.ref == 'main'
     steps:
       - name: Checkout
         uses: actions/checkout@v3
