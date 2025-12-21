@@ -1,95 +1,222 @@
-DROP INDEX IF EXISTS idx_tms_manual_scenario_preconditions_attachment_attachment_id;
-DROP INDEX IF EXISTS idx_tms_manual_scenario_preconditions_attachment_preconditions_id;
-DROP TABLE IF EXISTS tms_manual_scenario_preconditions_attachment;
+-- ============================================================================
+-- REVERT LAUNCH TABLE CHANGES
+-- ============================================================================
+
+ALTER TABLE launch DROP COLUMN IF EXISTS test_plan_id;
+ALTER TABLE launch DROP COLUMN IF EXISTS launch_type;
+
+-- ============================================================================
+-- DROP EXECUTION COMMENT ATTACHMENTS
+-- ============================================================================
+
+DROP INDEX IF EXISTS idx_tms_execution_comment_attachment_attachment_id;
+DROP INDEX IF EXISTS idx_tms_execution_comment_attachment_comment_id;
+DROP TABLE IF EXISTS tms_test_case_execution_comment_attachment;
+
+-- ============================================================================
+-- DROP EXECUTION COMMENTS
+-- ============================================================================
+
+DROP INDEX IF EXISTS idx_tms_test_case_execution_comment_execution_id;
+DROP TABLE IF EXISTS tms_test_case_execution_comment;
+
+-- ============================================================================
+-- DROP TEST CASE EXECUTION
+-- ============================================================================
+
+DROP INDEX IF EXISTS idx_tms_test_case_execution_snapshot;
+DROP INDEX IF EXISTS idx_tms_test_case_execution_launch_case;
+DROP INDEX IF EXISTS idx_tms_test_case_execution_version_id;
+DROP INDEX IF EXISTS idx_tms_test_case_execution_launch_id;
+DROP INDEX IF EXISTS idx_tms_test_case_execution_test_item_id;
+DROP INDEX IF EXISTS idx_tms_test_case_execution_test_case_id;
+DROP TABLE IF EXISTS tms_test_case_execution;
+
+-- ============================================================================
+-- DROP ATTRIBUTE RELATIONSHIPS
+-- ============================================================================
+
+DROP TABLE IF EXISTS tms_test_plan_attribute;
+DROP TABLE IF EXISTS tms_test_case_attribute;
+DROP TABLE IF EXISTS tms_manual_scenario_attribute;
+
+-- ============================================================================
+-- DROP ATTACHMENT RELATIONSHIPS
+-- ============================================================================
 
 DROP INDEX IF EXISTS idx_preconditions_attachment_attachment_id;
 DROP INDEX IF EXISTS idx_preconditions_attachment_preconditions_id;
-DROP INDEX IF EXISTS idx_tms_text_manual_scenario_attachment_scenario_id;
+DROP TABLE IF EXISTS tms_manual_scenario_preconditions_attachment;
+
 DROP INDEX IF EXISTS idx_tms_text_manual_scenario_attachment_attachment_id;
+DROP INDEX IF EXISTS idx_tms_text_manual_scenario_attachment_scenario_id;
 DROP TABLE IF EXISTS tms_text_manual_scenario_attachment;
 
 DROP INDEX IF EXISTS idx_tms_step_attachment_attachment_id;
 DROP INDEX IF EXISTS idx_tms_step_attachment_step_id;
 DROP TABLE IF EXISTS tms_step_attachment;
 
+-- ============================================================================
+-- DROP ATTACHMENTS
+-- ============================================================================
+
 DROP INDEX IF EXISTS idx_tms_attachment_path;
 DROP INDEX IF EXISTS idx_tms_attachment_expires_at;
 DROP TABLE IF EXISTS tms_attachment;
 
-DROP INDEX IF EXISTS idx_tms_test_folder_test_item_test_folder_id;
-DROP INDEX IF EXISTS idx_tms_test_folder_test_item_test_item_id;
-DROP TABLE IF EXISTS tms_test_folder_test_item;
+-- ============================================================================
+-- DROP STEP EXECUTION
+-- ============================================================================
 
-DROP INDEX IF EXISTS idx_tms_step_test_item_step_id;
-DROP INDEX IF EXISTS idx_tms_step_test_item_test_item_id;
-DROP TABLE IF EXISTS tms_step_test_item;
+DROP INDEX IF EXISTS idx_tms_step_execution_tms_step;
+DROP INDEX IF EXISTS idx_tms_step_execution_launch;
+DROP INDEX IF EXISTS idx_tms_step_execution_test_item;
+DROP INDEX IF EXISTS idx_tms_step_execution_test_case;
+DROP TABLE IF EXISTS tms_step_execution;
 
-DROP INDEX IF EXISTS idx_tms_test_case_test_item_test_case_id;
-DROP INDEX IF EXISTS idx_tms_test_case_test_item_test_item_id;
-DROP TABLE IF EXISTS tms_test_case_test_item;
-
-DROP INDEX IF EXISTS idx_tms_test_case_execution_snapshot;
-DROP INDEX IF EXISTS idx_tms_test_case_execution_case_item;
-DROP INDEX IF EXISTS idx_tms_test_case_execution_version_id;
-DROP INDEX IF EXISTS idx_tms_test_case_execution_test_item_id;
-DROP INDEX IF EXISTS idx_tms_test_case_execution_test_case_id;
-DROP TABLE IF EXISTS tms_test_case_execution;
-
-DROP INDEX IF EXISTS idx_tms_test_case_search_vector;
-DROP INDEX IF EXISTS idx_tms_test_plan_search_vector;
-DROP INDEX IF EXISTS idx_tms_attribute_search_vector;
-DROP INDEX IF EXISTS idx_tms_test_folder_project_id;
-
-DROP TRIGGER IF EXISTS tms_test_case_search_vector_trigger ON tms_test_case;
-DROP TRIGGER IF EXISTS tms_test_plan_search_vector_trigger ON tms_test_plan;
-DROP TRIGGER IF EXISTS tms_attribute_search_vector_trigger ON tms_attribute;
-
-DROP FUNCTION IF EXISTS update_tms_test_case_search_vector();
-DROP FUNCTION IF EXISTS update_tms_test_plan_search_vector();
-DROP FUNCTION IF EXISTS update_tms_attribute_search_vector();
-
-DROP TABLE IF EXISTS tms_test_plan_attribute;
-DROP TABLE IF EXISTS tms_test_case_attribute;
-DROP TABLE IF EXISTS tms_manual_scenario_attribute;
+-- ============================================================================
+-- DROP STEPS
+-- ============================================================================
 
 DROP TABLE IF EXISTS tms_step;
+
+-- ============================================================================
+-- DROP MANUAL SCENARIO TYPES
+-- ============================================================================
 
 DROP TABLE IF EXISTS tms_steps_manual_scenario;
 DROP TABLE IF EXISTS tms_text_manual_scenario;
 
+-- ============================================================================
+-- DROP MANUAL SCENARIO PRECONDITIONS
+-- ============================================================================
+
 DROP INDEX IF EXISTS idx_tms_manual_scenario_preconditions_scenario_unique;
 DROP TABLE IF EXISTS tms_manual_scenario_preconditions;
+
+-- ============================================================================
+-- DROP MANUAL SCENARIO
+-- ============================================================================
 
 DROP INDEX IF EXISTS idx_tms_manual_scenario_type;
 DROP TABLE IF EXISTS tms_manual_scenario;
 
-DROP TYPE IF EXISTS tms_manual_scenario_type;
+-- ============================================================================
+-- DROP TEST CASE VERSION
+-- ============================================================================
 
 DROP INDEX IF EXISTS idx_tms_test_case_version_default;
 DROP TABLE IF EXISTS tms_test_case_version;
 
-DROP INDEX IF EXISTS idx_tms_test_plan_test_case_test_plan_id;
+-- ============================================================================
+-- DROP TEST PLAN - TEST CASE (Many-to-Many)
+-- ============================================================================
+
 DROP INDEX IF EXISTS idx_tms_test_plan_test_case_test_case_id;
+DROP INDEX IF EXISTS idx_tms_test_plan_test_case_test_plan_id;
 DROP TABLE IF EXISTS tms_test_plan_test_case;
 
-DROP INDEX IF EXISTS idx_tms_test_case_launch_test_case_id;
-DROP INDEX IF EXISTS idx_tms_test_case_launch_launch_id;
-DROP TABLE IF EXISTS tms_test_case_launch;
+-- ============================================================================
+-- DROP TEST CASE
+-- ============================================================================
 
+DROP TRIGGER IF EXISTS tms_test_case_search_vector_trigger ON tms_test_case;
+DROP FUNCTION IF EXISTS update_tms_test_case_search_vector();
+DROP INDEX IF EXISTS idx_tms_test_case_search_vector;
 DROP TABLE IF EXISTS tms_test_case;
+
+-- ============================================================================
+-- DROP TEST FOLDER TEST ITEM
+-- ============================================================================
+
+DROP INDEX IF EXISTS idx_tms_test_folder_test_item_test_item_id;
+DROP INDEX IF EXISTS idx_tms_test_folder_test_item_test_folder_id;
+DROP TABLE IF EXISTS tms_test_folder_test_item;
+
+-- ============================================================================
+-- DROP TEST FOLDER
+-- ============================================================================
+
+DROP INDEX IF EXISTS idx_tms_test_folder_project_id;
 DROP TABLE IF EXISTS tms_test_folder;
-DROP TABLE IF EXISTS tms_milestone;
+
+-- ============================================================================
+-- DROP TEST PLAN
+-- ============================================================================
+
+DROP INDEX IF EXISTS idx_tms_test_plan_milestone_id;
+DROP INDEX IF EXISTS idx_tms_test_plan_project_id;
+DROP INDEX IF EXISTS idx_tms_test_plan_search_vector;
+DROP TRIGGER IF EXISTS tms_test_plan_search_vector_trigger ON tms_test_plan;
+DROP FUNCTION IF EXISTS update_tms_test_plan_search_vector();
 DROP TABLE IF EXISTS tms_test_plan;
+
+-- ============================================================================
+-- DROP MILESTONE
+-- ============================================================================
+
+DROP INDEX IF EXISTS idx_tms_milestone_product_version_id;
+DROP INDEX IF EXISTS idx_tms_milestone_project_id;
+DROP TABLE IF EXISTS tms_milestone;
+
+-- ============================================================================
+-- DROP ENVIRONMENT
+-- ============================================================================
+
 DROP TABLE IF EXISTS tms_environment_dataset;
 DROP TABLE IF EXISTS tms_environment;
-DROP TABLE IF EXISTS tms_product_version;
+
+-- ============================================================================
+-- DROP DATASET
+-- ============================================================================
+
 DROP TABLE IF EXISTS tms_dataset_data;
 DROP TABLE IF EXISTS tms_dataset;
 
-DROP TYPE IF EXISTS tms_dataset_type;
+-- ============================================================================
+-- DROP PRODUCT VERSION
+-- ============================================================================
 
+DROP TABLE IF EXISTS tms_product_version;
+
+-- ============================================================================
+-- DROP ATTRIBUTE
+-- ============================================================================
+
+DROP TRIGGER IF EXISTS tms_attribute_search_vector_trigger ON tms_attribute;
+DROP FUNCTION IF EXISTS update_tms_attribute_search_vector();
+DROP INDEX IF EXISTS idx_tms_attribute_search_vector;
 DROP TABLE IF EXISTS tms_attribute;
 
-ALTER TABLE launch DROP COLUMN IF EXISTS test_plan_id;
-ALTER TABLE launch DROP COLUMN IF EXISTS launch_type;
+-- ============================================================================
+-- DROP ENUMS
+-- ============================================================================
+
 DROP TYPE IF EXISTS LAUNCH_TYPE_ENUM;
+DROP TYPE IF EXISTS tms_manual_scenario_type;
+DROP TYPE IF EXISTS tms_milestone_type;
+DROP TYPE IF EXISTS tms_milestone_status;
+DROP TYPE IF EXISTS tms_dataset_type;
+
+-- ============================================================================
+-- REMOVE ADDED ENUM VALUES (optional - if you want to revert completely)
+-- ============================================================================
+
+-- Note: PostgreSQL doesn't support removing enum values directly.
+-- If you need to remove 'FULL_TEXT_SEARCH' from filter_condition_enum
+-- or 'TO_RUN' from status_enum, you would need to:
+-- 1. Create new enum without these values
+-- 2. Alter all columns using the enum to use the new type
+-- 3. Drop old enum
+-- 4. Rename new enum to old name
+-- This is complex and usually not necessary for development.
+
+-- Example (commented out as it's complex and might not be needed):
+-- ALTER TYPE filter_condition_enum RENAME TO filter_condition_enum_old;
+-- CREATE TYPE filter_condition_enum AS ENUM (...list without 'FULL_TEXT_SEARCH'...);
+-- ALTER TABLE ... ALTER COLUMN ... TYPE filter_condition_enum USING ...::filter_condition_enum;
+-- DROP TYPE filter_condition_enum_old;
+
+-- ============================================================================
+-- END OF DROP SCRIPT
+-- ============================================================================
