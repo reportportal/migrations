@@ -183,9 +183,9 @@ DROP TABLE IF EXISTS tms_product_version;
 -- DROP ATTRIBUTE
 -- ============================================================================
 
-DROP TRIGGER IF EXISTS tms_attribute_search_vector_trigger ON tms_attribute;
-DROP FUNCTION IF EXISTS update_tms_attribute_search_vector();
-DROP INDEX IF EXISTS idx_tms_attribute_search_vector;
+DROP INDEX IF EXISTS idx_tms_attribute_project_key;
+DROP INDEX IF EXISTS idx_tms_attribute_key_trgm;
+DROP INDEX IF EXISTS idx_tms_attribute_project_id;
 DROP TABLE IF EXISTS tms_attribute;
 
 -- ============================================================================
@@ -199,23 +199,10 @@ DROP TYPE IF EXISTS tms_milestone_status;
 DROP TYPE IF EXISTS tms_dataset_type;
 
 -- ============================================================================
--- REMOVE ADDED ENUM VALUES (optional - if you want to revert completely)
+-- DROP EXTENSIONS (optional)
 -- ============================================================================
 
--- Note: PostgreSQL doesn't support removing enum values directly.
--- If you need to remove 'FULL_TEXT_SEARCH' from filter_condition_enum
--- or 'TO_RUN' from status_enum, you would need to:
--- 1. Create new enum without these values
--- 2. Alter all columns using the enum to use the new type
--- 3. Drop old enum
--- 4. Rename new enum to old name
--- This is complex and usually not necessary for development.
-
--- Example (commented out as it's complex and might not be needed):
--- ALTER TYPE filter_condition_enum RENAME TO filter_condition_enum_old;
--- CREATE TYPE filter_condition_enum AS ENUM (...list without 'FULL_TEXT_SEARCH'...);
--- ALTER TABLE ... ALTER COLUMN ... TYPE filter_condition_enum USING ...::filter_condition_enum;
--- DROP TYPE filter_condition_enum_old;
+-- DROP EXTENSION IF EXISTS pg_trgm;
 
 -- ============================================================================
 -- END OF DROP SCRIPT
