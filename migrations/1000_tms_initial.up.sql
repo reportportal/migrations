@@ -1,4 +1,10 @@
 -- ============================================================================
+-- CREATE EXTENSIONS
+-- ============================================================================
+
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+-- ============================================================================
 -- CREATE ENUMS
 -- ============================================================================
 
@@ -14,25 +20,19 @@ CREATE TYPE LAUNCH_TYPE_ENUM AS ENUM ('AUTOMATION', 'MANUAL');
 
 CREATE TABLE tms_attribute
 (
-    id  BIGSERIAL
+    id         BIGSERIAL
         CONSTRAINT tms_attribute_pk PRIMARY KEY,
-    key varchar(255) NOT NULL UNIQUE,
-    search_vector tsvector
+    key        varchar(255) NOT NULL,
+    project_id bigint NOT NULL
+        CONSTRAINT tms_attribute_fk_project
+            REFERENCES project ON DELETE CASCADE,
+    CONSTRAINT tms_attribute_key_project_unique UNIQUE (key, project_id)
 );
 
-CREATE FUNCTION update_tms_attribute_search_vector()
-    RETURNS TRIGGER AS $$
-BEGIN
-    NEW.search_vector := to_tsvector('simple', COALESCE(NEW.key, ''));
-RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
 
-CREATE TRIGGER tms_attribute_search_vector_trigger
-    BEFORE INSERT OR UPDATE ON tms_attribute
-                         FOR EACH ROW EXECUTE FUNCTION update_tms_attribute_search_vector();
-
-CREATE INDEX idx_tms_attribute_search_vector ON tms_attribute USING gin (search_vector);
+CREATE INDEX idx_tms_attribute_project_id ON tms_attribute (project_id);
+CREATE INDEX idx_tms_attribute_key_trgm ON tms_attribute USING gin (key gin_trgm_ops);
+CREATE INDEX idx_tms_attribute_project_key ON tms_attribute (project_id, key);
 
 -- ============================================================================
 -- PRODUCT VERSION
