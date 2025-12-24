@@ -226,8 +226,7 @@ CREATE TABLE tms_test_case
             REFERENCES tms_test_folder,
     dataset_id     bigint
         CONSTRAINT tms_test_case_fk_dataset
-            REFERENCES tms_dataset,
-    CONSTRAINT tms_test_case_name_folder_unique UNIQUE (name, test_folder_id)
+            REFERENCES tms_dataset
 );
 
 CREATE FUNCTION update_tms_test_case_search_vector()
