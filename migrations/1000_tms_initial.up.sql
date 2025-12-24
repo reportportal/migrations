@@ -323,8 +323,8 @@ CREATE TABLE tms_text_manual_scenario
         CONSTRAINT tms_text_manual_scenario_pk PRIMARY KEY
         CONSTRAINT tms_text_manual_scenario_fk_manual_scenario
             REFERENCES tms_manual_scenario,
-    instructions       varchar(255),
-    expected_result    varchar(255)
+    instructions       TEXT,
+    expected_result    TEXT
 );
 
 CREATE TABLE tms_steps_manual_scenario
@@ -343,8 +343,8 @@ CREATE TABLE tms_step
 (
     id                       BIGSERIAL
         CONSTRAINT tms_step_pk PRIMARY KEY,
-    instructions             varchar(255),
-    expected_result          varchar(255),
+    instructions             TEXT,
+    expected_result          TEXT,
     number                   INTEGER NOT NULL DEFAULT 0,
     steps_manual_scenario_id bigint
         CONSTRAINT tms_step_fk_steps_manual_scenario
