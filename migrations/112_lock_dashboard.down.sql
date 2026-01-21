@@ -1,0 +1,6 @@
+ALTER TABLE widget
+    DROP COLUMN IF EXISTS locked;
+ALTER TABLE dashboard
+    DROP COLUMN IF EXISTS locked;
+ALTER TABLE filter
+    DROP COLUMN IF EXISTS locked;
