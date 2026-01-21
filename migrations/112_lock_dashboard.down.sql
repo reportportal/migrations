@@ -1,6 +1,2 @@
-ALTER TABLE widget
-    DROP COLUMN IF EXISTS locked;
-ALTER TABLE dashboard
-    DROP COLUMN IF EXISTS locked;
-ALTER TABLE filter
+ALTER TABLE owned_entity
     DROP COLUMN IF EXISTS locked;
