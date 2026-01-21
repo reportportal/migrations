@@ -217,7 +217,7 @@ CREATE TABLE tms_test_case
     created_at     TIMESTAMP DEFAULT now() NOT NULL,
     updated_at     TIMESTAMP DEFAULT now() NOT NULL,
     name           varchar(255),
-    description    varchar(1000),
+    description    TEXT,
     priority       varchar(255),
     search_vector  tsvector,
     external_id    varchar(255),
