@@ -36,6 +36,8 @@ DROP TABLE IF EXISTS tms_test_case_execution;
 -- DROP ATTRIBUTE RELATIONSHIPS
 -- ============================================================================
 
+DROP INDEX IF EXISTS idx_tms_test_plan_attr_item_attribute_id;
+DROP INDEX IF EXISTS idx_tms_test_plan_attr_test_plan_id;
 DROP TABLE IF EXISTS tms_test_plan_attribute;
 DROP TABLE IF EXISTS tms_test_case_attribute;
 DROP TABLE IF EXISTS tms_manual_scenario_attribute;

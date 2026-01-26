@@ -463,15 +463,19 @@ CREATE TABLE tms_test_case_attribute
 
 CREATE TABLE tms_test_plan_attribute
 (
-    attribute_id bigint NOT NULL
-        CONSTRAINT tms_test_plan_attribute_fk_attribute
-            REFERENCES tms_attribute,
-    test_plan_id bigint NOT NULL
+    test_plan_id      BIGINT NOT NULL
         CONSTRAINT tms_test_plan_attribute_fk_test_plan
             REFERENCES tms_test_plan,
-    value        varchar(255),
-    PRIMARY KEY (attribute_id, test_plan_id)
+    attribute_id BIGINT NOT NULL
+        CONSTRAINT tms_test_plan_attribute_fk_item_attribute
+            REFERENCES item_attribute,
+    PRIMARY KEY (test_plan_id, attribute_id)
 );
+
+CREATE INDEX idx_tms_test_plan_attr_test_plan_id
+    ON tms_test_plan_attribute (test_plan_id);
+CREATE INDEX idx_tms_test_plan_attr_item_attribute_id
+    ON tms_test_plan_attribute (attribute_id);
 
 -- ============================================================================
 -- TEST CASE EXECUTION
