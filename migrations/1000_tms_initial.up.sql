@@ -558,3 +558,6 @@ ALTER TYPE filter_condition_enum ADD VALUE IF NOT EXISTS 'FULL_TEXT_SEARCH';
 -- ============================================================================
 
 ALTER TYPE status_enum ADD VALUE IF NOT EXISTS 'TO_RUN';
+
+-- TODO verify that
+ALTER TABLE item_attribute DROP CONSTRAINT IF EXISTS item_attribute_check;
