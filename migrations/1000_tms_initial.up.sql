@@ -23,16 +23,19 @@ CREATE TABLE tms_attribute
     id         BIGSERIAL
         CONSTRAINT tms_attribute_pk PRIMARY KEY,
     key        varchar(255) NOT NULL,
+    value      varchar(255),
     project_id bigint NOT NULL
         CONSTRAINT tms_attribute_fk_project
             REFERENCES project ON DELETE CASCADE,
-    CONSTRAINT tms_attribute_key_project_unique UNIQUE (key, project_id)
+    CONSTRAINT tms_attribute_project_key_value_unique UNIQUE NULLS NOT DISTINCT (project_id, key, value)
 );
 
 
 CREATE INDEX idx_tms_attribute_project_id ON tms_attribute (project_id);
 CREATE INDEX idx_tms_attribute_key_trgm ON tms_attribute USING gin (key gin_trgm_ops);
+CREATE INDEX idx_tms_attribute_value_trgm ON tms_attribute USING gin (value gin_trgm_ops);
 CREATE INDEX idx_tms_attribute_project_key ON tms_attribute (project_id, key);
+CREATE INDEX idx_tms_attribute_project_value ON tms_attribute (project_id, value);
 
 -- ============================================================================
 -- PRODUCT VERSION
@@ -445,7 +448,6 @@ CREATE TABLE tms_manual_scenario_attribute
     manual_scenario_id bigint NOT NULL
         CONSTRAINT tms_manual_scenario_attribute_fk_manual_scenario
             REFERENCES tms_manual_scenario,
-    value              varchar(255),
     PRIMARY KEY (attribute_id, manual_scenario_id)
 );
 
@@ -457,7 +459,6 @@ CREATE TABLE tms_test_case_attribute
     test_case_id bigint NOT NULL
         CONSTRAINT tms_test_case_attribute_fk_test_case
             REFERENCES tms_test_case,
-    value        varchar(255),
     PRIMARY KEY (attribute_id, test_case_id)
 );
 
@@ -469,7 +470,6 @@ CREATE TABLE tms_test_plan_attribute
     test_plan_id bigint NOT NULL
         CONSTRAINT tms_test_plan_attribute_fk_test_plan
             REFERENCES tms_test_plan,
-    value        varchar(255),
     PRIMARY KEY (attribute_id, test_plan_id)
 );
 
