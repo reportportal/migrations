@@ -183,6 +183,8 @@ DROP TABLE IF EXISTS tms_product_version;
 -- DROP ATTRIBUTE
 -- ============================================================================
 
+DROP INDEX IF EXISTS idx_tms_attribute_project_value;
+DROP INDEX IF EXISTS idx_tms_attribute_value_trgm;
 DROP INDEX IF EXISTS idx_tms_attribute_project_key;
 DROP INDEX IF EXISTS idx_tms_attribute_key_trgm;
 DROP INDEX IF EXISTS idx_tms_attribute_project_id;
