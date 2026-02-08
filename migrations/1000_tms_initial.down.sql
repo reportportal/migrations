@@ -1,3 +1,4 @@
+
 -- ============================================================================
 -- REVERT LAUNCH TABLE CHANGES
 -- ============================================================================
@@ -93,6 +94,13 @@ DROP TABLE IF EXISTS tms_text_manual_scenario;
 
 DROP INDEX IF EXISTS idx_tms_manual_scenario_preconditions_scenario_unique;
 DROP TABLE IF EXISTS tms_manual_scenario_preconditions;
+
+-- ============================================================================
+-- DROP MANUAL SCENARIO REQUIREMENTS
+-- ============================================================================
+
+DROP INDEX IF EXISTS idx_tms_manual_scenario_requirement_scenario_id;
+DROP TABLE IF EXISTS tms_manual_scenario_requirement;
 
 -- ============================================================================
 -- DROP MANUAL SCENARIO
