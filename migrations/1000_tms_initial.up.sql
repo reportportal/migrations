@@ -1,3 +1,4 @@
+
 -- ============================================================================
 -- CREATE EXTENSIONS
 -- ============================================================================
@@ -26,7 +27,7 @@ CREATE TABLE tms_attribute
     value      varchar(255),
     project_id bigint NOT NULL
         CONSTRAINT tms_attribute_fk_project
-            REFERENCES project ON DELETE CASCADE,
+            REFERENCES project,
     CONSTRAINT tms_attribute_project_key_value_unique UNIQUE NULLS NOT DISTINCT (project_id, key, value)
 );
 
@@ -296,7 +297,6 @@ CREATE TABLE tms_manual_scenario
     id                        BIGSERIAL
         CONSTRAINT tms_manual_scenario_pk PRIMARY KEY,
     execution_estimation_time integer,
-    link_to_requirements      varchar(255),
     test_case_version_id      bigint
         UNIQUE
         CONSTRAINT tms_manual_scenario_fk_test_case_version
@@ -318,6 +318,19 @@ CREATE TABLE tms_manual_scenario_preconditions
 
 CREATE UNIQUE INDEX idx_tms_manual_scenario_preconditions_scenario_unique
     ON tms_manual_scenario_preconditions(manual_scenario_id);
+
+CREATE TABLE tms_manual_scenario_requirement
+(
+    id                 VARCHAR(255) NOT NULL
+        CONSTRAINT tms_manual_scenario_requirement_pk PRIMARY KEY,
+    value              VARCHAR(255),
+    manual_scenario_id BIGINT       NOT NULL
+        CONSTRAINT tms_manual_scenario_requirement_fk_manual_scenario
+            REFERENCES tms_manual_scenario
+);
+
+CREATE INDEX idx_tms_manual_scenario_requirement_scenario_id
+    ON tms_manual_scenario_requirement (manual_scenario_id);
 
 CREATE TABLE tms_text_manual_scenario
 (
