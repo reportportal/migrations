@@ -326,7 +326,8 @@ CREATE TABLE tms_manual_scenario_requirement
     value              VARCHAR(255),
     manual_scenario_id BIGINT       NOT NULL
         CONSTRAINT tms_manual_scenario_requirement_fk_manual_scenario
-            REFERENCES tms_manual_scenario
+            REFERENCES tms_manual_scenario,
+    number             INTEGER      NOT NULL DEFAULT 0
 );
 
 CREATE INDEX idx_tms_manual_scenario_requirement_scenario_id
