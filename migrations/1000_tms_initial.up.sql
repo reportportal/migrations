@@ -1,4 +1,3 @@
-
 -- ============================================================================
 -- CREATE EXTENSIONS
 -- ============================================================================
@@ -185,6 +184,7 @@ CREATE TABLE tms_test_folder
         CONSTRAINT tms_test_folder_pk PRIMARY KEY,
     name        varchar(255) NOT NULL,
     description varchar(255),
+    index       INTEGER DEFAULT 0,
     parent_id   bigint
         CONSTRAINT tms_test_folder_fk_parent
             REFERENCES tms_test_folder,
