@@ -395,6 +395,7 @@ CREATE TABLE tms_attachment
     file_type    varchar(255),
     file_size    bigint,
     path_to_file varchar(255) NOT NULL,
+    thumbnail_path varchar(255),
     created_at   TIMESTAMP,
     expires_at   TIMESTAMP,
     environment_id                   bigint
