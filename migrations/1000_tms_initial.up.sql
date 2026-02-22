@@ -496,6 +496,7 @@ CREATE TABLE tms_test_case_execution
 (
     id                    BIGSERIAL
         CONSTRAINT tms_test_case_execution_pk PRIMARY KEY,
+    name                  varchar(255),
     test_item_id          bigint UNIQUE
         CONSTRAINT tms_test_case_execution_fk_test_item
             REFERENCES test_item,
