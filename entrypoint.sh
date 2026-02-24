@@ -38,3 +38,5 @@ else
   exec /wait-for-it.sh $POSTGRES_SERVER:$POSTGRES_PORT -t 0 -- migrate -path /migrations -database postgres://$ENCODED_USER:$ENCODED_PASSWORD@$POSTGRES_SERVER:$POSTGRES_PORT/$POSTGRES_DB?sslmode=$POSTGRES_SSLMODE "$@"
 
 fi
+
+exec /wait-for-it.sh $POSTGRES_SERVER:$POSTGRES_PORT -t 0 -- migrate -path /migrations -database postgres://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_SERVER:$POSTGRES_PORT/$POSTGRES_DB?sslmode=$POSTGRES_SSLMODE "$@"

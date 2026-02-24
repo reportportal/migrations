@@ -1,0 +1,1 @@
+DROP INDEX IF EXISTS mode_idx;

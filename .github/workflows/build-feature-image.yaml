@@ -5,6 +5,12 @@ on:
     types: [opened, synchronize, reopened]
     branches:
       - 'develop'
+  workflow_dispatch:
+    inputs:
+      image-tag:
+        description: 'Image tag for the Docker build'
+        required: true
+        default: 'feature'
 
 jobs:
   variables-setup:
@@ -18,22 +24,32 @@ jobs:
       - name: Create variables
         id: vars
         run: |
-          echo "tag=$(echo ${{ github.head_ref }}-${{ github.run_number }} | tr '/' '-')" >> $GITHUB_OUTPUT
+          echo "platforms=linux/amd64,linux/arm64" >> $GITHUB_OUTPUT
+          if [ -n "${{ github.event.inputs.image-tag }}" ]; then
+            echo "Using provided image tag: ${{ github.event.inputs.image-tag }}"
+            echo "tag=${{ github.event.inputs.image-tag }}" >> $GITHUB_OUTPUT
+          elif [ -n "${{ github.head_ref }}" ]; then
+            echo "tag=$(echo ${{ github.head_ref }}-${{ github.run_number }} | tr '/' '-')" >> $GITHUB_OUTPUT
+          else
+            echo "tag=$(echo ${{ github.ref_name }}-${{ github.run_number }} | tr '/' '-')" >> $GITHUB_OUTPUT
+          fi
+          
           echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
-          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
     outputs:
       tag: ${{ steps.vars.outputs.tag }}
+      platforms: ${{ steps.vars.outputs.platforms }}
       date: ${{ steps.vars.outputs.date }}
-      sha_short: ${{ steps.vars.outputs.sha_short }}
 
   call-docker-build:
     name: Call feature Docker build
     needs: variables-setup
     uses: reportportal/.github/.github/workflows/build-docker-image.yaml@main
     with:
+      build-platforms: ${{ needs.variables-setup.outputs.platforms }}
       aws-region: ${{ vars.AWS_REGION }}
       image-tag: ${{ needs.variables-setup.outputs.tag }}
-      version: '${{ github.head_ref }}-${{ needs.variables-setup.outputs.sha_short }}'
+      version: ${{ needs.variables-setup.outputs.tag }}
       branch: ${{ github.head_ref }}
       date: ${{ needs.variables-setup.outputs.date }}
+      runs-on: ubuntu-latest
     secrets: inherit
