@@ -24,7 +24,6 @@ jobs:
       - name: Create variables
         id: vars
         run: |
-          echo "platforms=linux/amd64,linux/arm64" >> $GITHUB_OUTPUT
           if [ -n "${{ github.event.inputs.image-tag }}" ]; then
             echo "Using provided image tag: ${{ github.event.inputs.image-tag }}"
             echo "tag=${{ github.event.inputs.image-tag }}" >> $GITHUB_OUTPUT
@@ -37,7 +36,6 @@ jobs:
           echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
     outputs:
       tag: ${{ steps.vars.outputs.tag }}
-      platforms: ${{ steps.vars.outputs.platforms }}
       date: ${{ steps.vars.outputs.date }}
 
   call-docker-build:
@@ -45,11 +43,12 @@ jobs:
     needs: variables-setup
     uses: reportportal/.github/.github/workflows/build-docker-image.yaml@main
     with:
-      build-platforms: ${{ needs.variables-setup.outputs.platforms }}
       aws-region: ${{ vars.AWS_REGION }}
+      build-platforms: ${{ vars.BUILD_PLATFORMS || 'linux/amd64,linux/arm64' }}
       image-tag: ${{ needs.variables-setup.outputs.tag }}
       version: ${{ needs.variables-setup.outputs.tag }}
       branch: ${{ github.head_ref }}
       date: ${{ needs.variables-setup.outputs.date }}
       runs-on: ubuntu-latest
-    secrets: inherit
+    secrets:
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
