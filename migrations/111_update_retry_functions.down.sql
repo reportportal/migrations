@@ -1,6 +1,4 @@
--- DROP FUNCTION public.handle_retries(int8);
-
-CREATE OR REPLACE FUNCTION public.handle_retries(itemid bigint)
+CREATE OR REPLACE FUNCTION handle_retries(itemid bigint)
  RETURNS integer
  LANGUAGE plpgsql
 AS $function$
@@ -106,9 +104,7 @@ END;
 $function$
 ;
 
--- DROP FUNCTION public.handle_retry(int8, int8);
-
-CREATE OR REPLACE FUNCTION public.handle_retry(retry_id bigint, retry_parent_id bigint)
+CREATE OR REPLACE FUNCTION handle_retry(retry_id bigint, retry_parent_id bigint)
  RETURNS integer
  LANGUAGE plpgsql
 AS $function$
