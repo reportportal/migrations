@@ -1,9 +1,9 @@
-DROP TRIGGER IF EXISTS trg_update_test_item_last_modified_on_launch ON public.launch;
-DROP FUNCTION IF EXISTS public.update_last_modified_from_launch();
+DROP TRIGGER IF EXISTS trg_update_test_item_last_modified_on_launch ON launch;
+DROP FUNCTION IF EXISTS update_last_modified_from_launch();
 
-UPDATE public.launch SET retention_policy = 'REGULAR' WHERE retention_policy IS NULL;
+UPDATE launch SET retention_policy = 'REGULAR' WHERE retention_policy IS NULL;
 
-ALTER TABLE public.launch ALTER COLUMN retention_policy SET NOT NULL;
+ALTER TABLE launch ALTER COLUMN retention_policy SET NOT NULL;
 
 CREATE OR REPLACE FUNCTION update_last_modified_from_launch()
 RETURNS TRIGGER AS $$
@@ -17,7 +17,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER trg_update_test_item_last_modified_on_launch
-AFTER UPDATE ON public.launch
+AFTER UPDATE ON launch
 FOR EACH ROW
 WHEN (OLD.mode IS DISTINCT FROM NEW.mode)
-EXECUTE FUNCTION public.update_last_modified_from_launch();
+EXECUTE FUNCTION update_last_modified_from_launch();
