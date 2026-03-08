@@ -7,16 +7,15 @@ ALTER TABLE launch DROP COLUMN IF EXISTS test_plan_id;
 ALTER TABLE launch DROP COLUMN IF EXISTS launch_type;
 
 -- ============================================================================
--- DROP EXECUTION COMMENT ATTACHMENTS
+-- DROP EXECUTION COMMENTS
 -- ============================================================================
 
 DROP INDEX IF EXISTS idx_tms_execution_comment_attachment_attachment_id;
 DROP INDEX IF EXISTS idx_tms_execution_comment_attachment_comment_id;
 DROP TABLE IF EXISTS tms_test_case_execution_comment_attachment;
 
--- ============================================================================
--- DROP EXECUTION COMMENTS
--- ============================================================================
+DROP INDEX IF EXISTS idx_tms_test_case_execution_comment_bts_ticket_comment_id;
+DROP TABLE IF EXISTS tms_test_case_execution_comment_bts_ticket;
 
 DROP INDEX IF EXISTS idx_tms_test_case_execution_comment_execution_id;
 DROP TABLE IF EXISTS tms_test_case_execution_comment;
