@@ -1,0 +1,1 @@
+ALTER TABLE launch ALTER COLUMN retention_policy DROP NOT NULL;
