@@ -195,6 +195,14 @@ CREATE TABLE tms_test_folder
 
 CREATE INDEX idx_tms_test_folder_project_id ON tms_test_folder (project_id, id);
 
+CREATE INDEX idx_tms_test_folder_parent_id ON tms_test_folder (parent_id);
+
+CREATE INDEX idx_tms_test_folder_project_parent ON tms_test_folder (project_id, parent_id);
+
+CREATE INDEX idx_tms_test_folder_project_name ON tms_test_folder (project_id, name);
+
+CREATE INDEX idx_tms_test_folder_parent_index ON tms_test_folder (parent_id, index);
+
 CREATE TABLE tms_test_folder_test_item
 (
     id BIGSERIAL PRIMARY KEY,
@@ -249,6 +257,8 @@ CREATE TRIGGER tms_test_case_search_vector_trigger
                          FOR EACH ROW EXECUTE FUNCTION update_tms_test_case_search_vector();
 
 CREATE INDEX idx_tms_test_case_search_vector ON tms_test_case USING gin (search_vector);
+
+CREATE INDEX idx_tms_test_case_test_folder_id ON tms_test_case (test_folder_id);
 
 -- ============================================================================
 -- TEST PLAN - TEST CASE (Many-to-Many)

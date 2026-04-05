@@ -129,6 +129,7 @@ DROP TABLE IF EXISTS tms_test_plan_test_case;
 
 DROP TRIGGER IF EXISTS tms_test_case_search_vector_trigger ON tms_test_case;
 DROP FUNCTION IF EXISTS update_tms_test_case_search_vector();
+DROP INDEX IF EXISTS idx_tms_test_case_test_folder_id;
 DROP INDEX IF EXISTS idx_tms_test_case_search_vector;
 DROP TABLE IF EXISTS tms_test_case;
 
@@ -144,6 +145,10 @@ DROP TABLE IF EXISTS tms_test_folder_test_item;
 -- DROP TEST FOLDER
 -- ============================================================================
 
+DROP INDEX IF EXISTS idx_tms_test_folder_parent_index;
+DROP INDEX IF EXISTS idx_tms_test_folder_project_name;
+DROP INDEX IF EXISTS idx_tms_test_folder_project_parent;
+DROP INDEX IF EXISTS idx_tms_test_folder_parent_id;
 DROP INDEX IF EXISTS idx_tms_test_folder_project_id;
 DROP TABLE IF EXISTS tms_test_folder;
 
