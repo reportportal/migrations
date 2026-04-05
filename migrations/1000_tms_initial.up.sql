@@ -121,6 +121,7 @@ CREATE TABLE tms_milestone
     end_date           TIMESTAMP,
     type               tms_milestone_type   NOT NULL,
     status             tms_milestone_status NOT NULL,
+    display_id         varchar(255),
     product_version_id bigint
         CONSTRAINT tms_milestone_fk_product_version
             REFERENCES tms_product_version
@@ -128,6 +129,7 @@ CREATE TABLE tms_milestone
 
 CREATE INDEX idx_tms_milestone_project_id ON tms_milestone (project_id);
 CREATE INDEX idx_tms_milestone_product_version_id ON tms_milestone (product_version_id);
+CREATE UNIQUE INDEX unq_tms_milestone_project_display_id ON tms_milestone (project_id, display_id);
 
 -- ============================================================================
 -- TEST PLAN
@@ -142,6 +144,7 @@ CREATE TABLE tms_test_plan
     created_at         TIMESTAMP DEFAULT now() NOT NULL,
     updated_at         TIMESTAMP DEFAULT now() NOT NULL,
     search_vector      tsvector,
+    display_id         varchar(255),
     project_id         bigint NOT NULL
         CONSTRAINT tms_test_plan_fk_project
             REFERENCES project,
@@ -173,6 +176,7 @@ CREATE TRIGGER tms_test_plan_search_vector_trigger
 CREATE INDEX idx_tms_test_plan_search_vector ON tms_test_plan USING gin (search_vector);
 CREATE INDEX idx_tms_test_plan_project_id ON tms_test_plan (project_id);
 CREATE INDEX idx_tms_test_plan_milestone_id ON tms_test_plan (milestone_id);
+CREATE UNIQUE INDEX unq_tms_test_plan_project_display_id ON tms_test_plan (project_id, display_id);
 
 -- ============================================================================
 -- TEST FOLDER
@@ -233,6 +237,10 @@ CREATE TABLE tms_test_case
     priority       varchar(255),
     search_vector  tsvector,
     external_id    varchar(255),
+    display_id     varchar(255),
+    project_id     bigint NOT NULL
+        CONSTRAINT tms_test_case_fk_project
+            REFERENCES project,
     test_folder_id bigint NOT NULL
         CONSTRAINT tms_test_case_fk_test_folder
             REFERENCES tms_test_folder,
@@ -259,6 +267,10 @@ CREATE TRIGGER tms_test_case_search_vector_trigger
 CREATE INDEX idx_tms_test_case_search_vector ON tms_test_case USING gin (search_vector);
 
 CREATE INDEX idx_tms_test_case_test_folder_id ON tms_test_case (test_folder_id);
+
+CREATE INDEX idx_tms_test_case_project_id ON tms_test_case (project_id);
+
+CREATE UNIQUE INDEX unq_tms_test_case_project_display_id ON tms_test_case (project_id, display_id);
 
 -- ============================================================================
 -- TEST PLAN - TEST CASE (Many-to-Many)
@@ -591,3 +603,35 @@ ALTER TYPE filter_condition_enum ADD VALUE IF NOT EXISTS 'FULL_TEXT_SEARCH';
 -- ============================================================================
 
 ALTER TYPE status_enum ADD VALUE IF NOT EXISTS 'TO_RUN';
+
+-- ============================================================================
+-- DISPLAY ID SEQUENCE GENERATION
+-- ============================================================================
+
+CREATE TABLE tms_project_sequence (
+    project_id    BIGINT      NOT NULL
+        CONSTRAINT tms_project_sequence_fk_project REFERENCES project ON DELETE CASCADE,
+    entity_type   VARCHAR(50) NOT NULL,
+    current_value BIGINT      NOT NULL DEFAULT 0,
+    CONSTRAINT tms_project_sequence_pk PRIMARY KEY (project_id, entity_type)
+);
+
+CREATE OR REPLACE FUNCTION generate_tms_display_id(p_project_id BIGINT, p_entity_type VARCHAR(50), p_prefix VARCHAR(10))
+    RETURNS VARCHAR AS
+$$
+DECLARE
+v_next_val BIGINT;
+BEGIN
+INSERT INTO tms_project_sequence (project_id, entity_type, current_value)
+VALUES (p_project_id, p_entity_type, 1)
+    ON CONFLICT (project_id, entity_type)
+        DO UPDATE SET current_value = tms_project_sequence.current_value + 1
+                   RETURNING current_value INTO v_next_val;
+
+RETURN p_prefix || v_next_val;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Add display_id column to launch (partial index since only MANUAL launches have display_id)
+ALTER TABLE launch ADD COLUMN IF NOT EXISTS display_id VARCHAR(255);
+CREATE UNIQUE INDEX unq_launch_project_display_id ON launch (project_id, display_id) WHERE display_id IS NOT NULL;
