@@ -1,14 +1,12 @@
-CREATE OR REPLACE FUNCTION public.update_last_modified_from_item_attribute()
- RETURNS trigger
- LANGUAGE plpgsql
-AS $function$
-  BEGIN
-      IF NEW.item_id IS NOT NULL OR OLD.item_id IS NOT NULL THEN
-          UPDATE test_item
-          SET last_modified = CURRENT_TIMESTAMP
-          WHERE item_id = COALESCE(NEW.item_id, OLD.item_id);
-      END IF;
-      RETURN NEW;
-  END;
-  $function$
-;
+DROP TRIGGER IF EXISTS trg_update_test_item_last_modified_on_results ON test_item_results;
+DROP FUNCTION IF EXISTS update_last_modified_from_results;
+
+DROP TRIGGER IF EXISTS trg_update_test_item_last_modified_on_launch ON launch;
+DROP FUNCTION IF EXISTS update_last_modified_from_launch;
+
+DROP TRIGGER IF EXISTS trg_update_test_item_last_modified_on_issue ON issue;
+DROP TRIGGER IF EXISTS trg_update_test_item_last_modified_on_issue ON issue_ticket;
+DROP FUNCTION IF EXISTS update_last_modified_from_issue;
+
+DROP TRIGGER IF EXISTS trg_update_test_item_last_modified_on_item_attribute ON item_attribute;
+DROP FUNCTION IF EXISTS update_last_modified_from_item_attribute;
