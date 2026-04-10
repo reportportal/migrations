@@ -1,3 +1,5 @@
+ALTER TYPE integration_auth_flow_enum ADD VALUE IF NOT EXISTS 'SAML';
+
 CREATE TABLE IF NOT EXISTS integration_backup
 (
     name          VARCHAR,
@@ -55,3 +57,4 @@ WHERE name IN ('ad', 'ldap', 'saml')
 DROP TABLE IF EXISTS oauth_registration_restriction;
 DROP TABLE IF EXISTS oauth_registration_scope;
 DROP TABLE IF EXISTS oauth_registration;
+
