@@ -61,3 +61,5 @@ CREATE TABLE oauth_registration_restriction
     value                 VARCHAR(256) NOT NULL,
     CONSTRAINT oauth_registration_restriction_unique UNIQUE (type, value, oauth_registration_fk)
 );
+
+DROP TABLE IF EXISTS integration_backup;

@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS integration_backup
 );
 
 INSERT INTO integration_backup (name, auth_type, enabled, params, creator)
-SELECT i.name, i.type, i.enabled, i.params, i.creator
+SELECT i.name, it.name, i.enabled, i.params, i.creator
 FROM integration i
          JOIN integration_type it ON i.type = it.id
 WHERE it.name IN ('ldap', 'saml')
@@ -19,7 +19,7 @@ WHERE it.name IN ('ldap', 'saml')
   AND it.plugin_type = 'BUILT_IN';
 
 INSERT INTO integration_backup (name, auth_type, enabled, params, creator, creation_date)
-SELECT 'github', 'OAUTH', true,jsonb_build_object(
+SELECT 'github', 'github', true,jsonb_build_object(
                'params', jsonb_build_object(
                        'clientId', r.client_id,
                        'clientSecret', r.client_secret,
