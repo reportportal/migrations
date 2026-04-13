@@ -45,7 +45,7 @@ SELECT 'github', 'github', true,jsonb_build_object(
                                       GROUP BY type) rs),
                                '{}'::jsonb)
                    )
-           ), 'SYSTEM', now()
+           ), 'backup@reportportal.internal', now()
 FROM oauth_registration r;
 
 DELETE
