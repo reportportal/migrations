@@ -1,3 +1,12 @@
+-- ============================================================================
+-- REVERT DISPLAY ID SEQUENCE GENERATION
+-- ============================================================================
+
+DROP INDEX IF EXISTS unq_launch_project_display_id;
+ALTER TABLE launch DROP COLUMN IF EXISTS display_id;
+
+DROP FUNCTION IF EXISTS generate_tms_display_id(BIGINT, VARCHAR, VARCHAR);
+DROP TABLE IF EXISTS tms_project_sequence;
 
 -- ============================================================================
 -- REVERT LAUNCH TABLE CHANGES
@@ -7,16 +16,15 @@ ALTER TABLE launch DROP COLUMN IF EXISTS test_plan_id;
 ALTER TABLE launch DROP COLUMN IF EXISTS launch_type;
 
 -- ============================================================================
--- DROP EXECUTION COMMENT ATTACHMENTS
+-- DROP EXECUTION COMMENTS
 -- ============================================================================
 
 DROP INDEX IF EXISTS idx_tms_execution_comment_attachment_attachment_id;
 DROP INDEX IF EXISTS idx_tms_execution_comment_attachment_comment_id;
 DROP TABLE IF EXISTS tms_test_case_execution_comment_attachment;
 
--- ============================================================================
--- DROP EXECUTION COMMENTS
--- ============================================================================
+DROP INDEX IF EXISTS idx_tms_test_case_execution_comment_bts_ticket_comment_id;
+DROP TABLE IF EXISTS tms_test_case_execution_comment_bts_ticket;
 
 DROP INDEX IF EXISTS idx_tms_test_case_execution_comment_execution_id;
 DROP TABLE IF EXISTS tms_test_case_execution_comment;
@@ -130,7 +138,11 @@ DROP TABLE IF EXISTS tms_test_plan_test_case;
 
 DROP TRIGGER IF EXISTS tms_test_case_search_vector_trigger ON tms_test_case;
 DROP FUNCTION IF EXISTS update_tms_test_case_search_vector();
+DROP INDEX IF EXISTS idx_tms_test_case_test_folder_id;
 DROP INDEX IF EXISTS idx_tms_test_case_search_vector;
+DROP INDEX IF EXISTS unq_tms_test_case_project_display_id;
+DROP INDEX IF EXISTS unq_tms_test_case_project_display_id;
+DROP INDEX IF EXISTS idx_tms_test_case_project_id;
 DROP TABLE IF EXISTS tms_test_case;
 
 -- ============================================================================
@@ -145,6 +157,10 @@ DROP TABLE IF EXISTS tms_test_folder_test_item;
 -- DROP TEST FOLDER
 -- ============================================================================
 
+DROP INDEX IF EXISTS idx_tms_test_folder_parent_index;
+DROP INDEX IF EXISTS idx_tms_test_folder_project_name;
+DROP INDEX IF EXISTS idx_tms_test_folder_project_parent;
+DROP INDEX IF EXISTS idx_tms_test_folder_parent_id;
 DROP INDEX IF EXISTS idx_tms_test_folder_project_id;
 DROP TABLE IF EXISTS tms_test_folder;
 
@@ -157,6 +173,7 @@ DROP INDEX IF EXISTS idx_tms_test_plan_project_id;
 DROP INDEX IF EXISTS idx_tms_test_plan_search_vector;
 DROP TRIGGER IF EXISTS tms_test_plan_search_vector_trigger ON tms_test_plan;
 DROP FUNCTION IF EXISTS update_tms_test_plan_search_vector();
+DROP INDEX IF EXISTS unq_tms_test_plan_project_display_id;
 DROP TABLE IF EXISTS tms_test_plan;
 
 -- ============================================================================
@@ -165,6 +182,7 @@ DROP TABLE IF EXISTS tms_test_plan;
 
 DROP INDEX IF EXISTS idx_tms_milestone_product_version_id;
 DROP INDEX IF EXISTS idx_tms_milestone_project_id;
+DROP INDEX IF EXISTS unq_tms_milestone_project_display_id;
 DROP TABLE IF EXISTS tms_milestone;
 
 -- ============================================================================
