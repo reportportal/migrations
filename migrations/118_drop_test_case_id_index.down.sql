@@ -1,0 +1,1 @@
+CREATE INDEX item_test_case_id_launch_id_idx ON public.test_item USING btree (test_case_id, launch_id);
