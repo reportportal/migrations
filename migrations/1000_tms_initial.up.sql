@@ -526,7 +526,8 @@ CREATE TABLE tms_test_case_execution
     test_case_id          bigint NOT NULL,
     launch_id             bigint NOT NULL,
     test_case_version_id  bigint NOT NULL,
-    test_case_snapshot    jsonb NOT NULL
+    test_case_snapshot    jsonb NOT NULL,
+    display_id            varchar(255)
 );
 
 CREATE INDEX idx_tms_test_case_execution_test_case_id ON tms_test_case_execution (test_case_id);
