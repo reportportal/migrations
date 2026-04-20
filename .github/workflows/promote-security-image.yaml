@@ -8,13 +8,13 @@ on:
       - master
 
 jobs:
-  # Filters: PR must be approved, targeting main or master, from a secure/* branch whose name includes '-rc'.
+  # Filters: PR must be approved, targeting main or master, from a secure/* branch.
+  # The extract step below validates the x.x.x-r<N> tag from the PR title and fails fast otherwise.
   extract-image-tag:
     name: Extract image tag from PR title
     if: >-
       github.event.review.state == 'approved' &&
-      startsWith(github.event.pull_request.head.ref, 'secure/') &&
-      contains(github.event.pull_request.head.ref, '-rc')
+      startsWith(github.event.pull_request.head.ref, 'secure/')
     runs-on: ubuntu-latest
     outputs:
       image-tag: ${{ steps.extract.outputs.image-tag }}
