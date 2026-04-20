@@ -8,8 +8,6 @@ on:
       - master
 
 jobs:
-  # Filters: PR must be approved, targeting main or master, from a secure/* branch.
-  # The extract step below validates the x.x.x-r<N> tag from the PR title and fails fast otherwise.
   extract-image-tag:
     name: Extract image tag from PR title
     if: >-
