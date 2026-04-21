@@ -63,3 +63,5 @@ CREATE TABLE oauth_registration_restriction
 );
 
 DROP TABLE IF EXISTS integration_backup;
+
+ALTER TABLE integration DROP COLUMN IF EXISTS organization_id;

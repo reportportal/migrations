@@ -1,5 +1,8 @@
 ALTER TYPE integration_auth_flow_enum ADD VALUE IF NOT EXISTS 'SAML';
 
+ALTER TABLE integration
+    ADD COLUMN IF NOT EXISTS organization_id BIGINT REFERENCES organization (id) ON DELETE CASCADE;
+
 CREATE TABLE IF NOT EXISTS integration_backup
 (
     name          VARCHAR,
@@ -57,4 +60,3 @@ WHERE name IN ('ad', 'ldap', 'saml')
 DROP TABLE IF EXISTS oauth_registration_restriction;
 DROP TABLE IF EXISTS oauth_registration_scope;
 DROP TABLE IF EXISTS oauth_registration;
-
