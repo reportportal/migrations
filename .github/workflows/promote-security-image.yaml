@@ -22,7 +22,7 @@ jobs:
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          IMAGE_TAG=$(echo "${PR_TITLE}" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+-r[0-9]+' | head -1)
+          IMAGE_TAG=$(echo "${PR_TITLE}" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+-r[0-9]+' | tail -1)
           if [ -z "${IMAGE_TAG}" ]; then
             echo "::error::Could not extract a version tag (x.x.x-rx) from PR title: '${PR_TITLE}'"
             exit 1
