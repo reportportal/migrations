@@ -1,1 +1,1 @@
-ALTER TABLE public.launch ALTER COLUMN retention_policy DROP NOT NULL;
+ALTER TABLE launch ALTER COLUMN retention_policy DROP NOT NULL;
