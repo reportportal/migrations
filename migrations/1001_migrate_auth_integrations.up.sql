@@ -5,6 +5,9 @@ ALTER TABLE integration
 
 CREATE INDEX IF NOT EXISTS idx_integration_organization_id ON integration (organization_id);
 
+CREATE UNIQUE INDEX IF NOT EXISTS unique_organization_integration_name ON integration (name, type, organization_id)
+    WHERE organization_id IS NOT NULL AND project_id IS NULL;
+
 CREATE TABLE IF NOT EXISTS integration_backup
 (
     name          VARCHAR,
