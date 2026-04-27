@@ -1,6 +1,3 @@
-DELETE FROM pg_enum
-WHERE enumlabel = 'SAML'
-  AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'integration_auth_flow_enum');
 
 INSERT INTO integration_type (enabled, name, creation_date, group_type, plugin_type, details)
 VALUES (TRUE, 'ad', now(), 'AUTH', 'BUILT_IN', '{
@@ -68,4 +65,5 @@ CREATE TABLE oauth_registration_restriction
 
 DROP TABLE IF EXISTS integration_backup;
 
+DROP INDEX IF EXISTS idx_integration_organization_id;
 ALTER TABLE integration DROP COLUMN IF EXISTS organization_id;

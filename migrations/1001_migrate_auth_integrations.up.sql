@@ -2,6 +2,7 @@ ALTER TYPE integration_auth_flow_enum ADD VALUE IF NOT EXISTS 'SAML';
 
 ALTER TABLE integration
     ADD COLUMN IF NOT EXISTS organization_id BIGINT REFERENCES organization (id) ON DELETE CASCADE;
+
 CREATE INDEX IF NOT EXISTS idx_integration_organization_id ON integration (organization_id);
 
 CREATE TABLE IF NOT EXISTS integration_backup
