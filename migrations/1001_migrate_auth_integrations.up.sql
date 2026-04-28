@@ -33,7 +33,7 @@ SELECT 'github', 'github', true,jsonb_build_object(
                        'clientSecret', r.client_secret,
                        'clientAuthMethod', r.client_auth_method,
                        'authGrantType', r.auth_grant_type,
-                       'redirectUriTemplate', r.redirect_uri_template,
+                       'redirectUriTemplate', regexp_replace(r.redirect_uri_template, '/uat/', '/'),
                        'authorizationUri', r.authorization_uri,
                        'tokenUri', r.token_uri,
                        'userInfoEndpointUri', r.user_info_endpoint_uri,
