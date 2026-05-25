@@ -66,4 +66,8 @@ CREATE TABLE oauth_registration_restriction
 DROP TABLE IF EXISTS integration_backup;
 
 DROP INDEX IF EXISTS idx_integration_organization_id;
+DROP INDEX IF EXISTS unique_organization_integration_name;
+DROP INDEX IF EXISTS unique_global_integration_name;
+CREATE UNIQUE INDEX unique_global_integration_name ON integration (name, type)
+    WHERE project_id IS NULL;
 ALTER TABLE integration DROP COLUMN IF EXISTS organization_id;
