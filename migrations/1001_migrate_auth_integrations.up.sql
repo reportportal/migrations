@@ -8,6 +8,10 @@ CREATE INDEX IF NOT EXISTS idx_integration_organization_id ON integration (organ
 CREATE UNIQUE INDEX IF NOT EXISTS unique_organization_integration_name ON integration (name, type, organization_id)
     WHERE organization_id IS NOT NULL AND project_id IS NULL;
 
+DROP INDEX IF EXISTS unique_global_integration_name;
+CREATE UNIQUE INDEX unique_global_integration_name ON integration (name, type)
+    WHERE project_id IS NULL AND organization_id IS NULL;
+
 CREATE TABLE IF NOT EXISTS integration_backup
 (
     name          VARCHAR,
