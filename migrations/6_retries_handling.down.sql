@@ -268,14 +268,14 @@ BEGIN
 
     cur_launch_id := (SELECT launch_id FROM test_item WHERE test_item.item_id = new.issue_id);
 
-    defect_field := (SELECT concat('statistics$defects$', lower(public.issue_group.issue_group :: VARCHAR), '$',
-                                   lower(public.issue_type.locator))
+    defect_field := (SELECT concat('statistics$defects$', lower(issue_group.issue_group :: VARCHAR), '$',
+                                   lower(issue_type.locator))
                      FROM issue
                               JOIN issue_type ON issue.issue_type = issue_type.id
                               JOIN issue_group ON issue_type.issue_group_id = issue_group.issue_group_id
                      WHERE issue.issue_id = new.issue_id);
 
-    defect_field_total := (SELECT concat('statistics$defects$', lower(public.issue_group.issue_group :: VARCHAR), '$total')
+    defect_field_total := (SELECT concat('statistics$defects$', lower(issue_group.issue_group :: VARCHAR), '$total')
                            FROM issue
                                     JOIN issue_type ON issue.issue_type = issue_type.id
                                     JOIN issue_group ON issue_type.issue_group_id = issue_group.issue_group_id
@@ -368,8 +368,8 @@ BEGIN
 
     cur_launch_id := (SELECT launch_id FROM test_item WHERE test_item.item_id = new.issue_id);
 
-    defect_field := (SELECT concat('statistics$defects$', lower(public.issue_group.issue_group :: VARCHAR), '$',
-                                   lower(public.issue_type.locator))
+    defect_field := (SELECT concat('statistics$defects$', lower(issue_group.issue_group :: VARCHAR), '$',
+                                   lower(issue_type.locator))
                      FROM issue_type
                               JOIN issue_group ON issue_type.issue_group_id = issue_group.issue_group_id
                      WHERE issue_type.id = new.issue_type);
@@ -377,13 +377,13 @@ BEGIN
     defect_field_old_id := (SELECT DISTINCT ON (statistics_field.name) sf_id
                             FROM statistics_field
                             WHERE statistics_field.name =
-                                  (SELECT concat('statistics$defects$', lower(public.issue_group.issue_group :: VARCHAR), '$',
-                                                 lower(public.issue_type.locator))
+                                  (SELECT concat('statistics$defects$', lower(issue_group.issue_group :: VARCHAR), '$',
+                                                 lower(issue_type.locator))
                                    FROM issue_type
                                             JOIN issue_group ON issue_type.issue_group_id = issue_group.issue_group_id
                                    WHERE issue_type.id = old.issue_type));
 
-    defect_field_total := (SELECT concat('statistics$defects$', lower(public.issue_group.issue_group :: VARCHAR), '$total')
+    defect_field_total := (SELECT concat('statistics$defects$', lower(issue_group.issue_group :: VARCHAR), '$total')
                            FROM issue_type
                                     JOIN issue_group ON issue_type.issue_group_id = issue_group.issue_group_id
                            WHERE issue_type.id = new.issue_type);
@@ -391,7 +391,7 @@ BEGIN
     defect_field_old_total_id := (SELECT DISTINCT ON (statistics_field.name) sf_id
                                   FROM statistics_field
                                   WHERE statistics_field.name =
-                                        (SELECT concat('statistics$defects$', lower(public.issue_group.issue_group :: VARCHAR), '$total')
+                                        (SELECT concat('statistics$defects$', lower(issue_group.issue_group :: VARCHAR), '$total')
                                          FROM issue_type
                                                   JOIN issue_group ON issue_type.issue_group_id = issue_group.issue_group_id
                                          WHERE issue_type.id = old.issue_type));
