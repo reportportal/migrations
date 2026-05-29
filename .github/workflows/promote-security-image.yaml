@@ -3,16 +3,14 @@ name: Promote Security Image
 on:
   pull_request_review:
     types: [submitted]
-    branches:
-      - main
-      - master
 
 jobs:
   extract-image-tag:
     name: Extract image tag from PR title
     if: >-
       github.event.review.state == 'approved' &&
-      startsWith(github.event.pull_request.head.ref, 'secure/')
+      startsWith(github.event.pull_request.head.ref, 'secure/') &&
+      (github.event.pull_request.base.ref == 'master' || github.event.pull_request.base.ref == 'main')
     runs-on: ubuntu-latest
     outputs:
       image-tag: ${{ steps.extract.outputs.image-tag }}
