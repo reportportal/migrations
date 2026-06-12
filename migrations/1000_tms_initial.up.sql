@@ -74,7 +74,7 @@ CREATE TABLE tms_dataset_data
     value      varchar(255),
     dataset_id bigint NOT NULL
         CONSTRAINT tms_dataset_attribute_fk_tms_dataset
-            REFERENCES tms_dataset
+            REFERENCES tms_dataset ON DELETE CASCADE
 );
 
 -- ============================================================================
@@ -100,7 +100,7 @@ CREATE TABLE tms_environment_dataset
             REFERENCES tms_environment,
     dataset_id     BIGINT           NOT NULL
         CONSTRAINT tms_environment_dataset_fk_dataset
-            REFERENCES tms_dataset,
+            REFERENCES tms_dataset ON DELETE CASCADE,
     dataset_type   tms_dataset_type NOT NULL,
     CONSTRAINT tms_environment_dataset_unique UNIQUE (environment_id, dataset_id)
 );
@@ -216,7 +216,7 @@ CREATE TABLE tms_test_folder_test_item
     launch_id      bigint NOT NULL,
     test_item_id   bigint NOT NULL
         CONSTRAINT tms_test_folder_test_item_fk_test_item
-            REFERENCES test_item
+            REFERENCES test_item ON DELETE CASCADE
 );
 
 CREATE INDEX idx_tms_test_folder_test_item_test_folder_id ON tms_test_folder_test_item (test_folder_id);
@@ -246,7 +246,7 @@ CREATE TABLE tms_test_case
             REFERENCES tms_test_folder,
     dataset_id     bigint
         CONSTRAINT tms_test_case_fk_dataset
-            REFERENCES tms_dataset
+            REFERENCES tms_dataset ON DELETE SET NULL
 );
 
 CREATE FUNCTION update_tms_test_case_search_vector()
@@ -280,10 +280,10 @@ CREATE TABLE tms_test_plan_test_case
 (
     test_plan_id bigint
         CONSTRAINT tms_test_plan_test_case_fk_test_plan
-            REFERENCES tms_test_plan,
+            REFERENCES tms_test_plan ON DELETE CASCADE,
     test_case_id bigint
         CONSTRAINT tms_test_plan_test_case_fk_test_case
-            REFERENCES tms_test_case,
+            REFERENCES tms_test_case ON DELETE CASCADE,
     PRIMARY KEY (test_plan_id, test_case_id)
 );
 
@@ -303,7 +303,7 @@ CREATE TABLE tms_test_case_version
     is_draft     boolean,
     test_case_id bigint NOT NULL
         CONSTRAINT tms_test_case_version_fk_test_case
-            REFERENCES tms_test_case
+            REFERENCES tms_test_case ON DELETE CASCADE
 );
 
 CREATE UNIQUE INDEX idx_tms_test_case_version_default
@@ -322,7 +322,7 @@ CREATE TABLE tms_manual_scenario
     test_case_version_id      bigint
         UNIQUE
         CONSTRAINT tms_manual_scenario_fk_test_case_version
-            REFERENCES tms_test_case_version,
+            REFERENCES tms_test_case_version ON DELETE CASCADE,
     type                      tms_manual_scenario_type NOT NULL
 );
 
@@ -334,7 +334,7 @@ CREATE TABLE tms_manual_scenario_preconditions
         CONSTRAINT tms_manual_scenario_preconditions_pk PRIMARY KEY,
     manual_scenario_id bigint NOT NULL UNIQUE
         CONSTRAINT tms_manual_scenario_preconditions_fk_manual_scenario
-            REFERENCES tms_manual_scenario,
+            REFERENCES tms_manual_scenario ON DELETE CASCADE,
     value              varchar(255)
 );
 
@@ -348,7 +348,7 @@ CREATE TABLE tms_manual_scenario_requirement
     value              VARCHAR(255),
     manual_scenario_id BIGINT       NOT NULL
         CONSTRAINT tms_manual_scenario_requirement_fk_manual_scenario
-            REFERENCES tms_manual_scenario,
+            REFERENCES tms_manual_scenario ON DELETE CASCADE,
     number             INTEGER      NOT NULL DEFAULT 0
 );
 
@@ -360,7 +360,7 @@ CREATE TABLE tms_text_manual_scenario
     manual_scenario_id bigint NOT NULL
         CONSTRAINT tms_text_manual_scenario_pk PRIMARY KEY
         CONSTRAINT tms_text_manual_scenario_fk_manual_scenario
-            REFERENCES tms_manual_scenario,
+            REFERENCES tms_manual_scenario ON DELETE CASCADE,
     instructions       TEXT,
     expected_result    TEXT
 );
@@ -370,7 +370,7 @@ CREATE TABLE tms_steps_manual_scenario
     manual_scenario_id bigint NOT NULL
         CONSTRAINT tms_steps_manual_scenario_pk PRIMARY KEY
         CONSTRAINT tms_steps_manual_scenario_fk_manual_scenario
-            REFERENCES tms_manual_scenario
+            REFERENCES tms_manual_scenario ON DELETE CASCADE
 );
 
 -- ============================================================================
@@ -386,7 +386,7 @@ CREATE TABLE tms_step
     number                   INTEGER NOT NULL DEFAULT 0,
     steps_manual_scenario_id bigint
         CONSTRAINT tms_step_fk_steps_manual_scenario
-            REFERENCES tms_steps_manual_scenario
+            REFERENCES tms_steps_manual_scenario ON DELETE CASCADE
 );
 
 CREATE TABLE tms_step_execution
@@ -395,7 +395,7 @@ CREATE TABLE tms_step_execution
     test_case_execution_id bigint NOT NULL,
     test_item_id   bigint NOT NULL
         CONSTRAINT tms_step_execution_test_item_fk_test_item
-            REFERENCES test_item,
+            REFERENCES test_item ON DELETE CASCADE,
     launch_id      bigint NOT NULL,
     tms_step_id     bigint
 );
@@ -422,7 +422,7 @@ CREATE TABLE tms_attachment
     expires_at   TIMESTAMP,
     environment_id                   bigint
         CONSTRAINT tms_attachment_fk_environment
-            REFERENCES tms_environment
+            REFERENCES tms_environment ON DELETE SET NULL
 );
 
 CREATE INDEX idx_tms_attachment_expires_at ON tms_attachment(expires_at) WHERE expires_at IS NOT NULL;
@@ -432,7 +432,7 @@ CREATE TABLE tms_step_attachment
 (
     step_id       bigint NOT NULL
         CONSTRAINT tms_step_attachment_fk_step
-            REFERENCES tms_step,
+            REFERENCES tms_step ON DELETE CASCADE,
     attachment_id bigint NOT NULL
         CONSTRAINT tms_step_attachment_fk_attachment
             REFERENCES tms_attachment,
@@ -447,7 +447,7 @@ CREATE TABLE tms_text_manual_scenario_attachment
 (
     text_manual_scenario_id bigint NOT NULL
         CONSTRAINT tms_text_manual_scenario_attachment_fk_scenario
-            REFERENCES tms_text_manual_scenario,
+            REFERENCES tms_text_manual_scenario ON DELETE CASCADE,
     attachment_id           bigint NOT NULL
         CONSTRAINT tms_text_manual_scenario_attachment_fk_attachment
             REFERENCES tms_attachment,
@@ -462,7 +462,7 @@ CREATE TABLE tms_manual_scenario_preconditions_attachment
 (
     preconditions_id bigint NOT NULL
         CONSTRAINT tms_manual_scenario_preconditions_attachment_fk_preconditions
-            REFERENCES tms_manual_scenario_preconditions,
+            REFERENCES tms_manual_scenario_preconditions ON DELETE CASCADE,
     attachment_id    bigint                  NOT NULL
         CONSTRAINT tms_manual_scenario_preconditions_attachment_fk_attachment
             REFERENCES tms_attachment,
@@ -481,10 +481,10 @@ CREATE TABLE tms_manual_scenario_attribute
 (
     attribute_id       bigint NOT NULL
         CONSTRAINT tms_manual_scenario_attribute_fk_attribute
-            REFERENCES tms_attribute,
+            REFERENCES tms_attribute ON DELETE CASCADE,
     manual_scenario_id bigint NOT NULL
         CONSTRAINT tms_manual_scenario_attribute_fk_manual_scenario
-            REFERENCES tms_manual_scenario,
+            REFERENCES tms_manual_scenario ON DELETE CASCADE,
     PRIMARY KEY (attribute_id, manual_scenario_id)
 );
 
@@ -492,10 +492,10 @@ CREATE TABLE tms_test_case_attribute
 (
     attribute_id bigint NOT NULL
         CONSTRAINT tms_test_case_attribute_fk_attribute
-            REFERENCES tms_attribute,
+            REFERENCES tms_attribute ON DELETE CASCADE,
     test_case_id bigint NOT NULL
         CONSTRAINT tms_test_case_attribute_fk_test_case
-            REFERENCES tms_test_case,
+            REFERENCES tms_test_case ON DELETE CASCADE,
     PRIMARY KEY (attribute_id, test_case_id)
 );
 
@@ -503,10 +503,10 @@ CREATE TABLE tms_test_plan_attribute
 (
     attribute_id bigint NOT NULL
         CONSTRAINT tms_test_plan_attribute_fk_attribute
-            REFERENCES tms_attribute,
+            REFERENCES tms_attribute ON DELETE CASCADE,
     test_plan_id bigint NOT NULL
         CONSTRAINT tms_test_plan_attribute_fk_test_plan
-            REFERENCES tms_test_plan,
+            REFERENCES tms_test_plan ON DELETE CASCADE,
     PRIMARY KEY (attribute_id, test_plan_id)
 );
 
@@ -521,7 +521,7 @@ CREATE TABLE tms_test_case_execution
     name                  varchar(255),
     test_item_id          bigint UNIQUE
         CONSTRAINT tms_test_case_execution_fk_test_item
-            REFERENCES test_item,
+            REFERENCES test_item ON DELETE SET NULL,
     priority              varchar(255),
     test_case_id          bigint NOT NULL,
     launch_id             bigint NOT NULL,
