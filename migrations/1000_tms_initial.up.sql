@@ -26,7 +26,7 @@ CREATE TABLE tms_attribute
     value      varchar(255),
     project_id bigint NOT NULL
         CONSTRAINT tms_attribute_fk_project
-            REFERENCES project,
+            REFERENCES project ON DELETE CASCADE,
     CONSTRAINT tms_attribute_project_key_value_unique UNIQUE NULLS NOT DISTINCT (project_id, key, value)
 );
 
@@ -49,7 +49,7 @@ CREATE TABLE tms_product_version
     version       varchar(255),
     project_id    bigint NOT NULL
         CONSTRAINT tms_product_version_fk_project
-            REFERENCES project
+            REFERENCES project ON DELETE CASCADE
 );
 
 -- ============================================================================
@@ -63,7 +63,7 @@ CREATE TABLE tms_dataset
     name       varchar(255),
     project_id bigint NOT NULL
         CONSTRAINT tms_dataset_fk_project
-            REFERENCES project
+            REFERENCES project ON DELETE CASCADE
 );
 
 CREATE TABLE tms_dataset_data
@@ -88,7 +88,7 @@ CREATE TABLE tms_environment
     name       varchar(255),
     project_id bigint NOT NULL
         CONSTRAINT tms_environment_fk_project
-            REFERENCES project
+            REFERENCES project ON DELETE CASCADE
 );
 
 CREATE TABLE tms_environment_dataset
@@ -116,7 +116,7 @@ CREATE TABLE tms_milestone
     name               varchar(255),
     project_id         bigint               NOT NULL
         CONSTRAINT tms_milestone_fk_project
-            REFERENCES project,
+            REFERENCES project ON DELETE CASCADE,
     start_date         TIMESTAMP,
     end_date           TIMESTAMP,
     type               tms_milestone_type   NOT NULL,
@@ -147,7 +147,7 @@ CREATE TABLE tms_test_plan
     display_id         varchar(255),
     project_id         bigint NOT NULL
         CONSTRAINT tms_test_plan_fk_project
-            REFERENCES project,
+            REFERENCES project ON DELETE CASCADE,
     environment_id     bigint
         CONSTRAINT tms_test_plan_fk_environment
             REFERENCES tms_environment,
@@ -194,7 +194,7 @@ CREATE TABLE tms_test_folder
             REFERENCES tms_test_folder,
     project_id  bigint NOT NULL
         CONSTRAINT tms_test_folder_fk_project
-            REFERENCES project
+            REFERENCES project ON DELETE CASCADE
 );
 
 CREATE INDEX idx_tms_test_folder_project_id ON tms_test_folder (project_id, id);
@@ -240,7 +240,7 @@ CREATE TABLE tms_test_case
     display_id     varchar(255),
     project_id     bigint NOT NULL
         CONSTRAINT tms_test_case_fk_project
-            REFERENCES project,
+            REFERENCES project ON DELETE CASCADE,
     test_folder_id bigint NOT NULL
         CONSTRAINT tms_test_case_fk_test_folder
             REFERENCES tms_test_folder,
