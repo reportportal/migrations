@@ -14,6 +14,7 @@ COPY --from=downloader /usr/lib/libncursesw.so.6 /usr/lib/
 COPY --chmod=755 --from=downloader /migrate /usr/local/bin/migrate
 COPY --chmod=755 --from=downloader /wait-for-it.sh /wait-for-it.sh
 COPY --chmod=755 entrypoint.sh /entrypoint.sh
+COPY --chmod=755 index-template-setup.sh /index-template-setup.sh
 COPY migrations/ /migrations/
 USER nonroot
 ENTRYPOINT ["/entrypoint.sh"]
