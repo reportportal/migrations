@@ -12,7 +12,7 @@ CREATE TYPE tms_dataset_type AS ENUM ('ENVIRONMENTAL', 'PARAMETRIZED');
 CREATE TYPE tms_milestone_status AS ENUM ('SCHEDULED', 'TESTING', 'COMPLETED');
 CREATE TYPE tms_milestone_type AS ENUM ('RELEASE', 'SPRINT', 'PLAN', 'FEATURE', 'OTHER');
 CREATE TYPE tms_manual_scenario_type AS ENUM ('TEXT', 'STEPS');
-CREATE TYPE LAUNCH_TYPE_ENUM AS ENUM ('AUTOMATION', 'MANUAL');
+ALTER TYPE LAUNCH_TYPE_ENUM ADD VALUE IF NOT EXISTS 'MANUAL';
 
 -- ============================================================================
 -- ATTRIBUTES

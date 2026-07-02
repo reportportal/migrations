@@ -13,7 +13,6 @@ DROP TABLE IF EXISTS tms_project_sequence;
 -- ============================================================================
 
 ALTER TABLE launch DROP COLUMN IF EXISTS test_plan_id;
-ALTER TABLE launch DROP COLUMN IF EXISTS launch_type;
 
 -- ============================================================================
 -- DROP EXECUTION COMMENTS
@@ -220,7 +219,6 @@ DROP TABLE IF EXISTS tms_attribute;
 -- DROP ENUMS
 -- ============================================================================
 
-DROP TYPE IF EXISTS LAUNCH_TYPE_ENUM;
 DROP TYPE IF EXISTS tms_manual_scenario_type;
 DROP TYPE IF EXISTS tms_milestone_type;
 DROP TYPE IF EXISTS tms_milestone_status;

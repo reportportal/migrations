@@ -1,4 +1,4 @@
-	CREATE index if not EXISTS test_item_last_modified_idx ON public.test_item USING btree (last_modified);
+	CREATE index if not EXISTS test_item_last_modified_idx ON test_item USING btree (last_modified);
 
 	-- TEST_ITEM_RESULTS
 	CREATE OR REPLACE FUNCTION update_last_modified_from_results()
