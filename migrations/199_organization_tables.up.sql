@@ -3,14 +3,17 @@ CREATE TABLE organization
     id bigserial PRIMARY KEY,
     created_at TIMESTAMP DEFAULT now() NOT NULL,
     updated_at TIMESTAMP DEFAULT now() NOT NULL,
-    name TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
     organization_type TEXT NOT NULL,
     external_id TEXT UNIQUE,
-    slug TEXT NOT NULL UNIQUE,
+    slug TEXT NOT NULL,
     owner_id BIGINT UNIQUE REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS organization_slug_idx ON organization(slug);
+
+CREATE UNIQUE INDEX IF NOT EXISTS organization_name_lower_key ON organization (lower(name));
+CREATE UNIQUE INDEX IF NOT EXISTS organization_slug_lower_key ON organization (lower(slug));
 
 CREATE TYPE ORGANIZATION_ROLE_ENUM AS ENUM ('MANAGER', 'MEMBER');
 
