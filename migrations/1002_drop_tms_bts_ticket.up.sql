@@ -1,2 +1,0 @@
-DROP INDEX IF EXISTS idx_tms_test_case_execution_comment_bts_ticket_comment_id;
-DROP TABLE IF EXISTS tms_test_case_execution_comment_bts_ticket;
