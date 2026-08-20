@@ -22,8 +22,8 @@ CREATE TABLE tms_attribute
 (
     id         BIGSERIAL
         CONSTRAINT tms_attribute_pk PRIMARY KEY,
-    key        varchar(255) NOT NULL,
-    value      varchar(255),
+    key        varchar(512) NOT NULL,
+    value      varchar(512),
     project_id bigint NOT NULL
         CONSTRAINT tms_attribute_fk_project
             REFERENCES project ON DELETE CASCADE,
