@@ -1,0 +1,1 @@
+-- Application-level widget type "testStabilityFlakiness" (varchar on widget.widget_type). No DDL.
