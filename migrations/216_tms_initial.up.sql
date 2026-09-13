@@ -221,6 +221,7 @@ CREATE TABLE tms_test_folder_test_item
 
 CREATE INDEX idx_tms_test_folder_test_item_test_folder_id ON tms_test_folder_test_item (test_folder_id);
 CREATE INDEX idx_tms_test_folder_test_item_test_item_id ON tms_test_folder_test_item (test_item_id);
+CREATE INDEX idx_tms_test_folder_test_item_launch_folder ON tms_test_folder_test_item (launch_id, test_folder_id);
 
 -- ============================================================================
 -- TEST CASE
@@ -580,6 +581,7 @@ WHERE launch_type IS NULL;
 
 ALTER TABLE launch
     ADD COLUMN IF NOT EXISTS test_plan_id bigint;
+CREATE INDEX idx_launch_test_plan_id ON launch (test_plan_id) WHERE test_plan_id IS NOT NULL;
 
 -- ============================================================================
 -- FILTER CONDITION ENUM UPDATE

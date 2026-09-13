@@ -12,6 +12,7 @@ DROP TABLE IF EXISTS tms_project_sequence;
 -- REVERT LAUNCH TABLE CHANGES
 -- ============================================================================
 
+DROP INDEX IF EXISTS idx_launch_test_plan_id;
 ALTER TABLE launch DROP COLUMN IF EXISTS test_plan_id;
 
 -- ============================================================================
@@ -145,6 +146,7 @@ DROP TABLE IF EXISTS tms_test_case;
 -- DROP TEST FOLDER TEST ITEM
 -- ============================================================================
 
+DROP INDEX IF EXISTS idx_tms_test_folder_test_item_launch_folder;
 DROP INDEX IF EXISTS idx_tms_test_folder_test_item_test_item_id;
 DROP INDEX IF EXISTS idx_tms_test_folder_test_item_test_folder_id;
 DROP TABLE IF EXISTS tms_test_folder_test_item;
