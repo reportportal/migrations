@@ -188,6 +188,7 @@ CREATE TABLE tms_test_folder
         CONSTRAINT tms_test_folder_pk PRIMARY KEY,
     name        varchar(255) NOT NULL,
     description varchar(255),
+    external_id varchar(255),
     index       INTEGER DEFAULT 0,
     parent_id   bigint
         CONSTRAINT tms_test_folder_fk_parent
@@ -232,6 +233,7 @@ CREATE TABLE tms_test_case
         CONSTRAINT tms_test_case_pk PRIMARY KEY,
     created_at     TIMESTAMP DEFAULT now() NOT NULL,
     updated_at     TIMESTAMP DEFAULT now() NOT NULL,
+    source_updated_at TIMESTAMP WITHOUT TIME ZONE,
     name           varchar(255),
     description    TEXT,
     priority       varchar(255),
