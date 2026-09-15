@@ -1,0 +1,1 @@
+-- TMS tag key normalization is a data migration and cannot be safely reverted.
