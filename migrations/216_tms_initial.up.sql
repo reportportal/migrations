@@ -234,7 +234,7 @@ CREATE TABLE tms_test_case
     updated_at     TIMESTAMP DEFAULT now() NOT NULL,
     name           varchar(255),
     description    TEXT,
-    priority       varchar(255),
+    priority       varchar(255) NOT NULL DEFAULT 'UNSPECIFIED',
     search_vector  tsvector,
     external_id    varchar(255),
     display_id     varchar(255),
@@ -526,7 +526,7 @@ CREATE TABLE tms_test_case_execution
     test_item_id          bigint UNIQUE
         CONSTRAINT tms_test_case_execution_fk_test_item
             REFERENCES test_item ON DELETE SET NULL,
-    priority              varchar(255),
+    priority              varchar(255) NOT NULL DEFAULT 'UNSPECIFIED',
     test_case_id          bigint NOT NULL,
     launch_id             bigint NOT NULL,
     test_case_version_id  bigint NOT NULL,
