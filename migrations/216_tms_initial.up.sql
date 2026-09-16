@@ -411,22 +411,26 @@ CREATE INDEX idx_tms_step_execution_tms_step ON tms_step_execution(tms_step_id);
 
 CREATE TABLE tms_attachment
 (
-    id           BIGSERIAL
+    id             BIGSERIAL
         CONSTRAINT tms_attachment_pk PRIMARY KEY,
-    file_name    varchar(255) NOT NULL,
-    file_type    varchar(255),
-    file_size    bigint,
-    path_to_file varchar(255) NOT NULL,
+    file_name      varchar(255) NOT NULL,
+    file_type      varchar(255),
+    file_size      bigint,
+    path_to_file   varchar(255) NOT NULL,
     thumbnail_path varchar(255),
-    created_at   TIMESTAMP,
-    expires_at   TIMESTAMP,
-    environment_id                   bigint
+    created_at     TIMESTAMP,
+    expires_at     TIMESTAMP,
+    project_id     bigint       NOT NULL
+        CONSTRAINT tms_attachment_fk_project
+            REFERENCES project ON DELETE CASCADE,
+    environment_id bigint
         CONSTRAINT tms_attachment_fk_environment
             REFERENCES tms_environment ON DELETE SET NULL
 );
 
-CREATE INDEX idx_tms_attachment_expires_at ON tms_attachment(expires_at) WHERE expires_at IS NOT NULL;
-CREATE INDEX idx_tms_attachment_path ON tms_attachment(path_to_file);
+CREATE INDEX idx_tms_attachment_expires_at ON tms_attachment (expires_at) WHERE expires_at IS NOT NULL;
+CREATE INDEX idx_tms_attachment_path ON tms_attachment (path_to_file);
+CREATE INDEX idx_tms_attachment_project_id ON tms_attachment (project_id, id);
 
 CREATE TABLE tms_step_attachment
 (
