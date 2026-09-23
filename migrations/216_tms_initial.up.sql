@@ -272,6 +272,8 @@ CREATE INDEX idx_tms_test_case_test_folder_id ON tms_test_case (test_folder_id);
 
 CREATE INDEX idx_tms_test_case_project_id ON tms_test_case (project_id);
 
+CREATE INDEX idx_tms_test_case_display_id_trgm ON tms_test_case USING gin (display_id gin_trgm_ops);
+
 CREATE UNIQUE INDEX unq_tms_test_case_project_display_id ON tms_test_case (project_id, display_id);
 
 -- ============================================================================
