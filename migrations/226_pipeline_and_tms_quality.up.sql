@@ -88,6 +88,11 @@ ALTER TABLE tms_test_case
     ADD COLUMN IF NOT EXISTS origin VARCHAR(16) NOT NULL DEFAULT 'MANUAL',
     ADD COLUMN IF NOT EXISTS status VARCHAR(16) NOT NULL DEFAULT 'READY';
 
+-- updated_at lets Layer B detect an AI quality score gone stale: a score is
+-- obsolete once the version it graded was modified after evaluatedAt.
+ALTER TABLE tms_test_case_version
+    ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
+
 -- ============================================================================
 -- TMS QUALITY STANDARD (one per project, MVP — no versioning yet)
 -- ============================================================================

@@ -4,6 +4,9 @@ DROP TABLE IF EXISTS tms_test_case_quality_score;
 DROP TABLE IF EXISTS tms_quality_standard_criterion;
 DROP TABLE IF EXISTS tms_quality_standard;
 
+ALTER TABLE tms_test_case_version
+    DROP COLUMN IF EXISTS updated_at;
+
 ALTER TABLE tms_test_case
     DROP COLUMN IF EXISTS status,
     DROP COLUMN IF EXISTS origin;
