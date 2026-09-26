@@ -72,12 +72,19 @@ CREATE INDEX IF NOT EXISTS idx_pipeline_stage_test_case_test_case_id ON pipeline
 -- CI-trigger integration types (group 'AUTOMATION', added by migration 225).
 -- Each provider is its own integration type row rather than one generic type
 -- with a provider param, mirroring how other integration kinds are modeled.
-INSERT INTO integration_type (enabled, name, creation_date, group_type, plugin_type, details)
-VALUES (TRUE, 'github-actions', CURRENT_TIMESTAMP, 'AUTOMATION', 'BUILT_IN', '{"details": {"id": "github-actions", "name": "GitHub Actions"}}')
+--
+-- Explicit, high ids: a later migration (V001007__integration_type, versioned
+-- high so it runs after everything else) seeds 'rally'/'jira'/'signup' via
+-- plain auto-increment and other tests hardcode the resulting ids. Letting
+-- these two rows consume the next auto-increment values would shift that
+-- migration's ids out from under those tests; explicit out-of-range ids avoid
+-- the collision without touching the sequence other inserts rely on.
+INSERT INTO integration_type (id, enabled, name, creation_date, group_type, plugin_type, details)
+VALUES (9000, TRUE, 'github-actions', CURRENT_TIMESTAMP, 'AUTOMATION', 'BUILT_IN', '{"details": {"id": "github-actions", "name": "GitHub Actions"}}')
 ON CONFLICT (name) DO NOTHING;
 
-INSERT INTO integration_type (enabled, name, creation_date, group_type, plugin_type, details)
-VALUES (TRUE, 'gitlab-ci', CURRENT_TIMESTAMP, 'AUTOMATION', 'BUILT_IN', '{"details": {"id": "gitlab-ci", "name": "GitLab CI"}}')
+INSERT INTO integration_type (id, enabled, name, creation_date, group_type, plugin_type, details)
+VALUES (9001, TRUE, 'gitlab-ci', CURRENT_TIMESTAMP, 'AUTOMATION', 'BUILT_IN', '{"details": {"id": "gitlab-ci", "name": "GitLab CI"}}')
 ON CONFLICT (name) DO NOTHING;
 
 -- ============================================================================
