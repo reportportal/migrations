@@ -188,6 +188,7 @@ CREATE TABLE tms_test_folder
         CONSTRAINT tms_test_folder_pk PRIMARY KEY,
     name        varchar(255) NOT NULL,
     description varchar(255),
+    external_id varchar(255),
     index       INTEGER DEFAULT 0,
     parent_id   bigint
         CONSTRAINT tms_test_folder_fk_parent
@@ -232,9 +233,10 @@ CREATE TABLE tms_test_case
         CONSTRAINT tms_test_case_pk PRIMARY KEY,
     created_at     TIMESTAMP DEFAULT now() NOT NULL,
     updated_at     TIMESTAMP DEFAULT now() NOT NULL,
+    source_updated_at TIMESTAMP,
     name           varchar(255),
     description    TEXT,
-    priority       varchar(255),
+    priority       varchar(255) NOT NULL DEFAULT 'UNSPECIFIED',
     search_vector  tsvector,
     external_id    varchar(255),
     display_id     varchar(255),
@@ -269,6 +271,8 @@ CREATE INDEX idx_tms_test_case_search_vector ON tms_test_case USING gin (search_
 CREATE INDEX idx_tms_test_case_test_folder_id ON tms_test_case (test_folder_id);
 
 CREATE INDEX idx_tms_test_case_project_id ON tms_test_case (project_id);
+
+CREATE INDEX idx_tms_test_case_display_id_trgm ON tms_test_case USING gin (display_id gin_trgm_ops);
 
 CREATE UNIQUE INDEX unq_tms_test_case_project_display_id ON tms_test_case (project_id, display_id);
 
@@ -411,22 +415,26 @@ CREATE INDEX idx_tms_step_execution_tms_step ON tms_step_execution(tms_step_id);
 
 CREATE TABLE tms_attachment
 (
-    id           BIGSERIAL
+    id             BIGSERIAL
         CONSTRAINT tms_attachment_pk PRIMARY KEY,
-    file_name    varchar(255) NOT NULL,
-    file_type    varchar(255),
-    file_size    bigint,
-    path_to_file varchar(255) NOT NULL,
+    file_name      varchar(255) NOT NULL,
+    file_type      varchar(255),
+    file_size      bigint,
+    path_to_file   varchar(255) NOT NULL,
     thumbnail_path varchar(255),
-    created_at   TIMESTAMP,
-    expires_at   TIMESTAMP,
-    environment_id                   bigint
+    created_at     TIMESTAMP,
+    expires_at     TIMESTAMP,
+    project_id     bigint       NOT NULL
+        CONSTRAINT tms_attachment_fk_project
+            REFERENCES project ON DELETE CASCADE,
+    environment_id bigint
         CONSTRAINT tms_attachment_fk_environment
             REFERENCES tms_environment ON DELETE SET NULL
 );
 
-CREATE INDEX idx_tms_attachment_expires_at ON tms_attachment(expires_at) WHERE expires_at IS NOT NULL;
-CREATE INDEX idx_tms_attachment_path ON tms_attachment(path_to_file);
+CREATE INDEX idx_tms_attachment_expires_at ON tms_attachment (expires_at) WHERE expires_at IS NOT NULL;
+CREATE INDEX idx_tms_attachment_path ON tms_attachment (path_to_file);
+CREATE INDEX idx_tms_attachment_project_id ON tms_attachment (project_id, id);
 
 CREATE TABLE tms_step_attachment
 (
@@ -522,7 +530,7 @@ CREATE TABLE tms_test_case_execution
     test_item_id          bigint UNIQUE
         CONSTRAINT tms_test_case_execution_fk_test_item
             REFERENCES test_item ON DELETE SET NULL,
-    priority              varchar(255),
+    priority              varchar(255) NOT NULL DEFAULT 'UNSPECIFIED',
     test_case_id          bigint NOT NULL,
     launch_id             bigint NOT NULL,
     test_case_version_id  bigint NOT NULL,
@@ -544,7 +552,7 @@ CREATE TABLE tms_test_case_execution_comment
     execution_id  bigint NOT NULL UNIQUE
         CONSTRAINT tms_test_case_execution_comment_fk_execution
             REFERENCES tms_test_case_execution,
-    comment       text
+    comment       varchar(1000)
 );
 
 CREATE INDEX idx_tms_test_case_execution_comment_execution_id ON tms_test_case_execution_comment (execution_id);

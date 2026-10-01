@@ -136,6 +136,7 @@ DROP TRIGGER IF EXISTS tms_test_case_search_vector_trigger ON tms_test_case;
 DROP FUNCTION IF EXISTS update_tms_test_case_search_vector();
 DROP INDEX IF EXISTS idx_tms_test_case_test_folder_id;
 DROP INDEX IF EXISTS idx_tms_test_case_search_vector;
+DROP INDEX IF EXISTS idx_tms_test_case_display_id_trgm;
 DROP INDEX IF EXISTS unq_tms_test_case_project_display_id;
 DROP INDEX IF EXISTS unq_tms_test_case_project_display_id;
 DROP INDEX IF EXISTS idx_tms_test_case_project_id;
