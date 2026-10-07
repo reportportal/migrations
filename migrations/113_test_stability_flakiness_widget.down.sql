@@ -1,0 +1,1 @@
+-- No-op (no schema change in up migration).
