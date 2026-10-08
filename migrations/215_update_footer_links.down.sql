@@ -1,0 +1,1 @@
+UPDATE server_settings SET key = 'server.footer.links' where key = 'server.sidebar.links'

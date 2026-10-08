@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
 
       - name: Create variables
         id: vars
@@ -33,6 +33,10 @@ jobs:
       aws-region: ${{ vars.AWS_REGION }}
       build-platforms: ${{ vars.BUILD_PLATFORMS || 'linux/amd64,linux/arm64' }}
       image-tag: 'develop-${{ github.run_number }}'
+      # To push multiple extra tags, use a multi-line string:
+      # additional-tag: |
+      #   develop-latest
+      #   develop-stable
       additional-tag: 'develop-latest'
       version: '${{ github.ref_name }}-${{ needs.variables-setup.outputs.sha_short }}'
       date: ${{ needs.variables-setup.outputs.date }}
