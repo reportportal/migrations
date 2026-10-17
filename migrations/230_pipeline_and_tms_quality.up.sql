@@ -3,8 +3,8 @@
 -- independent of launch/test_item. See EPMRPP-118192.
 --
 -- Facts about a pipeline / iteration / stage / attempt are typed attributes: a JSONB array of
---   {key, value, type: MAIN|TAG|HIDDEN, valueType: TEXT|NUMBER|SCORE|MONEY|DURATION|DATE|LINK|STATUS,
---    label?, url?, order?, direction?, rollup?, identity?}
+--   {key, value, type: META|TAG|NONE, valueType: TEXT|NUMBER|SCORE|MONEY|DURATION|DATE|LINK|STATUS,
+--    label?, description?, url?, order?, direction?, rollup?, comparisonKey?}
 -- A status is stored as reported (free text) next to a normalized status_category. What a stage produced
 -- is described by attributes and result tables (sections); a reported document is kept as received.
 -- ============================================================================
@@ -69,20 +69,22 @@ CREATE TABLE IF NOT EXISTS pipeline_stage (
     path                     LTREE,
     status                   VARCHAR(64) NOT NULL,
     status_category          VARCHAR(16) NOT NULL,
-    -- REPORTED: sent by the pipeline (e.g. Create, Grade, Upload);
-    -- DERIVED: created and kept up to date by ReportPortal (e.g. a Review stage counting Ready test cases)
-    origin                   VARCHAR(16) NOT NULL DEFAULT 'REPORTED',
+    -- PIPELINE: reported by the pipeline (e.g. Create, Grade, Upload);
+    -- REPORTPORTAL: created and kept up to date by ReportPortal (e.g. a Review stage counting Ready test cases)
+    owned_by                 VARCHAR(16) NOT NULL DEFAULT 'PIPELINE',
     affects_iteration_status BOOLEAN NOT NULL DEFAULT TRUE,
     attributes               JSONB,
     -- named result tables {key, title, columns, rows}
     sections                 JSONB,
+    -- short text for the stage chip, e.g. "4 cases" or "79"
+    summary                  VARCHAR(128),
     -- what the stage is doing or waiting for right now
     message                  VARCHAR(512),
     -- links out of the stage, e.g. [{"type": "RUN", "label": "#78911", "url": "https://ci/job/78911"}] or
     -- [{"type": "ENTITY_LIST", "label": "Open review queue", "target": {"entityType": "TEST_CASE_LIST", "entityId": "iteration=4"}}];
     -- the link to the run is derived from execution and is not stored here
     links                    JSONB,
-    -- things elsewhere in ReportPortal the stage worked on or produced, as reported,
+    -- things elsewhere in ReportPortal the stage worked on or produced, collected from the cell targets of its sections,
     -- e.g. [{"entityType": "TEST_CASE", "entityId": "TC-12"}]
     related_entities         JSONB,
     -- a document the stage reported, kept as received (e.g. the grader's output on a Grade stage), and the
