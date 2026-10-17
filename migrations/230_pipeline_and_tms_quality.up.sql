@@ -6,7 +6,7 @@
 --   {key, value, type: META|TAG|NONE, valueType: TEXT|NUMBER|SCORE|MONEY|DURATION|DATE|LINK|STATUS,
 --    label?, description?, url?, order?, direction?, rollup?, comparisonKey?}
 -- A status is stored as reported (free text) next to a normalized status_category. What a stage produced
--- is described by attributes and result tables (sections); a reported document is kept as received.
+-- is described by attributes and result tables (sections); the raw output a stage reported is kept as received.
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS pipeline (
@@ -87,10 +87,10 @@ CREATE TABLE IF NOT EXISTS pipeline_stage (
     -- things elsewhere in ReportPortal the stage worked on or produced, collected from the cell targets of its sections,
     -- e.g. [{"entityType": "TEST_CASE", "entityId": "TC-12"}]
     related_entities         JSONB,
-    -- a document the stage reported, kept as received (e.g. the grader's output on a Grade stage), and the
+    -- the raw output the stage reported, kept as received (e.g. the grader's output on a Grade stage), and the
     -- name of the schema it had to follow (e.g. 'grade')
-    document                 JSONB,
-    document_schema_name     VARCHAR(128),
+    raw_output               JSONB,
+    raw_output_schema_name   VARCHAR(128),
     result_type              VARCHAR(64),
     result_ref               VARCHAR(255),
     started_at               TIMESTAMP,
