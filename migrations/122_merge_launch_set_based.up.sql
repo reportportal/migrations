@@ -118,8 +118,8 @@ BEGIN
                   GROUP BY mi.target_id) agg
             WHERE tir.result_id = agg.target_id;
 
-            INSERT INTO statistics (statistics_field_id, item_id, launch_id, s_counter)
-            SELECT s.statistics_field_id, mi.target_id, NULL, sum(s.s_counter)
+            INSERT INTO statistics (statistics_field_id, item_id, s_counter)
+            SELECT s.statistics_field_id, mi.target_id, sum(s.s_counter)
             FROM merge_launch_item mi
                      JOIN statistics s ON s.item_id = mi.item_id
             WHERE mi.target_has_children
@@ -216,15 +216,15 @@ BEGIN
 
         END LOOP;
 
-    INSERT INTO statistics (statistics_field_id, launch_id, s_counter)
-    SELECT statistics_field_id, launchid, sum(s_counter)
-    FROM statistics
-             JOIN test_item ti ON statistics.item_id = ti.item_id
+    INSERT INTO launch_statistics (statistics_field_id, launch_id, s_counter)
+    SELECT s.statistics_field_id, launchid, sum(s.s_counter)
+    FROM statistics s
+             JOIN test_item ti ON s.item_id = ti.item_id
     WHERE ti.launch_id = launchid
       AND ti.has_stats
       AND ti.parent_id IS NULL
-    GROUP BY statistics_field_id
-    ON CONFLICT ON CONSTRAINT unique_stats_launch DO UPDATE
+    GROUP BY s.statistics_field_id
+    ON CONFLICT ON CONSTRAINT unique_launch_stats DO UPDATE
         SET s_counter = excluded.s_counter;
 
     RETURN 0;
