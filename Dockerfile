@@ -1,7 +1,7 @@
 FROM alpine:3.24 AS downloader
 ARG TARGETOS
 ARG TARGETARCH
-ARG GO_MIGRATE_VERSION="v4.19.0"
+ARG GO_MIGRATE_VERSION="v4.20.1"
 RUN apk --no-cache add --upgrade curl bash openssl libcrypto3 libssl3 && \
     curl -L https://github.com/golang-migrate/migrate/releases/download/${GO_MIGRATE_VERSION}/migrate.${TARGETOS}-${TARGETARCH}.tar.gz | tar xvz && \
     curl -Lo /wait-for-it.sh https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh
