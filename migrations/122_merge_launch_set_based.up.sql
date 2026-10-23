@@ -5,6 +5,7 @@
 -- The merged launch is new, so planner has no statistics for its launch_id: launch items are read only once
 -- per level, all other statements are driven by the temporary table through item_id/parent_id/retry_of indexes.
 
+
 CREATE OR REPLACE FUNCTION merge_launch(launchid BIGINT)
     RETURNS INTEGER
     LANGUAGE plpgsql
