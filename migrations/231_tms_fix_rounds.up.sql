@@ -1,19 +1,19 @@
 -- ============================================================================
 -- TMS FIX ROUNDS (stories US-AI-FCTRY-011 and US-AI-FCTRY-012)
 --
--- A reviewer comments the steps of an AI-generated test case; "Push to agent" sends the unsent comments to the
--- factory. The agent fixes the case and reports a new pipeline iteration (a re-run of the one that produced the
+-- A reviewer comments the steps of an AI-generated test case; "Push to agent" starts a fix round that sends the
+-- unsent comments to the factory. The agent fixes the case and reports a new pipeline iteration (a re-run of the one that produced the
 -- case); the fix lands in the Library as a NEW default version of the same test case.
 --
 --   tms_test_case_review_comment  one reviewer comment on the precondition or a step of a test case
---   tms_test_case_fix_push        one "Push to agent" of one test case, i.e. one fix round
+--   tms_test_case_fix_round       one fix round of one test case (one "Push to agent")
 -- ============================================================================
 
-CREATE TABLE IF NOT EXISTS tms_test_case_fix_push (
+CREATE TABLE IF NOT EXISTS tms_test_case_fix_round (
     id                    BIGSERIAL PRIMARY KEY,
     test_case_id          BIGINT NOT NULL REFERENCES tms_test_case (id) ON DELETE CASCADE,
     project_id            BIGINT NOT NULL REFERENCES project (id) ON DELETE CASCADE,
-    -- per test case: the first push is round 1
+    -- per test case: the first round is round 1
     round_number          INTEGER NOT NULL,
     -- PENDING while the agent works, then FIXED, FIXED_GRADE_FAILED or FAILED
     status                VARCHAR(24) NOT NULL,
@@ -29,12 +29,12 @@ CREATE TABLE IF NOT EXISTS tms_test_case_fix_push (
     failure_reason        TEXT
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS unq_tms_test_case_fix_push_round ON tms_test_case_fix_push (test_case_id, round_number);
+CREATE UNIQUE INDEX IF NOT EXISTS unq_tms_test_case_fix_round_number ON tms_test_case_fix_round (test_case_id, round_number);
 
 -- a test case has at most one round running
-CREATE UNIQUE INDEX IF NOT EXISTS unq_tms_test_case_fix_push_pending ON tms_test_case_fix_push (test_case_id) WHERE status = 'PENDING';
+CREATE UNIQUE INDEX IF NOT EXISTS unq_tms_test_case_fix_round_pending ON tms_test_case_fix_round (test_case_id) WHERE status = 'PENDING';
 
-CREATE INDEX IF NOT EXISTS idx_tms_test_case_fix_push_pending_since ON tms_test_case_fix_push (requested_at) WHERE status = 'PENDING';
+CREATE INDEX IF NOT EXISTS idx_tms_test_case_fix_round_pending_since ON tms_test_case_fix_round (requested_at) WHERE status = 'PENDING';
 
 CREATE TABLE IF NOT EXISTS tms_test_case_review_comment (
     id            BIGSERIAL PRIMARY KEY,
@@ -48,14 +48,14 @@ CREATE TABLE IF NOT EXISTS tms_test_case_review_comment (
     created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     -- NOT_SENT, SENT (agent fixing), ADDRESSED, NOT_ADDRESSED
     state         VARCHAR(16) NOT NULL DEFAULT 'NOT_SENT',
-    -- the push that carried the comment to the agent, and the agent's answer to it
-    fix_push_id   BIGINT REFERENCES tms_test_case_fix_push (id) ON DELETE SET NULL,
+    -- the fix round that carried the comment to the agent, and the agent's answer to it
+    fix_round_id  BIGINT REFERENCES tms_test_case_fix_round (id) ON DELETE SET NULL,
     round_number  INTEGER,
     agent_reason  TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_tms_test_case_review_comment_test_case ON tms_test_case_review_comment (test_case_id);
-CREATE INDEX IF NOT EXISTS idx_tms_test_case_review_comment_push ON tms_test_case_review_comment (fix_push_id);
+CREATE INDEX IF NOT EXISTS idx_tms_test_case_review_comment_fix_round ON tms_test_case_review_comment (fix_round_id);
 
 -- the pipeline iteration that produced a version of the test case (the first upload or a fix round)
 ALTER TABLE tms_test_case_version
