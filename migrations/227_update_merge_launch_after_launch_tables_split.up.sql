@@ -1,19 +1,31 @@
--- Set-based rewrite of merge_launch. Previous implementation iterated over every merged item with
--- cursors and executed several queries per item filtered by an expression on test_case_id/test_case_hash,
--- so each of them scanned the whole launch. Now every tree level is processed with a fixed number of
--- statements over a temporary, analyzed mapping of merged items to their target items.
--- The merged launch is new, so planner has no statistics for its launch_id: launch items are read only once
--- per level, all other statements are driven by the temporary table through item_id/parent_id/retry_of indexes.
+-- Plan-stable merge_launch (follow-up of 122/227), same behavior.
+--
+-- Previous version joined temporary tables with test_item/statistics/log/attachment and let planner pick the
+-- join method. With production statistics (big tables, underestimated n_distinct of parent_id/retry_of)
+-- planner preferred hash and merge joins that read whole tables or whole indexes:
+--  * recursive CTE collecting nested steps: worktable size can't be estimated (trillions of rows in estimate),
+--    so recursion steps got hash joins over sequential scans of test_item spilling to disk, or merge joins
+--    over full ti_retry_of_idx (PostgreSQL 18: ~400 s and ~22M blocks read for a 5 x 1000 tests DEEP merge);
+--  * moving children of merged items: merge join over full ti_parent_idx.
+--
+-- Now access to a big table never depends on join method choice:
+--  * reads are LATERAL subqueries referencing the row of a temporary table and fenced with OFFSET 0, so they
+--    can't be pulled up into a plain join: the only possible plan is a nested loop with parameterized index scans;
+--  * UPDATE/DELETE targets are additionally restricted with "indexed column = ANY(ARRAY(SELECT ... FROM temporary
+--    table))", so the target table is read by an index scan on the given keys and is joined only to a small set;
+--  * nested steps are collected level by level into a temporary table instead of a recursive CTE.
 
 CREATE OR REPLACE FUNCTION merge_launch(launchid BIGINT)
     RETURNS INTEGER
     LANGUAGE plpgsql
-    -- row estimates of recursive queries are inaccurate, JIT compilation costs more than execution
+    -- JIT compilation costs more than execution
     SET jit = off
 AS
 $$
 DECLARE
-    max_level INTEGER;
+    max_level    INTEGER;
+    nested_level INTEGER;
+    inserted     BIGINT;
 BEGIN
     max_level := (SELECT MAX(nlevel(path))
                   FROM test_item
@@ -41,11 +53,13 @@ BEGIN
     ) ON COMMIT DROP;
 
     -- Nested steps and retries of not merged items with the item they belong to
-    CREATE TEMP TABLE IF NOT EXISTS merge_launch_nested
+    -- (renamed from merge_launch_nested: it has a different structure)
+    CREATE TEMP TABLE IF NOT EXISTS merge_launch_nested_step
     (
         item_id    BIGINT PRIMARY KEY,
         owner_id   BIGINT,
-        owner_path LTREE
+        owner_path LTREE,
+        step_level INTEGER
     ) ON COMMIT DROP;
 
     FOR lvl IN 1..max_level
@@ -66,6 +80,7 @@ BEGIN
 
             ANALYZE merge_launch_item;
 
+            -- sublinks in SET are executed per row as parameterized index scans
             UPDATE merge_launch_item mi
             SET has_any_child = EXISTS(SELECT 1 FROM test_item c WHERE c.parent_id = mi.item_id),
                 is_container  = mi.is_suite OR EXISTS(SELECT 1
@@ -93,14 +108,21 @@ BEGIN
             SET description = agg.description,
                 start_time  = agg.start_time
             FROM (SELECT mi.target_id,
-                         string_agg(i.description, chr(10) ORDER BY i.item_id) AS description,
-                         min(i.start_time)                                     AS start_time
+                         string_agg(i.description, chr(10) ORDER BY mi.item_id) AS description,
+                         min(i.start_time)                                      AS start_time
                   FROM merge_launch_item mi
-                           JOIN test_item i ON i.item_id = mi.item_id
+                           CROSS JOIN LATERAL (SELECT i.description, i.start_time
+                                               FROM test_item i
+                                               WHERE i.item_id = mi.item_id
+                                               OFFSET 0) i
                   WHERE mi.target_has_children
                     AND mi.has_children
                   GROUP BY mi.target_id) agg
-            WHERE ti.item_id = agg.target_id;
+            WHERE ti.item_id = agg.target_id
+              AND ti.item_id = ANY (ARRAY(SELECT mi.target_id
+                                          FROM merge_launch_item mi
+                                          WHERE mi.target_has_children
+                                            AND mi.has_children));
 
             UPDATE test_item_results tir
             SET end_time = agg.end_time,
@@ -112,16 +134,26 @@ BEGIN
                                   WHEN bool_or(r.status != 'PASSED') THEN 'SKIPPED'
                                   ELSE 'PASSED' END AS STATUS_ENUM)                      AS status
                   FROM merge_launch_item mi
-                           JOIN test_item_results r ON r.result_id = mi.item_id
+                           CROSS JOIN LATERAL (SELECT r.end_time, r.status
+                                               FROM test_item_results r
+                                               WHERE r.result_id = mi.item_id
+                                               OFFSET 0) r
                   WHERE mi.target_has_children
                     AND mi.has_children
                   GROUP BY mi.target_id) agg
-            WHERE tir.result_id = agg.target_id;
+            WHERE tir.result_id = agg.target_id
+              AND tir.result_id = ANY (ARRAY(SELECT mi.target_id
+                                             FROM merge_launch_item mi
+                                             WHERE mi.target_has_children
+                                               AND mi.has_children));
 
             INSERT INTO statistics (statistics_field_id, item_id, s_counter)
             SELECT s.statistics_field_id, mi.target_id, sum(s.s_counter)
             FROM merge_launch_item mi
-                     JOIN statistics s ON s.item_id = mi.item_id
+                     CROSS JOIN LATERAL (SELECT s.statistics_field_id, s.s_counter
+                                         FROM statistics s
+                                         WHERE s.item_id = mi.item_id
+                                         OFFSET 0) s
             WHERE mi.target_has_children
               AND mi.has_children
             GROUP BY s.statistics_field_id, mi.target_id
@@ -135,6 +167,7 @@ BEGIN
             FROM merge_launch_item mi
             WHERE mi.is_container
               AND c.parent_id = mi.item_id
+              AND c.parent_id = ANY (ARRAY(SELECT m.item_id FROM merge_launch_item m WHERE m.is_container))
               AND nlevel(c.path) = lvl + 1
               AND c.has_stats
               AND c.retry_of IS NULL;
@@ -145,6 +178,7 @@ BEGIN
             FROM merge_launch_item mi
             WHERE mi.is_container
               AND c.parent_id = mi.item_id
+              AND c.parent_id = ANY (ARRAY(SELECT m.item_id FROM merge_launch_item m WHERE m.is_container))
               AND c.retry_of IS NOT NULL;
 
             UPDATE attachment a
@@ -152,21 +186,29 @@ BEGIN
             FROM merge_launch_item mi
             WHERE mi.is_container
               AND mi.item_id != mi.target_id
-              AND a.item_id = mi.item_id;
+              AND a.item_id = mi.item_id
+              AND a.item_id = ANY (ARRAY(SELECT m.item_id
+                                         FROM merge_launch_item m
+                                         WHERE m.is_container
+                                           AND m.item_id != m.target_id));
 
             UPDATE log l
             SET item_id = mi.target_id
             FROM merge_launch_item mi
             WHERE mi.is_container
               AND mi.item_id != mi.target_id
-              AND l.item_id = mi.item_id;
+              AND l.item_id = mi.item_id
+              AND l.item_id = ANY (ARRAY(SELECT m.item_id
+                                         FROM merge_launch_item m
+                                         WHERE m.is_container
+                                           AND m.item_id != m.target_id));
 
             DELETE
             FROM test_item ti
-                USING merge_launch_item mi
-            WHERE mi.is_container
-              AND mi.item_id != mi.target_id
-              AND ti.item_id = mi.item_id
+            WHERE ti.item_id = ANY (ARRAY(SELECT m.item_id
+                                          FROM merge_launch_item m
+                                          WHERE m.is_container
+                                            AND m.item_id != m.target_id))
               AND ti.has_stats;
 
             -- Fix paths of retries and nested steps of not merged items which parents were moved
@@ -175,42 +217,65 @@ BEGIN
             FROM merge_launch_item mi
             WHERE NOT mi.is_container
               AND mi.has_retries
-              AND r.retry_of = mi.item_id;
+              AND r.retry_of = mi.item_id
+              AND r.retry_of = ANY (ARRAY(SELECT m.item_id
+                                          FROM merge_launch_item m
+                                          WHERE NOT m.is_container
+                                            AND m.has_retries));
 
-            TRUNCATE merge_launch_nested;
+            TRUNCATE merge_launch_nested_step;
 
-            INSERT INTO merge_launch_nested (item_id, owner_id, owner_path)
-            WITH RECURSIVE nested_owner AS (SELECT mi.item_id, mi.path
-                                            FROM merge_launch_item mi
-                                            WHERE NOT mi.is_container
-                                              AND EXISTS(SELECT 1
-                                                         FROM test_item n
-                                                         WHERE n.parent_id = mi.item_id
-                                                           AND NOT n.has_stats)),
-                           nested AS (SELECT n.item_id, o.item_id AS owner_id, o.path AS owner_path
-                                      FROM nested_owner o
-                                               JOIN test_item n ON n.parent_id = o.item_id
-                                      WHERE NOT n.has_stats
-                                      UNION ALL
-                                      SELECT r.item_id, o.item_id, o.path
-                                      FROM nested_owner o
-                                               JOIN test_item r ON r.retry_of = o.item_id
-                                      WHERE NOT r.has_stats
-                                      UNION ALL
-                                      SELECT c.item_id, n.owner_id, n.owner_path
-                                      FROM nested n
-                                               JOIN test_item c ON c.parent_id = n.item_id
-                                      WHERE NOT c.has_stats)
-            SELECT DISTINCT ON (item_id) item_id, owner_id, owner_path
-            FROM nested
-            ORDER BY item_id;
+            -- Nested steps of not merged items
+            INSERT INTO merge_launch_nested_step (item_id, owner_id, owner_path, step_level)
+            SELECT n.item_id, mi.item_id, mi.path, 0
+            FROM merge_launch_item mi
+                     CROSS JOIN LATERAL (SELECT c.item_id
+                                         FROM test_item c
+                                         WHERE c.parent_id = mi.item_id
+                                           AND NOT c.has_stats
+                                         OFFSET 0) n
+            WHERE NOT mi.is_container
+            ON CONFLICT (item_id) DO NOTHING;
 
-            ANALYZE merge_launch_nested;
+            -- Retries of not merged items which have nested steps
+            INSERT INTO merge_launch_nested_step (item_id, owner_id, owner_path, step_level)
+            SELECT r.item_id, mi.item_id, mi.path, 0
+            FROM merge_launch_item mi
+                     CROSS JOIN LATERAL (SELECT c.item_id
+                                         FROM test_item c
+                                         WHERE c.retry_of = mi.item_id
+                                           AND NOT c.has_stats
+                                         OFFSET 0) r
+            WHERE NOT mi.is_container
+              AND EXISTS(SELECT 1 FROM merge_launch_nested_step o WHERE o.owner_id = mi.item_id)
+            ON CONFLICT (item_id) DO NOTHING;
+
+            -- Descendants of collected nested steps and retries, one nesting level per statement
+            nested_level := 0;
+            LOOP
+                INSERT INTO merge_launch_nested_step (item_id, owner_id, owner_path, step_level)
+                SELECT ch.item_id, n.owner_id, n.owner_path, nested_level + 1
+                FROM merge_launch_nested_step n
+                         CROSS JOIN LATERAL (SELECT c.item_id
+                                             FROM test_item c
+                                             WHERE c.parent_id = n.item_id
+                                               AND NOT c.has_stats
+                                             OFFSET 0) ch
+                WHERE n.step_level = nested_level
+                ON CONFLICT (item_id) DO NOTHING;
+
+                GET DIAGNOSTICS inserted = ROW_COUNT;
+                EXIT WHEN inserted = 0;
+                nested_level := nested_level + 1;
+            END LOOP;
+
+            ANALYZE merge_launch_nested_step;
 
             UPDATE test_item d
             SET path = text2ltree(concat(n.owner_path :: TEXT, '.', subpath(d.path, lvl) :: TEXT))
-            FROM merge_launch_nested n
+            FROM merge_launch_nested_step n
             WHERE d.item_id = n.item_id
+              AND d.item_id = ANY (ARRAY(SELECT s.item_id FROM merge_launch_nested_step s))
               AND nlevel(d.path) > lvl
               AND ltree2text(subpath(d.path, lvl - 1, 1)) = n.owner_id :: TEXT;
 
@@ -218,8 +283,11 @@ BEGIN
 
     INSERT INTO launch_statistics (statistics_field_id, launch_id, s_counter)
     SELECT s.statistics_field_id, launchid, sum(s.s_counter)
-    FROM statistics s
-             JOIN test_item ti ON s.item_id = ti.item_id
+    FROM test_item ti
+             CROSS JOIN LATERAL (SELECT s.statistics_field_id, s.s_counter
+                                 FROM statistics s
+                                 WHERE s.item_id = ti.item_id
+                                 OFFSET 0) s
     WHERE ti.launch_id = launchid
       AND ti.has_stats
       AND ti.parent_id IS NULL
