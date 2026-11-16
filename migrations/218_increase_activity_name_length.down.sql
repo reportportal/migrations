@@ -1,0 +1,3 @@
+ALTER TABLE activity
+ALTER COLUMN event_name TYPE VARCHAR(32);
+
